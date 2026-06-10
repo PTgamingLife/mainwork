@@ -37,7 +37,8 @@ const T = {
       btn:'送出留言，領薯條！',
       qrTitle:'🍟 免費薯條兌換券', qrSub:'出示此 QR Code 給店員，兌換黃金薯條一份',
       qrClose:'關閉', placeholder:'寫下你對揪福的感想...',
-      empty:'還沒有留言，快來第一個分享！'
+      empty:'還沒有留言，快來第一個分享！',
+      formTitle:'留下你的足跡', wallTitle:'揪福留言牆'
     }
   },
   en: {
@@ -76,7 +77,8 @@ const T = {
       btn:'Comment & Get Free Fries!',
       qrTitle:'🍟 Free Fries Coupon', qrSub:'Show this QR Code to our staff to redeem one serving of golden fries',
       qrClose:'Close', placeholder:'Share your Joyful experience...',
-      empty:'No comments yet — be the first to share!'
+      empty:'No comments yet — be the first to share!',
+      formTitle:'Leave Your Mark', wallTitle:'Joyful Wall'
     }
   },
   ja: {
@@ -115,7 +117,8 @@ const T = {
       btn:'コメントして無料ポテトをゲット！',
       qrTitle:'🍟 無料フライドポテト引換券', qrSub:'このQRコードをスタッフに提示してフライドポテット1つと交換',
       qrClose:'閉じる', placeholder:'ジョイフルの感想を書いてください...',
-      empty:'まだコメントがありません。最初にシェアしてみましょう！'
+      empty:'まだコメントがありません。最初にシェアしてみましょう！',
+      formTitle:'足跡を残そう', wallTitle:'ジョイフル・ウォール'
     }
   },
   ko: {
@@ -154,7 +157,8 @@ const T = {
       btn:'댓글 작성하고 무료 감자튀김 받기!',
       qrTitle:'🍟 무료 감자튀김 쿠폰', qrSub:'이 QR 코드를 직원에게 보여주시면 황금 감자튀김 1개와 교환해 드립니다',
       qrClose:'닫기', placeholder:'조이풀에 대한 감상을 남겨주세요...',
-      empty:'아직 댓글이 없습니다. 첫 번째로 공유해보세요!'
+      empty:'아직 댓글이 없습니다. 첫 번째로 공유해보세요!',
+      formTitle:'발자취를 남겨보세요', wallTitle:'조이풀 월'
     }
   }
 };
@@ -281,33 +285,45 @@ function renderTransport() {
 
 function renderWall() {
   const w = T[lang].wall;
-  const cards = comments.length
-    ? comments.map(c=>`<div class="wall-card">
-        <div class="wall-meta"><strong>${c.name}</strong><span>${c.time}</span></div>
-        ${c.photo?`<img class="wall-photo" src="${c.photo}" alt="photo">`:''}
-        <p class="wall-msg">${c.msg}</p>
+  const photoCards = comments.filter(c=>c.photo).length
+    ? comments.filter(c=>c.photo).map(c=>`<div class="wall-photo-card">
+        <img src="${c.photo}" alt="${c.name}">
+        <div class="wpc-overlay"><strong>${c.name}</strong><span>${c.msg.slice(0,30)}${c.msg.length>30?'…':''}</span></div>
       </div>`).reverse().join('')
-    : `<p class="wall-empty">${w.empty}</p>`;
+    : '';
+  const textCards = comments.map(c=>`<div class="wall-card">
+      <div class="wall-meta"><strong>${c.name}</strong><span>${c.time}</span></div>
+      ${c.photo?`<img class="wall-card-img" src="${c.photo}" alt="photo">`:''}
+      <p class="wall-msg">${c.msg}</p>
+    </div>`).reverse().join('');
+  const rightContent = comments.length
+    ? `${photoCards?`<div class="wall-mosaic">${photoCards}</div>`:''}
+       <div class="wall-list">${textCards}</div>`
+    : `<div class="wall-empty-box"><div class="wall-empty-icon">📸</div><p>${w.empty}</p></div>`;
   return `${navbar()}${geo()}<div class="page-body">
     <div class="sec-head"><h2>${w.h}</h2><p>${w.p}</p></div>
-    <div class="wall-wrap">
-      <form class="wall-form" onsubmit="submitComment(event)">
-        <div class="fg-row">
+    <div class="wall-split">
+      <div class="wall-left">
+        <div class="wall-left-label">${w.formTitle||'✍️'}</div>
+        <form class="wall-form" onsubmit="submitComment(event)">
           <div class="fg"><label>${w.nameLbl}</label><input type="text" id="wName" required></div>
           <div class="fg"><label>${w.photoLbl}</label>
             <input type="file" id="wPhoto" accept="image/*" onchange="previewPhoto(this)">
           </div>
-        </div>
-        <div id="photoPreview" class="photo-preview-wrap" style="display:none">
-          <img id="photoPreviewImg" alt="preview">
-          <button type="button" class="photo-remove" onclick="removePhoto()">✕</button>
-        </div>
-        <div class="fg"><label>${w.msgLbl}</label>
-          <textarea id="wMsg" rows="3" placeholder="${w.placeholder}" required></textarea>
-        </div>
-        <button type="submit" class="submit-btn wall-submit-btn">${w.btn}</button>
-      </form>
-      <div class="wall-grid">${cards}</div>
+          <div id="photoPreview" class="photo-preview-wrap" style="display:none">
+            <img id="photoPreviewImg" alt="preview">
+            <button type="button" class="photo-remove" onclick="removePhoto()">✕</button>
+          </div>
+          <div class="fg"><label>${w.msgLbl}</label>
+            <textarea id="wMsg" rows="4" placeholder="${w.placeholder}" required></textarea>
+          </div>
+          <button type="submit" class="submit-btn wall-submit-btn">${w.btn}</button>
+        </form>
+      </div>
+      <div class="wall-right">
+        <div class="wall-right-label">${w.wallTitle||'🧱'}</div>
+        <div class="wall-right-content">${rightContent}</div>
+      </div>
     </div>
   </div>
   <div id="qrModal" class="qr-modal" style="display:none" onclick="closeQR(event)">
