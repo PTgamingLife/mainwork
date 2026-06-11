@@ -281,6 +281,27 @@ nav {
 @keyframes fadeUp { from { opacity:0; transform: translateX(-50%) translateY(20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
 @keyframes fadeOut { to { opacity:0; } }
 
+/* ── SEATING ── */
+.seat-wrap { padding: 0 1.5rem 3rem; }
+.seat-svg { width: 100%; max-width: 720px; display: block; margin: 0 auto; }
+.iso-table polygon { transition: opacity 0.15s; }
+.iso-table:hover polygon { opacity: 0.82; }
+.seat-info {
+  display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+  padding: 0.8rem 2rem; background: #fff4fa; border-left: 5px solid var(--pink);
+  margin: 0 1.5rem 1rem;
+}
+.seat-num { font-size: 1.1rem; font-weight: 900; color: var(--pink); }
+.seat-seats { font-size: 0.85rem; color: var(--gray); }
+.seat-book { width: auto; padding: 0.6rem 1.8rem; font-size: 0.8rem; }
+.seat-hint {
+  padding: 0.6rem 2rem; color: var(--gray); font-size: 0.85rem;
+  letter-spacing: 1px; margin-bottom: 0.5rem;
+}
+.seat-legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 0.8rem; font-size: 0.78rem; font-weight: 700; }
+.sl-avail { color: var(--pink); }
+.sl-sel { color: #009AB0; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .wall-split { grid-template-columns: 1fr; }

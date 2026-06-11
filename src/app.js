@@ -2,7 +2,7 @@ const MAPS_URL = 'https://www.google.com/maps/place/Joyful%E6%8F%AA%E7%A6%8F/@25
 
 const T = {
   zh: {
-    nav: { menu:'菜單', reserve:'訂位', transport:'交通', wall:'留言' },
+    nav: { menu:'菜單', reserve:'訂位', transport:'交通', wall:'留言', seating:'座位圖' },
     home: { t1:'揪福', t2:'漢堡', sub:'JOYFUL BURGER · TAIWAN', choose:'請選擇語言' },
     langs: ['中文','English','日本語','한국어'],
     menu: {
@@ -39,10 +39,11 @@ const T = {
       qrClose:'關閉', placeholder:'寫下你對揪福的感想...',
       empty:'還沒有留言，快來第一個分享！',
       formTitle:'留下你的足跡', wallTitle:'揪福留言牆'
-    }
+    },
+    seating:{ h:'座位平面圖', p:'選擇喜歡的座位，一鍵訂位。', table:'桌號', seats:'人座', book:'訂位', hint:'點選地圖上的桌子選擇座位', available:'● 可選', selected:'● 已選' }
   },
   en: {
-    nav: { menu:'Menu', reserve:'Reserve', transport:'Access', wall:'Wall' },
+    nav: { menu:'Menu', reserve:'Reserve', transport:'Access', wall:'Wall', seating:'Seats' },
     home: { t1:'Joyful', t2:'Burger', sub:'揪福漢堡 · TAIPEI, TAIWAN', choose:'Select Language' },
     langs: ['中文','English','日本語','한국어'],
     menu: {
@@ -79,10 +80,11 @@ const T = {
       qrClose:'Close', placeholder:'Share your Joyful experience...',
       empty:'No comments yet — be the first to share!',
       formTitle:'Leave Your Mark', wallTitle:'Joyful Wall'
-    }
+    },
+    seating:{ h:'Seating Map', p:'Pick your table and reserve instantly.', table:'Table', seats:'seats', book:'Book Now', hint:'Click a table on the map to select it', available:'● Available', selected:'● Selected' }
   },
   ja: {
-    nav: { menu:'メニュー', reserve:'予約', transport:'アクセス', wall:'コメント' },
+    nav: { menu:'メニュー', reserve:'予約', transport:'アクセス', wall:'コメント', seating:'席図' },
     home: { t1:'ジョイフル', t2:'バーガー', sub:'揪福漢堡 · 台北, 台湾', choose:'言語を選択' },
     langs: ['中文','English','日本語','한국어'],
     menu: {
@@ -119,10 +121,11 @@ const T = {
       qrClose:'閉じる', placeholder:'ジョイフルの感想を書いてください...',
       empty:'まだコメントがありません。最初にシェアしてみましょう！',
       formTitle:'足跡を残そう', wallTitle:'ジョイフル・ウォール'
-    }
+    },
+    seating:{ h:'席レイアウト', p:'テーブルを選んでご予約ください。', table:'テーブル', seats:'席', book:'予約する', hint:'マップのテーブルをクリックして選択', available:'● 空席', selected:'● 選択中' }
   },
   ko: {
-    nav: { menu:'메뉴', reserve:'예약', transport:'오시는 길', wall:'후기' },
+    nav: { menu:'메뉴', reserve:'예약', transport:'오시는 길', wall:'후기', seating:'좌석도' },
     home: { t1:'조이풀', t2:'버거', sub:'揪福漢堡 · 타이베이, 대만', choose:'언어를 선택하세요' },
     langs: ['中文','English','日本語','한국어'],
     menu: {
@@ -159,7 +162,8 @@ const T = {
       qrClose:'닫기', placeholder:'조이풀에 대한 감상을 남겨주세요...',
       empty:'아직 댓글이 없습니다. 첫 번째로 공유해보세요!',
       formTitle:'발자취를 남겨보세요', wallTitle:'조이풀 월'
-    }
+    },
+    seating:{ h:'좌석 배치도', p:'테이블을 선택하고 바로 예약하세요.', table:'테이블', seats:'인석', book:'예약하기', hint:'지도에서 테이블을 클릭하여 선택하세요', available:'● 예약가능', selected:'● 선택됨' }
   }
 };
 
@@ -174,7 +178,7 @@ const MENU = [
   { cat:{zh:'飲品',en:'Drinks',ja:'ドリンク',ko:'음료'}, name:{zh:'招牌奶昔',en:'Signature Milkshake',ja:'シグネチャーミルクシェイク',ko:'시그니처 밀크쉐이크'}, desc:{zh:'濃郁香草、草莓、巧克力三種口味',en:'Thick vanilla, strawberry or chocolate shake',ja:'バニラ、ストロベリー、チョコの3種類',ko:'바닐라, 딸기, 초콜릿 3가지 맛'}, price:'NT$120' }
 ];
 
-let lang = 'zh', page = 'home';
+let lang = 'zh', page = 'home', selectedTable = 0;
 const LANGS = ['zh','en','ja','ko'];
 let comments = [];
 
@@ -193,6 +197,7 @@ function navbar() {
       <a class="${page==='reserve'?'active':''}" onclick="go('reserve')">${n.reserve}</a>
       <a class="${page==='transport'?'active':''}" onclick="go('transport')">${n.transport}</a>
       <a class="${page==='wall'?'active':''}" onclick="go('wall')">${n.wall}</a>
+      <a class="${page==='seating'?'active':''}" onclick="go('seating')">${n.seating}</a>
       <span class="nav-globe" onclick="go('home')" title="Language">🌐</span>
     </div>
   </nav>`;
@@ -394,9 +399,55 @@ function closeQR(e) {
   }
 }
 
+function renderSeating() {
+  const s=T[lang].seating;
+  const CW=120,CH=60,OX=360,OY=140,TH=20,WH=60;
+  const iso=(c,r)=>[OX+(c-r)*CW/2,OY+(c+r)*CH/2];
+  const box=(c,r,w,d,h,tc,lc,fc,id,lb)=>{
+    const[ax,ay]=iso(c,r),[bx,by]=iso(c+w,r),[cx,cy]=iso(c+w,r+d),[dx,dy]=iso(c,r+d);
+    const ev=id?`onclick="selectTable(${id})" style="cursor:pointer"`:'';
+    return `<g ${ev}>`+
+      `<polygon points="${ax},${ay} ${dx},${dy} ${dx},${dy+h} ${ax},${ay+h}" fill="${lc}" stroke="white" stroke-width="0.8"/>`+
+      `<polygon points="${dx},${dy} ${cx},${cy} ${cx},${cy+h} ${dx},${dy+h}" fill="${fc}" stroke="white" stroke-width="0.8"/>`+
+      `<polygon points="${ax},${ay} ${bx},${by} ${cx},${cy} ${dx},${dy}" fill="${tc}" stroke="white" stroke-width="1.5"/>`+
+      (lb?`<text x="${(ax+bx+cx+dx)/4}" y="${(ay+by+cy+dy)/4+5}" text-anchor="middle" font-size="11" fill="#444" font-weight="bold" pointer-events="none">${lb}</text>`:'')
+      +'</g>';
+  };
+  const ch=(pc,pr)=>{const[x,y]=iso(pc,pr);return`<ellipse cx="${x}" cy="${y}" rx="9" ry="5" fill="#BF7040" stroke="white" stroke-width="1"/>`;};
+  const ch4=(c,r)=>ch(c+.5,r-.2)+ch(c+.5,r+1.2)+ch(c-.2,r+.5)+ch(c+1.2,r+.5);
+  const TBLS=[[1,0,0],[2,1,0],[3,2,0],[4,3,0],[5,0,1],[6,2,1],[7,3,1],[8,0,2],[9,2,2],[10,3,2]];
+  const sel=selectedTable;
+  const[f0x,f0y]=iso(0,0),[f1x,f1y]=iso(4,0),[f2x,f2y]=iso(4,3),[f3x,f3y]=iso(0,3);
+  const[w0x,w0y]=iso(0,0),[w1x,w1y]=iso(4,0);
+  const bwall=`<polygon points="${w0x},${w0y} ${w1x},${w1y} ${w1x},${w1y-WH} ${w0x},${w0y-WH}" fill="#EAF8FA" stroke="#00F0FF" stroke-width="2"/>`;
+  const ww=(w1x-w0x)/3;
+  const wins=[0,1,2].map(i=>`<rect x="${w0x+i*ww+5}" y="${w0y-WH+10}" width="${ww-10}" height="${WH-20}" fill="#A8E8F8" stroke="#00F0FF" stroke-width="1.5" rx="3"/>`).join('');
+  const floor=`<polygon points="${f0x},${f0y} ${f1x},${f1y} ${f2x},${f2y} ${f3x},${f3y}" fill="#F2F2EE" stroke="#ddd"/>`;
+  const ctr=box(1,1,1,2,TH+14,'#D4AA7A','#B88A4E','#C99555',0,'');
+  const objs=[...TBLS.map(([id,c,r])=>({id,c,r,z:c+r})),{id:0,c:1,r:1,z:3,isCtr:true}];
+  objs.sort((a,b)=>a.z-b.z||(b.c-a.c));
+  const tSVG=objs.map(o=>o.isCtr?ctr:(ch4(o.c,o.r)+box(o.c,o.r,1,1,TH,sel===o.id?'#00F0FF':'#fff',sel===o.id?'#00BFD8':'#FFB3D1',sel===o.id?'#009AB0':'#FF80B0',o.id,`${o.id}`))).join('');
+  const[drx,dry]=iso(4,2.8);
+  const[crx,cry]=iso(1.5,2.2);
+  const info=sel
+    ?`<div class="seat-info"><span class="seat-num">${s.table} ${sel}</span><span class="seat-seats">· 4 ${s.seats}</span><button class="submit-btn seat-book" onclick="go('reserve')">${s.book}</button></div>`
+    :`<p class="seat-hint">${s.hint}</p>`;
+  return `${navbar()}${geo()}<div class="page-body">
+    <div class="sec-head"><h2>${s.h}</h2><p>${s.p}</p></div>
+    ${info}
+    <div class="seat-wrap"><svg viewBox="0 0 720 420" class="seat-svg">
+      ${bwall}${wins}${floor}${tSVG}
+      <text x="${drx}" y="${dry+8}" font-size="10" fill="#bbb" font-family="sans-serif" text-anchor="middle">▼ DOOR</text>
+      <text x="${crx}" y="${cry}" font-size="9" fill="#a07040" font-family="sans-serif" text-anchor="middle" font-weight="bold">COUNTER</text>
+    </svg>
+    <div class="seat-legend"><span class="sl-avail">${s.available}</span><span class="sl-sel">${s.selected}</span></div>
+    </div></div>`;
+}
+function selectTable(id){selectedTable=id;render();}
+
 function render() {
   const app = document.getElementById('app');
-  const pages = { home:renderHome, menu:renderMenu, reserve:renderReserve, transport:renderTransport, wall:renderWall };
+  const pages = { home:renderHome, menu:renderMenu, reserve:renderReserve, transport:renderTransport, wall:renderWall, seating:renderSeating };
   app.innerHTML = pages[page]();
   window.scrollTo(0, 0);
 }
