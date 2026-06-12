@@ -126,6 +126,13 @@ nav {
 .mc-desc { font-size: 0.82rem; color: var(--gray); margin-bottom: 0.9rem; line-height: 1.5; }
 .mc-price { font-size: 1.2rem; font-weight: 900; color: var(--pink); }
 .menu-policy { text-align: center; font-size: 0.8rem; color: var(--gray); padding: 1.5rem 1.5rem 2rem; letter-spacing: 0.5px; }
+.menu-sec { margin-bottom: 0.5rem; }
+.menu-sec-h {
+  font-size: 1.3rem; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
+  padding: 1.2rem 1.5rem 0.6rem; color: var(--dark);
+  display: flex; align-items: center; gap: 1rem;
+}
+.menu-sec-h::after { content: ''; flex: 1; height: 3px; background: var(--pink); }
 
 /* ── RESERVE ── */
 .reserve-wrap { max-width: 580px; margin: 0 auto; padding: 0 1.5rem 3rem; }

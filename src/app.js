@@ -290,17 +290,31 @@ function renderHome() {
 function renderMenu() {
   const d = T[lang].menu;
   const policy = {zh:'🐾 寵物友善 · 每人低消 $200 · 用餐90分鐘 · 自取餐具 · 不收服務費',en:'🐾 Pet-friendly · Min. $200/person · 90-min limit · Self-serve utensils · No service charge',ja:'🐾 ペット可 · 最低注文 $200/人 · 90分制 · セルフサービス · サービス料なし',ko:'🐾 반려동물 환영 · 1인 최소 $200 · 90분 제한 · 셀프서비스 · 서비스료 없음'}[lang];
+  const SECS = [
+    {label:{zh:'套餐',en:'Combo',ja:'セット',ko:'세트'}, cats:['升級套餐']},
+    {label:{zh:'漢堡',en:'Burger',ja:'バーガー',ko:'버거'}, cats:['漢堡','漢堡加點']},
+    {label:{zh:'義大利麵',en:'Pasta',ja:'パスタ',ko:'파스타'}, cats:['粉紅醬麵','紅醬麵','白醬麵','辣奶油麵','青醬麵','米型麵','清炒麵']},
+    {label:{zh:'炸物 & 湯品',en:'Fried & Soup',ja:'揚げ物・スープ',ko:'튀김 & 수프'}, cats:['炸物','湯品']},
+    {label:{zh:'飲料',en:'Drinks',ja:'ドリンク',ko:'음료'}, cats:['飲品','咖啡','康普茶','精釀啤酒']},
+  ];
+  const card = i => `<div class="menu-card${i.tag?.includes('★')?' mc-rec':''}">
+    <div class="mc-top"><div class="mc-cat">${m(i.cat)}</div>${i.tag?`<div class="mc-badge">${i.tag}</div>`:''}</div>
+    <div class="mc-name">${m(i.name)}</div>
+    <div class="mc-desc">${m(i.desc)}</div>
+    <div class="mc-price">${i.price}</div>
+  </div>`;
+  const sections = SECS.map(sec => {
+    const items = MENU.filter(i => sec.cats.includes(i.cat.zh));
+    if (!items.length) return '';
+    return `<div class="menu-sec">
+      <h3 class="menu-sec-h"><span>${m(sec.label)}</span></h3>
+      <div class="menu-grid">${items.map(card).join('')}</div>
+    </div>`;
+  }).join('');
   return `${navbar()}${geo()}<div class="page-body">
     <div class="sec-head"><h2>${d.h}</h2><p>${d.p}</p></div>
     <div class="sec-faq"><div class="fq">${d.fq}</div><div class="fa">${d.fa}</div></div>
-    <div class="menu-grid">
-      ${MENU.map(item=>`<div class="menu-card${item.tag?.includes('★')?' mc-rec':''}">
-        <div class="mc-top"><div class="mc-cat">${m(item.cat)}</div>${item.tag?`<div class="mc-badge">${item.tag}</div>`:''}</div>
-        <div class="mc-name">${m(item.name)}</div>
-        <div class="mc-desc">${m(item.desc)}</div>
-        <div class="mc-price">${item.price}</div>
-      </div>`).join('')}
-    </div>
+    ${sections}
     <div class="menu-policy">${policy}</div>
   </div>`;
 }
