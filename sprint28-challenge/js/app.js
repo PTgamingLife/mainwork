@@ -73,12 +73,12 @@ App.db = {
     const { data } = await App.sb.from('sprint28_daily').select('*').eq('member_id', memberId).eq('day_index', day).maybeSingle();
     return data;
   },
-  async saveDaily(day, care, comm) {
-    const score = 5 + care.length * 1 + comm.length * 5;
+  async saveDaily(day, care, comm, bonus) {
+    const score = 5 + (bonus ? 15 : 0) + care.length * 1 + comm.length * 5;
     const row = {
       member_id: App.me.id, member_name: App.me.name, day_index: day,
       entry_date: new Date().toISOString().slice(0, 10),
-      care_names: care, comm_names: comm, base_score: 5, score, updated_at: new Date().toISOString(),
+      care_names: care, comm_names: comm, base_score: 5, bonus_done: !!bonus, score, updated_at: new Date().toISOString(),
     };
     const { error } = await App.sb.from('sprint28_daily').upsert(row, { onConflict: 'member_id,day_index' });
     if (error) throw error;
@@ -178,14 +178,15 @@ function renderTheme() {
       <div class="day-progress"><i style="width:${pct}%"></i></div>
     </div>
     <div class="card">
-      <p class="card-title">📝 今日任務</p>
+      <p class="card-title">🏆 加碼挑戰任務（+15 分）</p>
       <p class="theme-task">${App.esc(d.task)}</p>
+      <p class="empty-tip">完成後到「任務」頁勾選，即可獲得 15 分加碼！</p>
     </div>
     <div class="card">
-      <p class="card-title">🔥 寶哥的能量鼓勵</p>
+      <p class="card-title">🔥 韋老師的能量鼓勵</p>
       <p class="theme-cheer">${App.esc(d.cheer)}</p>
     </div>
-    <button class="btn btn-gold btn-block" id="goTaskBtn"><span>✍️ 去登記今天的行動分數</span></button>`;
+    <button class="btn btn-gold btn-block" id="goTaskBtn"><span>✍️ 去登記今天的挑戰分數</span></button>`;
   $('#dPrev').onclick = () => { App.viewDay--; renderTheme(); };
   $('#dNext').onclick = () => { App.viewDay++; renderTheme(); };
   $('#goTaskBtn').onclick = () => { App.tasksDay = App.todayDay; App.show('tasks'); };
@@ -193,23 +194,32 @@ function renderTheme() {
 const weekNo = (d) => DATA.WEEKS.findIndex((w) => d.day >= w.range[0] && d.day <= w.range[1]) + 1;
 
 /* ---------- 第3頁：每日任務計分 ---------- */
-let careNames = [], commNames = [];
+let careNames = [], commNames = [], bonusDone = false;
 async function renderTasks() {
   const day = App.tasksDay;
   const existing = await App.db.getDaily(App.me.id, day);
   careNames = existing ? [...existing.care_names] : [];
   commNames = existing ? [...existing.comm_names] : [];
+  bonusDone = existing ? !!existing.bonus_done : false;
   const di = App.dayInfo(day);
   $('#page-tasks').innerHTML = `
     <div class="card" style="background:linear-gradient(135deg,var(--blue-50),#fff)">
       <div class="day-nav">
         <button class="btn btn-ghost btn-sm" id="tPrev" ${day <= 1 ? 'disabled' : ''}>‹</button>
-        <span style="font-weight:900;color:var(--blue-900)">Day ${day} 行動登記</span>
+        <span style="font-weight:900;color:var(--blue-900)">Day ${day} 挑戰登記</span>
         <button class="btn btn-ghost btn-sm" id="tNext" ${day >= App.todayDay ? 'disabled' : ''}>›</button>
       </div>
-      <p class="empty-tip" style="text-align:center">${App.esc(di.task)}</p>
+      <p class="empty-tip" style="text-align:center">完成本頁登記，即得每日挑戰分數 5 分</p>
       <div class="score-big" id="scoreBig">5<small> 分</small></div>
       <div class="score-break" id="scoreBreak"></div>
+    </div>
+    <div class="card">
+      <p class="card-title">🏆 加碼挑戰任務（+15 分）</p>
+      <p class="empty-tip">${App.esc(di.task)}</p>
+      <label class="bonus-toggle">
+        <input type="checkbox" id="bonusChk" ${bonusDone ? 'checked' : ''} />
+        <span>我已完成今日加碼挑戰任務</span>
+      </label>
     </div>
     <div class="card">
       <p class="card-title">💗 今天關心的人（每位 +1 分）</p>
@@ -237,15 +247,16 @@ async function renderTasks() {
   $('#commAdd').onclick = addComm;
   $('#careInput').onkeydown = (e) => { if (e.key === 'Enter') addCare(); };
   $('#commInput').onkeydown = (e) => { if (e.key === 'Enter') addComm(); };
+  $('#bonusChk').onchange = () => { bonusDone = $('#bonusChk').checked; drawTags(); };
   $('#saveTasks').onclick = saveTasks;
   drawTags();
 }
 
 function drawTags() {
-  const score = 5 + careNames.length + commNames.length * 5;
+  const score = 5 + (bonusDone ? 15 : 0) + careNames.length + commNames.length * 5;
   $('#scoreBig').innerHTML = `${score}<small> 分</small>`;
   $('#scoreBreak').innerHTML =
-    `<span class="score-pill">基礎 5</span><span class="score-pill">關心 ${careNames.length}×1</span><span class="score-pill">溝通 ${commNames.length}×5</span>`;
+    `<span class="score-pill">每日挑戰 5</span><span class="score-pill">加碼 ${bonusDone ? '+15' : '0'}</span><span class="score-pill">關心 ${careNames.length}×1</span><span class="score-pill">溝通 ${commNames.length}×5</span>`;
   $('#careTags').innerHTML = careNames.length
     ? careNames.map((n, i) => `<span class="tag">${App.esc(n)}<span class="x" data-t="care" data-i="${i}">✕</span></span>`).join('')
     : '<span class="empty-tip">還沒有關心的人，加上來吧！</span>';
@@ -262,7 +273,7 @@ function drawTags() {
 async function saveTasks() {
   const btn = $('#saveTasks'); btn.disabled = true;
   try {
-    const score = await App.db.saveDaily(App.tasksDay, careNames, commNames);
+    const score = await App.db.saveDaily(App.tasksDay, careNames, commNames, bonusDone);
     App.toast(`已儲存！今日 ${score} 分 🌟`);
   } catch (e) { App.toast('儲存失敗，請重試'); console.error(e); }
   finally { btn.disabled = false; }

@@ -1,4 +1,4 @@
-// ===== 第5頁：小老師對話（寶哥語氣，真 AI 回覆） =====
+// ===== 第5頁：小老師對話（韋老師語氣，真 AI 回覆） =====
 App._coachHistory = []; // {role, content}
 
 App.renderCoach = function () {
@@ -9,7 +9,7 @@ App.renderCoach = function () {
     <div class="coach-wrap">
       <div class="coach-head">
         <span class="ava">🧑‍🏫</span>
-        <div><b>小老師（寶哥）</b><small>領導教練・有任何事業問題都可以問我</small></div>
+        <div><b>小老師（韋老師）</b><small>領導教練・有任何事業問題都可以問我</small></div>
       </div>
       <div class="coach-feed" id="coachFeed"></div>
       <div class="coach-input">

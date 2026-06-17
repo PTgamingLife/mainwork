@@ -216,6 +216,10 @@ body {
 .tag .x { cursor: pointer; font-weight: 900; opacity: .6; }
 .tag .x:hover { opacity: 1; color: var(--danger); }
 .empty-tip { color: var(--muted); font-size: 13px; padding: 4px 0; }
+.bonus-toggle { display: flex; align-items: center; gap: 12px; background: #fff1d6; border: 2px solid #ffe2a8; border-radius: 14px; padding: 12px 14px; margin-top: 12px; cursor: pointer; font-weight: 800; color: #8a5a00; transition: transform .15s, background .2s; }
+.bonus-toggle:hover { background: #ffeac2; transform: translateY(-1px); }
+.bonus-toggle:active { transform: scale(.98); }
+.bonus-toggle input { width: 24px; height: 24px; flex: 0 0 auto; accent-color: var(--gold-deep); cursor: pointer; }
 
 /* ===== 第4頁 名單 ===== */
 .seg { display: flex; background: var(--blue-50); border-radius: 14px; padding: 4px; margin-bottom: 14px; }
