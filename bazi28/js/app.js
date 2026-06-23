@@ -3,12 +3,13 @@
 // ════════════════════════════════════════════════════════
 
 const App = window.App = {
-  sb:       null,
-  cfg:      null,   // { start_date, team_name, expected_members }
-  me:       null,   // { id, name, pin, avatar_index, bazi_profile }
-  bazi:     null,   // { pillars, profile, masterType, formatted }
-  todayDay: 1,
-  currentPage: 'task',
+  sb:           null,
+  cfg:          null,   // { start_date, team_name, expected_members }
+  me:           null,   // { id, name, pin, avatar_index, bazi_profile }
+  bazi:         null,   // { pillars, profile, masterType, formatted }
+  todayDay:     1,
+  currentPage:  'task',
+  galaxyUserId: null,   // which user's galaxy to show in social page
 };
 
 /* ── Tiny helpers ── */
@@ -110,6 +111,10 @@ App.db = {
   },
   async myTasks() {
     const { data } = await App.sb.from('bazi28_tasks').select('*').eq('member_id',App.me.id);
+    return data || [];
+  },
+  async memberTasks(memberId) {
+    const { data } = await App.sb.from('bazi28_tasks').select('*').eq('member_id', memberId);
     return data || [];
   },
   async todayDoneMembers(day) {
@@ -251,7 +256,7 @@ function restoreBazi() {
 
 function logout() {
   localStorage.removeItem('bazi28_me');
-  App.me = null; App.bazi = null;
+  App.me = null; App.bazi = null; App.galaxyUserId = null;
   $('#app').classList.add('hidden');
   // Reset login form
   ['stepPin','stepRegister'].forEach(id => $('#'+id).classList.add('hidden'));
@@ -349,6 +354,62 @@ function showPage(page) {
 }
 
 /* ════════════════════════════════════════
+   AI 時代優勢報告 (Day 28 Conclusion)
+════════════════════════════════════════ */
+function renderAIEraSectionHtml(bazi) {
+  if (!bazi?.profile?.percents) return '';
+  const adv = DATA28.getAIEraAdvantage(bazi.profile.percents);
+  const { primary, secondary, dominantQ, secondaryQ, dominantPct, secondaryPct } = adv;
+
+  return `
+    <div class="ai-era-card">
+      <div class="ai-era-header">
+        <div class="ai-era-badge">🤖 × 👑</div>
+        <div class="ai-era-title">你在 AI 時代的核心優勢</div>
+        <div class="ai-era-sub">基於你的八字能量圖譜，專屬計算</div>
+      </div>
+      <div class="ai-era-body">
+        <div class="ai-era-profile-row">
+          <span class="ai-era-chip" style="background:${dominantQ.color}22;border-color:${dominantQ.color};color:${dominantQ.color}">${dominantQ.icon} ${dominantQ.name} ${dominantPct}%</span>
+          <span class="ai-era-x">×</span>
+          <span class="ai-era-chip" style="background:${secondaryQ.color}22;border-color:${secondaryQ.color};color:${secondaryQ.color}">${secondaryQ.icon} ${secondaryQ.name} ${secondaryPct}%</span>
+        </div>
+        <div class="ai-era-advantage-box">
+          <div class="ai-era-headline">${App.esc(primary.headline)}</div>
+          <div class="ai-era-headline-sub">${App.esc(primary.subtitle)}</div>
+        </div>
+        <div class="ai-era-section">
+          <div class="ai-era-section-hd">🌐 為什麼在 AI 時代特別有力</div>
+          <div class="ai-era-section-body">${App.esc(primary.whyAI)}</div>
+        </div>
+        <div class="ai-era-section">
+          <div class="ai-era-section-hd">⚡ 你的核心競爭優勢</div>
+          <div class="ai-era-section-body">${App.esc(primary.coreAdvantage)}</div>
+        </div>
+        <div class="ai-era-strategies">
+          <div class="ai-era-section-hd">🚀 四大放大策略</div>
+          ${primary.strategies.map((s, i) => `
+            <div class="ai-era-strategy-item">
+              <div class="ai-era-strategy-num">${i+1}</div>
+              <div class="ai-era-strategy-text">${App.esc(s)}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="ai-era-cta">
+          <div class="ai-era-cta-label">🎯 你的第一步行動</div>
+          <div class="ai-era-cta-text">${App.esc(primary.action)}</div>
+        </div>
+        ${secondaryPct >= 20 ? `
+        <div class="ai-era-secondary">
+          <div class="ai-era-secondary-label" style="color:${secondaryQ.color}">${secondaryQ.icon} 第二能量加成：${secondary.headline}</div>
+          <div class="ai-era-secondary-text">${App.esc(secondary.coreAdvantage)}</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════════
    任務頁 (Task Page)
 ════════════════════════════════════════ */
 async function renderTaskPage() {
@@ -404,6 +465,7 @@ async function renderTaskPage() {
         <span>${existing?.response ? '更新故事 ✨' : '提交今日故事 ✨'}</span>
       </button>
     </div>
+    ${App.todayDay === 28 && App.bazi ? renderAIEraSectionHtml(App.bazi) : ''}
   `;
 
   // Word count
@@ -511,110 +573,208 @@ function showRecordDetail(day, doneMap, pg) {
 }
 
 /* ════════════════════════════════════════
-   社交書架頁 (Social Page)
+   星系社交頁 (Galaxy Social Page)
 ════════════════════════════════════════ */
 async function renderSocialPage() {
   const pg = $('#page-social');
-  pg.innerHTML = '<div class="empty-tip"><span class="spinning">⏳</span> 載入書架中…</div>';
+  pg.innerHTML = '<div class="empty-tip"><span class="spinning">⏳</span> 載入星系中…</div>';
 
-  const day     = App.todayDay;
-  const members = await App.db.todayDoneMembers(day);
-  const allMem  = await App.db.allMembers();
-  const task    = DATA28.getTask(day);
+  if (!App.galaxyUserId) App.galaxyUserId = App.me.id;
 
-  // Avatar row: all members, highlight done ones
-  const doneIds = new Set(members.map(m => m.member_id));
-  const avatarHtml = allMem.map(m => {
-    const av  = DATA28.AVATARS[m.avatar_index || 0];
-    const cls = doneIds.has(m.id) ? 'c-avatar done-av' : 'c-avatar';
-    const sty = doneIds.has(m.id) ? 'border-color:#27AE60;box-shadow:0 0 0 2px rgba(39,174,96,.3),2px 2px 0 #1E7A44' : 'opacity:0.45';
-    return `<div class="${cls}" title="${App.esc(m.name)}" style="${sty}">${av}</div>`;
-  }).join('');
+  const allMem    = await App.db.allMembers();
+  const viewMem   = allMem.find(m => m.id === App.galaxyUserId) || allMem.find(m => m.id === App.me.id);
+  if (!viewMem) { App.galaxyUserId = App.me.id; }
 
-  const bookHtml = members.length === 0
-    ? `<div class="empty-tip">今天還沒有夥伴完成任務，成為第一個吧！📖</div>`
-    : `<div class="bookshelf">${members.map(m => buildBookCard(m, task, allMem)).join('')}</div>`;
+  const tasks   = await App.db.memberTasks(App.galaxyUserId);
+  const doneMap = {};
+  tasks.forEach(t => { if (t.response) doneMap[t.day_index] = t; });
+
+  const doneCount = Object.keys(doneMap).length;
+  const av   = DATA28.AVATARS[viewMem?.avatar_index || 0];
+  const isMe = App.galaxyUserId === App.me.id;
 
   pg.innerHTML = `
-    <div class="card">
-      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>今日完成的夥伴</span>
-        <span style="font-size:13px;font-weight:700;color:var(--gold-deep)">${doneIds.size} / ${allMem.length}</span>
+    <div class="galaxy-wrap">
+      <div class="galaxy-topbar">
+        <div class="galaxy-title">
+          ${av}
+          <span>${App.esc(viewMem?.name || '?')}</span>
+          <span class="galaxy-badge ${isMe ? 'galaxy-badge-me' : 'galaxy-badge-other'}">${isMe ? '我的星系' : '他人星系'}</span>
+        </div>
+        <div class="galaxy-user-sel" id="galaxyUserSel">
+          <button class="galaxy-menu-btn" id="galaxyMenuBtn">${av} ▾</button>
+          <div class="galaxy-dropdown hidden" id="galaxyDropdown">
+            <div class="galaxy-drop-item ${isMe ? 'active' : ''}" data-uid="${App.me.id}">
+              <span>${DATA28.AVATARS[App.me.avatar_index||0]}</span>
+              <span>${App.esc(App.me.name)}</span>
+              <span class="galaxy-me-tag">我</span>
+            </div>
+            ${allMem.filter(m => m.id !== App.me.id).map(m => `
+              <div class="galaxy-drop-item ${m.id === App.galaxyUserId ? 'active' : ''}" data-uid="${m.id}">
+                <span>${DATA28.AVATARS[m.avatar_index||0]}</span>
+                <span>${App.esc(m.name)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
       </div>
-      <div class="completed-avatars">${avatarHtml}</div>
-    </div>
-    <div class="card">
-      <div class="card-title">📚 今日書架 · Day ${day} · ${App.esc(task.title)}</div>
-      ${bookHtml}
+      <div class="galaxy-stats">
+        <span class="galaxy-stat-n">${doneCount}</span>
+        <span class="galaxy-stat-lbl">顆星點亮</span>
+        <span class="galaxy-stat-sep">·</span>
+        <span class="galaxy-stat-n">${28 - doneCount}</span>
+        <span class="galaxy-stat-lbl">顆待發光</span>
+      </div>
+      <div class="galaxy-legend">
+        <span class="galaxy-legend-item"><span class="galaxy-legend-dot" style="background:#C9A84C"></span>核心</span>
+        ${DATA28.QUADRANTS.map(q => `<span class="galaxy-legend-item"><span class="galaxy-legend-dot" style="background:${q.color}"></span>${q.name}</span>`).join('')}
+      </div>
+      <div class="galaxy-svg-wrap" id="galaxySvgWrap"></div>
     </div>
   `;
 
-  // Attach click handlers to books
-  $$('[data-book-id]', pg).forEach(el => {
-    el.addEventListener('click', () => {
-      const memberId   = el.dataset.bookId;
-      const memberName = el.dataset.bookName;
-      const response   = el.dataset.bookResponse;
-      openBookModal(memberId, memberName, response, day, task, allMem);
+  buildGalaxySVG(doneMap, viewMem);
+
+  $('#galaxyMenuBtn').onclick = (e) => {
+    e.stopPropagation();
+    $('#galaxyDropdown').classList.toggle('hidden');
+  };
+  $$('.galaxy-drop-item').forEach(item => {
+    item.onclick = () => {
+      App.galaxyUserId = item.dataset.uid;
+      renderSocialPage();
+    };
+  });
+  function onOutside(e) {
+    const sel = document.getElementById('galaxyUserSel');
+    if (sel && !sel.contains(e.target)) {
+      const dd = document.getElementById('galaxyDropdown');
+      if (dd) dd.classList.add('hidden');
+      document.removeEventListener('click', onOutside, true);
+    }
+  }
+  document.addEventListener('click', onOutside, true);
+}
+
+function buildGalaxySVG(doneMap, member) {
+  const wrap = $('#galaxySvgWrap');
+  if (!wrap) return;
+
+  const W = 380, H = 380, CX = 190, CY = 190;
+
+  const RINGS = [
+    { r: 46,  qId: -1, color: '#C9A84C', days: [1, 27, 28] },
+    { r: 78,  qId: 0,  color: '#C0392B', days: [2,3,4,5,6] },
+    { r: 106, qId: 1,  color: '#8E44AD', days: [7,8,9,10,11] },
+    { r: 132, qId: 2,  color: '#27AE60', days: [12,13,14,15,16] },
+    { r: 156, qId: 3,  color: '#2980B9', days: [17,18,19,20,21] },
+    { r: 177, qId: 4,  color: '#E67E22', days: [22,23,24,25,26] },
+  ];
+
+  const uid = Math.floor(Math.random() * 1e9);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="galaxy-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sbg${uid}" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="#1C0D38"/>
+        <stop offset="55%" stop-color="#0E0720"/>
+        <stop offset="100%" stop-color="#050210"/>
+      </radialGradient>
+      <radialGradient id="sunr${uid}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#C9A84C" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#C9A84C" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="sg${uid}" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#sbg${uid})" rx="14"/>`;
+
+  // decorative micro stars
+  for (let i = 0; i < 88; i++) {
+    const x = (Math.random() * W).toFixed(1);
+    const y = (Math.random() * H).toFixed(1);
+    const r = (Math.random() * 1.3 + 0.2).toFixed(1);
+    const o = (Math.random() * 0.45 + 0.05).toFixed(2);
+    svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${o}"/>`;
+  }
+
+  // orbital rings
+  RINGS.forEach(ring => {
+    const d = (ring.r * 0.28).toFixed(1);
+    const g = (ring.r * 0.07).toFixed(1);
+    svg += `<circle cx="${CX}" cy="${CY}" r="${ring.r}" fill="none" stroke="${ring.color}" stroke-width="1.5" stroke-opacity="0.28" stroke-dasharray="${d} ${g}"/>`;
+  });
+
+  // center sun glow + avatar
+  svg += `<circle cx="${CX}" cy="${CY}" r="42" fill="url(#sunr${uid})"/>`;
+  svg += `<circle cx="${CX}" cy="${CY}" r="26" fill="#130826" stroke="#C9A84C" stroke-width="2.5"/>`;
+  svg += `<text x="${CX}" y="${CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">${DATA28.AVATARS[member?.avatar_index || 0]}</text>`;
+
+  // story stars
+  const clickable = [];
+  RINGS.forEach(ring => {
+    const count = ring.days.length;
+    ring.days.forEach((day, i) => {
+      const angle = -Math.PI / 2 + (i / count) * 2 * Math.PI;
+      const x = (CX + ring.r * Math.cos(angle)).toFixed(1);
+      const y = (CY + ring.r * Math.sin(angle)).toFixed(1);
+      const done = doneMap[day];
+      const task = DATA28.getTask(day);
+      const c    = ring.color;
+      const big  = ring.qId === -1;
+
+      if (done) {
+        const sr = big ? 15 : 11;
+        svg += `<circle cx="${x}" cy="${y}" r="${sr + 6}" fill="${c}" opacity="0.18"/>`;
+        svg += `<circle cx="${x}" cy="${y}" r="${sr}" fill="${c}" stroke="#fff" stroke-width="1.5" stroke-opacity="0.4" opacity="0.92" class="gstar" data-day="${day}" style="cursor:pointer"><title>Day ${day} · ${task.title}</title></circle>`;
+        svg += `<text x="${x}" y="${(+y + 5).toFixed(1)}" text-anchor="middle" font-size="${big ? 13 : 9}" style="pointer-events:none">${task.icon}</text>`;
+        clickable.push({ day, task, response: done.response });
+      } else {
+        svg += `<circle cx="${x}" cy="${y}" r="3.5" fill="${c}" opacity="0.18"><title>Day ${day} · ${task.title}（未完成）</title></circle>`;
+      }
     });
+  });
+
+  svg += `</svg>`;
+  wrap.innerHTML = svg;
+
+  $$('.gstar', wrap).forEach(el => {
+    const day = +el.getAttribute('data-day');
+    const s   = clickable.find(c => c.day === day);
+    if (!s) return;
+    el.addEventListener('click', () => showStarModal(s.day, s.task, s.response, member));
   });
 }
 
-function buildBookCard(member, task, allMem) {
-  const q  = task.quadrantId != null ? DATA28.QUADRANTS[task.quadrantId] : null;
-  const bg = q ? q.color : '#1A0F00';
-  const memberInfo = allMem.find(m => m.id === member.member_id);
-  const av  = memberInfo ? DATA28.AVATARS[memberInfo.avatar_index || 0] : '📖';
-  const day = App.todayDay;
+async function showStarModal(day, task, response, member) {
+  const q       = task.quadrantId !== null ? DATA28.QUADRANTS[task.quadrantId] : null;
+  const color   = q ? q.color : '#C9A84C';
+  const av      = DATA28.AVATARS[member?.avatar_index || 0];
+  const memberId   = member?.id;
+  const memberName = member?.name || '?';
 
-  // Safe encode the response for data attribute
-  const responseEncoded = encodeURIComponent(member.response || '');
-
-  return `<div class="book" data-book-id="${member.member_id}"
-               data-book-name="${App.esc(member.member_name)}"
-               data-book-response="${responseEncoded}">
-    <div class="book-cover" style="background:${bg}">
-      <div class="book-spine"></div>
-      <div class="book-pattern"></div>
-      <div class="book-icon">${av}</div>
-      <div>
-        <div class="book-name">${App.esc(member.member_name)}</div>
-        <div class="book-day">Day ${day}</div>
-        <div class="book-stars">⭐⭐⭐⭐⭐</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function openBookModal(memberId, memberName, responseEncoded, day, task, allMem) {
-  const response = decodeURIComponent(responseEncoded);
-  const q  = task.quadrantId != null ? DATA28.QUADRANTS[task.quadrantId] : null;
-  const bg = q ? q.color : '#1A0F00';
-  const memberInfo = allMem.find(m => m.id === memberId);
-  const av = memberInfo ? DATA28.AVATARS[memberInfo.avatar_index || 0] : '📖';
-
-  const praises = await App.db.praisesForTask(memberId, day);
+  const praises  = await App.db.praisesForTask(memberId, day);
   const myPraise = praises.find(p => p.from_id === App.me.id);
-
   const praiseEmojis = ['👏','🔥','💎','✨','🌟','💪','🙏','❤️'];
 
   App.openModal(`
     <div class="book-modal" style="padding:0;max-height:none">
-      <div class="book-modal-header" style="background:${bg}">
+      <div class="book-modal-header" style="background:${color}">
         <div class="book-modal-avatar">${av}</div>
         <div class="book-modal-name">${App.esc(memberName)}</div>
         <div class="book-modal-meta">Day ${day} · ${task.icon} ${App.esc(task.title)}</div>
       </div>
       <div class="book-modal-body">
         <div class="book-modal-task-name">${task.icon} ${App.esc(task.title)}</div>
-        <div class="book-modal-text">${App.esc(response)}</div>
+        <div class="book-modal-text">${App.esc(response || '')}</div>
       </div>
       <div class="praise-section">
-        <div class="praise-count">收到 ${praises.length} 個鼓勵 ${praises.map(p=>p.emoji).join('')}</div>
+        <div class="praise-count">收到 ${praises.length} 個鼓勵 ${praises.map(p => p.emoji).join('')}</div>
         ${memberId !== App.me.id ? `
           <div style="font-size:13px;font-weight:700;color:var(--ink-mid);margin-bottom:4px">給予鼓勵：</div>
           <div class="praise-btn-row">
-            ${praiseEmojis.map(e => `<button class="praise-btn ${myPraise?.emoji===e?'sent':''}" data-emoji="${e}">${e}</button>`).join('')}
+            ${praiseEmojis.map(e => `<button class="praise-btn ${myPraise?.emoji === e ? 'sent' : ''}" data-emoji="${e}">${e}</button>`).join('')}
           </div>` : '<div style="font-size:13px;color:var(--ink-light)">這是你自己的故事 ❤️</div>'}
         <button class="btn btn-outline btn-block btn-sm" onclick="App.closeModal()">關閉</button>
       </div>
