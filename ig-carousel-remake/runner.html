@@ -36,11 +36,11 @@
 <body>
 
 <h1>🎨 IG輪播生成器</h1>
-<p class="sub">老婆教我別在跟AI聊天 — 手繪漫畫版（gpt-image-1）</p>
+<p class="sub">老婆教我別在跟AI聊天 — 手繪漫畫版（gpt-image-2）</p>
 
 <div class="fn-url-row">
   <input id="fnUrl" type="text" placeholder="貼上 Edge Function URL，例：https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/ig-carousel-gen" />
-  <button class="btn btn-primary" id="btnGenAll" onclick="generateAll()">生成全部 (5張)</button>
+  <button class="btn btn-primary" id="btnGenAll" onclick="generateAll()">生成全部 (7張)</button>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -49,10 +49,12 @@
 <script>
 const SLIDES = [
   { index: 0, title: '第1張 — 封面', filename: 'slide1-cover.png' },
-  { index: 1, title: '第2張 — 為什麼AI不會剪片', filename: 'slide2-why-tools.png' },
-  { index: 2, title: '第3張 — 四家AI比較', filename: 'slide3-which-ai.png' },
-  { index: 3, title: '第4張 — 要裝什麼', filename: 'slide4-install-list.png' },
-  { index: 4, title: '第5張 — 工具對照表', filename: 'slide5-tool-map.png' },
+  { index: 1, title: '第2張 — 學習曲線殺手', filename: 'slide2-learning-destroyer.png' },
+  { index: 2, title: '第3張 — 真實錯誤模擬器', filename: 'slide3-error-simulator.png' },
+  { index: 3, title: '第4張 — 看不懂內容翻譯機', filename: 'slide4-translator.png' },
+  { index: 4, title: '第5張 — 個人學習路徑建築師', filename: 'slide5-path-architect.png' },
+  { index: 5, title: '第6張 — 隱藏盲點偵測器', filename: 'slide6-gap-detector.png' },
+  { index: 6, title: '第7張 — 費曼教學法強制模式', filename: 'slide7-feynman.png' },
 ];
 
 const log = t => {
@@ -61,7 +63,6 @@ const log = t => {
   el.scrollTop = el.scrollHeight;
 };
 
-// Build cards
 const grid = document.getElementById('grid');
 SLIDES.forEach(s => {
   grid.innerHTML += `
@@ -119,14 +120,14 @@ async function generateAll() {
   const btn = document.getElementById('btnGenAll');
   btn.disabled = true;
   btn.textContent = '生成中...';
-  log('=== 開始生成全部 5 張 ===');
+  log('=== 開始生成全部 7 張 ===');
 
   for (const slide of SLIDES) {
     await generateSlide(baseUrl, slide);
   }
 
   btn.disabled = false;
-  btn.textContent = '生成全部 (5張)';
+  btn.textContent = '生成全部 (7張)';
   log('=== 全部完成 ===');
 }
 </script>
