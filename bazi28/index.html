@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>28天品牌故事挑戰</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+
+<!-- ── 背景印花 ── -->
+<div class="bg-motifs" id="bgMotifs" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════
+  登入 / 註冊 畫面
+══════════════════════════════════════ -->
+<div class="overlay" id="loginOverlay">
+  <div class="login-card pop-in">
+    <div class="login-emblem" id="loginEmblem">👑</div>
+    <h1 class="login-title">28天品牌故事</h1>
+    <p class="login-sub">挑戰・探索你的五大核心能量</p>
+
+    <!-- Step 1: Name -->
+    <div id="stepName">
+      <div class="field">
+        <label>你的名字</label>
+        <input id="loginName" type="text" maxlength="12" placeholder="輸入暱稱" autocomplete="off"/>
+      </div>
+      <button class="btn btn-gold btn-block" id="checkNameBtn"><span>開始 →</span></button>
+    </div>
+
+    <!-- Step 2a: PIN (returning user) -->
+    <div id="stepPin" class="hidden">
+      <p class="login-hint">👋 歡迎回來！請輸入你的 PIN 繼續。</p>
+      <div class="field">
+        <label>4 位 PIN 密碼</label>
+        <input id="loginPin" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"/>
+      </div>
+      <button class="btn btn-gold btn-block" id="pinLoginBtn"><span>進入 →</span></button>
+      <button class="link-btn" id="backToName">← 返回</button>
+    </div>
+
+    <!-- Step 2b: Register (new user) -->
+    <div id="stepRegister" class="hidden">
+      <p class="login-hint">✨ 歡迎加入！請填入你的出生資訊，讓我們計算你的五大能量。</p>
+      <div class="birth-grid">
+        <div class="field">
+          <label>出生年份</label>
+          <input id="regYear" type="number" min="1940" max="2010" placeholder="例：1990" inputmode="numeric"/>
+        </div>
+        <div class="field">
+          <label>月份</label>
+          <select id="regMonth">
+            <option value="">月</option>
+            <option value="1">1月</option><option value="2">2月</option>
+            <option value="3">3月</option><option value="4">4月</option>
+            <option value="5">5月</option><option value="6">6月</option>
+            <option value="7">7月</option><option value="8">8月</option>
+            <option value="9">9月</option><option value="10">10月</option>
+            <option value="11">11月</option><option value="12">12月</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>日期</label>
+          <input id="regDay" type="number" min="1" max="31" placeholder="日" inputmode="numeric"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>出生時辰 <span class="hint-small">（不確定可跳過）</span></label>
+        <select id="regHour">
+          <option value="12">不確定</option>
+          <option value="23">子時（23:00–01:00）</option>
+          <option value="1">丑時（01:00–03:00）</option>
+          <option value="3">寅時（03:00–05:00）</option>
+          <option value="5">卯時（05:00–07:00）</option>
+          <option value="7">辰時（07:00–09:00）</option>
+          <option value="9">巳時（09:00–11:00）</option>
+          <option value="11">午時（11:00–13:00）</option>
+          <option value="13">未時（13:00–15:00）</option>
+          <option value="15">申時（15:00–17:00）</option>
+          <option value="17">酉時（17:00–19:00）</option>
+          <option value="19">戌時（19:00–21:00）</option>
+          <option value="21">亥時（21:00–23:00）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>設定 4 位 PIN 密碼</label>
+        <input id="regPin" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"/>
+      </div>
+      <button class="btn btn-gold btn-block" id="registerBtn"><span>計算我的能量 ✨</span></button>
+      <button class="link-btn" id="backToName2">← 返回</button>
+    </div>
+
+    <p class="login-msg" id="loginMsg"></p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  八字能量 揭示畫面
+══════════════════════════════════════ -->
+<div class="overlay hidden" id="profileRevealOverlay">
+  <div class="profile-reveal-card pop-in">
+    <div class="reveal-header">
+      <div class="reveal-master-icon" id="revealMasterIcon">🌿</div>
+      <div class="reveal-master-name" id="revealMasterName">成長型 / 木</div>
+      <p class="reveal-master-desc" id="revealMasterDesc"></p>
+    </div>
+    <div class="pillars-row" id="revealPillars"></div>
+    <h3 class="reveal-section-title">你的五大能量圖譜</h3>
+    <div class="radar-wrap" id="revealRadar"></div>
+    <div class="quadrant-bars" id="revealBars"></div>
+    <button class="btn btn-gold btn-block" id="startJourneyBtn"><span>開始我的28天旅程 👑</span></button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  主 App
+══════════════════════════════════════ -->
+<div id="app" class="app hidden">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="avatar-btn" id="topAvatar" title="我的能量檔案"></button>
+      <div class="topbar-info">
+        <span class="topbar-name" id="topName">—</span>
+        <span class="team-chip" id="topTeam">團隊</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="day-badge" id="dayBadge">Day 1</span>
+      <button class="icon-btn" id="logoutBtn" title="登出">🚪</button>
+    </div>
+  </header>
+
+  <main class="pages">
+    <section class="page" id="page-task"></section>
+    <section class="page hidden" id="page-record"></section>
+    <section class="page hidden" id="page-social"></section>
+    <section class="page hidden" id="page-team"></section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-page="task">
+      <span class="tab-ico">✍️</span><span>任務</span>
+    </button>
+    <button class="tab" data-page="record">
+      <span class="tab-ico">📜</span><span>記錄</span>
+    </button>
+    <button class="tab" data-page="social">
+      <span class="tab-ico">📚</span><span>書架</span>
+    </button>
+    <button class="tab" data-page="team">
+      <span class="tab-ico">🏆</span><span>積分</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════
+  能量檔案 Modal (profile view)
+══════════════════════════════════════ -->
+<div class="overlay hidden" id="profileModal">
+  <div class="modal-card pop-in" id="profileModalCard" style="max-width:440px;max-height:88vh;overflow-y:auto"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+  通用 Modal
+══════════════════════════════════════ -->
+<div class="overlay hidden" id="modalOverlay">
+  <div class="modal-card pop-in" id="modalCard"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Confetti container -->
+<canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/bazi.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
