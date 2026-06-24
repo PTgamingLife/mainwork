@@ -140,6 +140,23 @@ App.db = {
     const { data } = await App.sb.from('bazi28_members').select('id,name,avatar_index').order('created_at');
     return data || [];
   },
+  async getAIChats(day) {
+    const { data } = await App.sb.from('bazi28_ai_chats')
+      .select('role,content,created_at')
+      .eq('member_id', App.me.id).eq('day_index', day).order('created_at');
+    return data || [];
+  },
+  async countTodayUserMsg(day) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data } = await App.sb.from('bazi28_ai_chats')
+      .select('id')
+      .eq('member_id', App.me.id).eq('day_index', day).eq('role', 'user')
+      .gte('created_at', today + 'T00:00:00');
+    return (data || []).length;
+  },
+  async saveAIChat(day, role, content) {
+    await App.sb.from('bazi28_ai_chats').insert({ member_id: App.me.id, day_index: day, role, content });
+  },
   async givePraise(toId, toName, dayIndex, emoji) {
     const { error } = await App.sb.from('bazi28_praises').insert({
       from_id:App.me.id, from_name:App.me.name,
@@ -354,6 +371,151 @@ function showPage(page) {
 }
 
 /* ════════════════════════════════════════
+   小老師 AI 對話
+════════════════════════════════════════ */
+async function showTeacherModal(task) {
+  const day = task.day;
+  const [chats, todayCount] = await Promise.all([
+    App.db.getAIChats(day),
+    App.db.countTodayUserMsg(day),
+  ]);
+  let remaining = Math.max(0, 5 - todayCount);
+
+  const chatHtml = chats.map(c =>
+    `<div class="teacher-msg ${c.role === 'user' ? 'teacher-msg-user' : 'teacher-msg-ai'}">
+      ${c.role === 'assistant' ? '<span class="teacher-msg-avatar">🤖</span>' : ''}
+      <div class="teacher-msg-bubble">${App.esc(c.content)}</div>
+    </div>`
+  ).join('');
+
+  App.openModal(`
+    <div class="teacher-modal-wrap">
+      <div class="teacher-modal-header">
+        <div class="teacher-modal-info">
+          <span class="teacher-modal-icon">🤖</span>
+          <div>
+            <div class="teacher-modal-title">小老師</div>
+            <div class="teacher-modal-sub">Day ${day} · ${App.esc(task.title)}</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="App.closeModal()" style="position:relative;top:0;right:0;flex-shrink:0">✕</button>
+      </div>
+      <div class="teacher-chat" id="teacherChat">
+        <div class="teacher-msg teacher-msg-ai">
+          <span class="teacher-msg-avatar">🤖</span>
+          <div class="teacher-msg-bubble">對今天的任務有什麼想問的或是要協助的呢？ 😊</div>
+        </div>
+        ${chatHtml}
+      </div>
+      <div class="teacher-footer">
+        <div class="teacher-limit" id="teacherLimit">今天還剩 <strong>${remaining}</strong> 次對話機會</div>
+        <div id="teacherInputRow">
+          ${remaining > 0 ? `
+            <div class="teacher-input-row">
+              <textarea class="teacher-input" id="teacherInput" placeholder="輸入你的問題…" rows="2"></textarea>
+              <button class="teacher-send-btn" id="teacherSendBtn">送出</button>
+            </div>` : '<div class="teacher-limit-msg">今天的對話次數已用完，明天見！🌙</div>'}
+        </div>
+      </div>
+    </div>
+  `);
+
+  const chatEl = document.getElementById('teacherChat');
+  if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+
+  if (remaining > 0) {
+    const doSend = () => sendTeacherMessage(task, chats, () => {
+      remaining--;
+      const lEl = document.getElementById('teacherLimit');
+      if (lEl) lEl.querySelector('strong').textContent = Math.max(0, remaining);
+      if (remaining <= 0) {
+        const ir = document.getElementById('teacherInputRow');
+        if (ir) ir.innerHTML = '<div class="teacher-limit-msg">今天的對話次數已用完，明天見！🌙</div>';
+      }
+    });
+    document.getElementById('teacherSendBtn').onclick = doSend;
+    document.getElementById('teacherInput').onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+    };
+  }
+}
+
+async function sendTeacherMessage(task, history, onSuccess) {
+  const input = document.getElementById('teacherInput');
+  const sendBtn = document.getElementById('teacherSendBtn');
+  const chatEl = document.getElementById('teacherChat');
+  if (!input || !chatEl) return;
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = ''; input.disabled = true;
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '…'; }
+
+  chatEl.insertAdjacentHTML('beforeend', `
+    <div class="teacher-msg teacher-msg-user"><div class="teacher-msg-bubble">${App.esc(msg)}</div></div>
+    <div class="teacher-msg teacher-msg-ai" id="tcLoad"><span class="teacher-msg-avatar">🤖</span><div class="teacher-msg-bubble">思考中…</div></div>
+  `);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  await App.db.saveAIChat(task.day, 'user', msg);
+
+  try {
+    const res = await fetch(`${window.CONFIG.SUPABASE_URL}/functions/v1/teacher-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${window.CONFIG.SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({
+        dayIndex: task.day, taskTitle: task.title, taskPrompt: task.prompt, message: msg,
+        history: history.map(h => ({ role: h.role, content: h.content })),
+      }),
+    });
+    const { reply } = await res.json();
+    document.getElementById('tcLoad')?.remove();
+    chatEl.insertAdjacentHTML('beforeend', `
+      <div class="teacher-msg teacher-msg-ai"><span class="teacher-msg-avatar">🤖</span><div class="teacher-msg-bubble">${App.esc(reply)}</div></div>
+    `);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    await App.db.saveAIChat(task.day, 'assistant', reply);
+    history.push({ role: 'user', content: msg }, { role: 'assistant', content: reply });
+    onSuccess?.();
+    input.disabled = false;
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '送出'; }
+    input.focus();
+  } catch(_) {
+    document.getElementById('tcLoad')?.remove();
+    chatEl.insertAdjacentHTML('beforeend', `
+      <div class="teacher-msg teacher-msg-ai"><span class="teacher-msg-avatar">🤖</span><div class="teacher-msg-bubble">連線失敗，請重試 😢</div></div>
+    `);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    input.disabled = false;
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '送出'; }
+  }
+}
+
+async function generateBrandStory() {
+  const btn = document.getElementById('aiGenBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span>生成中，請稍候… ✨</span>';
+  try {
+    const res = await fetch(`${window.CONFIG.SUPABASE_URL}/functions/v1/generate-brand-story`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${window.CONFIG.SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ memberId: App.me.id, memberName: App.me.name, baziProfile: App.me.bazi_profile }),
+    });
+    if (!res.ok) throw new Error();
+    const { story } = await res.json();
+    const ta = document.getElementById('taskResponse');
+    if (ta) { ta.value = story; ta.dispatchEvent(new Event('input')); ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    App.toast('品牌故事已生成！你可以繼續編輯後提交。✨', 3500);
+    btn.innerHTML = '<span>✨ 重新生成</span>';
+  } catch(_) {
+    App.toast('生成失敗，請確認 AI 功能已設定');
+    btn.innerHTML = '<span>✨ AI 幫我生成品牌故事</span>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ════════════════════════════════════════
    AI 時代優勢報告 (Day 28 Conclusion)
 ════════════════════════════════════════ */
 function renderAIEraSectionHtml(bazi) {
@@ -449,8 +611,15 @@ async function renderTaskPage() {
 
     <!-- Prompt card -->
     <div class="card" id="promptCard">
-      <div class="card-title">${task.icon} 今日任務</div>
+      <div class="card-title-row">
+        <span class="card-title">${task.icon} 今日任務</span>
+        <button class="teacher-btn" id="teacherBtn">🤖 小老師</button>
+      </div>
       ${App.renderPrompt(task.prompt)}
+      ${task.type === 'brand' ? `<div class="ai-gen-section">
+        <p class="ai-gen-hint">根據你過去 27 天的所有記錄，AI 將生成你的專屬品牌故事</p>
+        <button class="btn btn-gold btn-block" id="aiGenBtn" style="margin-top:6px"><span>✨ AI 幫我生成品牌故事</span></button>
+      </div>` : ''}
     </div>
 
     <!-- Response area -->
@@ -477,6 +646,15 @@ async function renderTaskPage() {
   };
   ta.addEventListener('input', updateWC);
   updateWC();
+
+  // Teacher button
+  $('#teacherBtn').onclick = () => showTeacherModal(task);
+
+  // AI gen (Day 28)
+  if (task.type === 'brand') {
+    const aiGenBtn = $('#aiGenBtn');
+    if (aiGenBtn) aiGenBtn.onclick = generateBrandStory;
+  }
 
   // Save
   $('#saveTaskBtn').onclick = async () => {
