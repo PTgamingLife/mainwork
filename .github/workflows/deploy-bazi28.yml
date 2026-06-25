@@ -1,0 +1,30 @@
+name: Deploy bazi28 to 28challenge
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mainwork
+        uses: actions/checkout@v4
+
+      - name: Clone 28challenge and copy files
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/PTgamingLife/28challenge.git /tmp/28challenge
+          cp bazi28/js/app.js     /tmp/28challenge/js/app.js
+          cp bazi28/js/data.js    /tmp/28challenge/js/data.js
+          cp bazi28/css/styles.css /tmp/28challenge/css/styles.css
+          cp bazi28/admin.html    /tmp/28challenge/admin.html
+
+      - name: Commit and push
+        working-directory: /tmp/28challenge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add js/app.js js/data.js css/styles.css admin.html
+          git diff --cached --quiet && echo "No changes" || git commit -m "feat: 小老師AI對話、Day28品牌故事生成、後臺管理"
+          git push origin main
