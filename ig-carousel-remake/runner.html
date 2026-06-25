@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IG輪播生成器 — 老婆教我別在跟AI聊天</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; padding: 24px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: #666; font-size: 14px; margin-bottom: 24px; }
+  .fn-url-row { display: flex; gap: 8px; margin-bottom: 24px; }
+  .fn-url-row input { flex: 1; padding: 10px 12px; border: 1.5px solid #ccc; border-radius: 8px; font-size: 14px; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-primary { background: #0070f3; color: #fff; }
+  .btn-primary:hover { background: #0060d0; }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-dl { background: #18a558; color: #fff; font-size: 12px; padding: 6px 14px; }
+  .btn-dl:hover { background: #148047; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .card h3 { font-size: 15px; margin-bottom: 12px; }
+  .card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+  .card .placeholder { width: 100%; aspect-ratio: 1; background: #f0f0f0; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; font-size: 13px; gap: 8px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #ddd; border-top-color: #0070f3; border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .card footer { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .status { font-size: 12px; color: #888; }
+  .status.ok { color: #18a558; }
+  .status.err { color: #d00; }
+  .log { margin-top: 24px; background: #1a1a1a; color: #0f0; font-family: monospace; font-size: 12px;
+    padding: 16px; border-radius: 10px; height: 140px; overflow-y: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>🎨 IG輪播生成器</h1>
+<p class="sub">老婆教我別在跟AI聊天 — 手繪漫畫版（gpt-image-2）</p>
+
+<div class="fn-url-row">
+  <input id="fnUrl" type="text" placeholder="貼上 Edge Function URL，例：https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/ig-carousel-gen" />
+  <button class="btn btn-primary" id="btnGenAll" onclick="generateAll()">生成全部 (7張)</button>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="log" id="log">等待開始...</div>
+
+<script>
+const SLIDES = [
+  { index: 0, title: '第1張 — 封面', filename: 'slide1-cover.png' },
+  { index: 1, title: '第2張 — 學習曲線殺手', filename: 'slide2-learning-destroyer.png' },
+  { index: 2, title: '第3張 — 真實錯誤模擬器', filename: 'slide3-error-simulator.png' },
+  { index: 3, title: '第4張 — 看不懂內容翻譯機', filename: 'slide4-translator.png' },
+  { index: 4, title: '第5張 — 個人學習路徑建築師', filename: 'slide5-path-architect.png' },
+  { index: 5, title: '第6張 — 隱藏盲點偵測器', filename: 'slide6-gap-detector.png' },
+  { index: 6, title: '第7張 — 費曼教學法強制模式', filename: 'slide7-feynman.png' },
+];
+
+const log = t => {
+  const el = document.getElementById('log');
+  el.textContent += '\n' + new Date().toLocaleTimeString() + '  ' + t;
+  el.scrollTop = el.scrollHeight;
+};
+
+const grid = document.getElementById('grid');
+SLIDES.forEach(s => {
+  grid.innerHTML += `
+  <div class="card" id="card-${s.index}">
+    <h3>${s.title}</h3>
+    <div class="placeholder" id="ph-${s.index}"><div>尚未生成</div></div>
+    <footer>
+      <span class="status" id="st-${s.index}">待機中</span>
+      <a id="dl-${s.index}" style="display:none">
+        <button class="btn btn-dl">⬇ 下載</button>
+      </a>
+    </footer>
+  </div>`;
+});
+
+async function generateSlide(baseUrl, slide) {
+  const ph = document.getElementById(`ph-${slide.index}`);
+  const st = document.getElementById(`st-${slide.index}`);
+  const dl = document.getElementById(`dl-${slide.index}`);
+
+  ph.innerHTML = '<div class="spinner"></div><div>生成中，請稍候…</div>';
+  st.textContent = '生成中...';
+  st.className = 'status';
+
+  log(`開始生成 slide ${slide.index}: ${slide.filename}`);
+
+  try {
+    const res = await fetch(`${baseUrl}?slide=${slide.index}`);
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${txt}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    ph.innerHTML = `<img src="${url}" alt="${slide.title}" />`;
+    st.textContent = '✓ 完成';
+    st.className = 'status ok';
+    dl.href = url;
+    dl.download = slide.filename;
+    dl.style.display = 'inline';
+    log(`✓ ${slide.filename} 生成完成`);
+  } catch (e) {
+    ph.innerHTML = `<div style="color:#d00;padding:16px;text-align:center">❌ 失敗<br><small>${e.message}</small></div>`;
+    st.textContent = '失敗';
+    st.className = 'status err';
+    log(`✗ ${slide.filename} 失敗: ${e.message}`);
+  }
+}
+
+async function generateAll() {
+  const baseUrl = document.getElementById('fnUrl').value.trim();
+  if (!baseUrl) { alert('請先貼上 Edge Function URL'); return; }
+
+  const btn = document.getElementById('btnGenAll');
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  log('=== 開始生成全部 7 張 ===');
+
+  for (const slide of SLIDES) {
+    await generateSlide(baseUrl, slide);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '生成全部 (7張)';
+  log('=== 全部完成 ===');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "ig-carousel-remake",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.js"
+  },
+  "dependencies": {
+    "openai": "^4.77.0"
+  }
+}
