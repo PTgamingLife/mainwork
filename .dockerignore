@@ -1,0 +1,10 @@
+.git
+__pycache__/
+*.pyc
+out/
+.env
+.venv/
+venv/
+node_modules/
+sprint28-challenge/
+supabase/

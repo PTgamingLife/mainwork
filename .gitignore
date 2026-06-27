@@ -10,3 +10,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# vidgen 產出 / 上傳暫存
+out/
+data/
