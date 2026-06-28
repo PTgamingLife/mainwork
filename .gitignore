@@ -10,3 +10,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Baby growth video project — local media (personal child photos / rendered video), not for publishing
+photos/
+output/
