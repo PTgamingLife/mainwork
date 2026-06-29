@@ -1,6 +1,12 @@
 name: 寶寶成長影片 — Baby Growth Video
 
 on:
+  push:
+    paths:
+      - 'assets/baby/**'
+      - 'assets/bgm/**'
+      - 'scripts/baby_growth_video.py'
+      - '.github/workflows/baby-growth-video.yml'
   workflow_dispatch:
     inputs:
       seconds_per_photo:
