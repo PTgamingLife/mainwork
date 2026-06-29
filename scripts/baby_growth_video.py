@@ -17,16 +17,22 @@ from pathlib import Path
 from PIL import Image, ImageOps
 
 # ---- 參數(預設值;可用環境變數覆寫,見 docs/baby-growth-video.md) ----
+def env(key: str, default: str) -> str:
+    """讀環境變數;未設定或為空字串(CI push 事件常見)都回退到 default。"""
+    v = os.environ.get(key)
+    return v if v not in (None, "") else default
+
+
 ROOT = Path(__file__).resolve().parent.parent
-INPUT_DIR = Path(os.environ.get("BGV_INPUT_DIR", ROOT / "assets" / "baby"))
-BGM_PATH = os.environ.get("BGV_BGM", "")            # 空字串 = 自動找 assets/bgm/ 第一個音檔
-OUTPUT = Path(os.environ.get("BGV_OUTPUT", ROOT / "output" / "baby-growth.mp4"))
-RESOLUTION = os.environ.get("BGV_RESOLUTION", "1080x1920")
-FPS = int(os.environ.get("BGV_FPS", "30"))
-SECONDS_PER_PHOTO = float(os.environ.get("BGV_SECONDS_PER_PHOTO", "2.5"))
-TRANSITION = float(os.environ.get("BGV_TRANSITION", "0.6"))
-FIT = os.environ.get("BGV_FIT", "contain").lower()   # contain | cover
-PAD_COLOR = os.environ.get("BGV_PAD_COLOR", "black")
+INPUT_DIR = Path(env("BGV_INPUT_DIR", str(ROOT / "assets" / "baby")))
+BGM_PATH = env("BGV_BGM", "")                        # 空字串 = 自動找 assets/bgm/ 第一個音檔
+OUTPUT = Path(env("BGV_OUTPUT", str(ROOT / "output" / "baby-growth.mp4")))
+RESOLUTION = env("BGV_RESOLUTION", "1080x1920")
+FPS = int(env("BGV_FPS", "30"))
+SECONDS_PER_PHOTO = float(env("BGV_SECONDS_PER_PHOTO", "2.5"))
+TRANSITION = float(env("BGV_TRANSITION", "0.6"))
+FIT = env("BGV_FIT", "contain").lower()              # contain | cover
+PAD_COLOR = env("BGV_PAD_COLOR", "black")
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".heic", ".webp", ".bmp", ".tiff"}
 AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".aac", ".ogg"}
