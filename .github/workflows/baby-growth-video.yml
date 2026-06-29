@@ -1,0 +1,61 @@
+name: 寶寶成長影片 — Baby Growth Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds_per_photo:
+        description: '每張照片秒數'
+        required: false
+        default: '2.5'
+      transition:
+        description: '轉場(交叉淡入淡出)秒數'
+        required: false
+        default: '0.6'
+      resolution:
+        description: '解析度 (WxH),直式預設 1080x1920'
+        required: false
+        default: '1080x1920'
+      fit:
+        description: 'contain(letterbox) 或 cover(裁切填滿)'
+        required: false
+        default: 'contain'
+
+concurrency:
+  group: baby-growth-video
+  cancel-in-progress: true
+
+jobs:
+  build-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps (Pillow)
+        run: pip install Pillow
+
+      - name: Build baby growth video
+        run: python scripts/baby_growth_video.py
+        env:
+          BGV_SECONDS_PER_PHOTO: ${{ github.event.inputs.seconds_per_photo }}
+          BGV_TRANSITION: ${{ github.event.inputs.transition }}
+          BGV_RESOLUTION: ${{ github.event.inputs.resolution }}
+          BGV_FIT: ${{ github.event.inputs.fit }}
+
+      - name: Upload video artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: baby-growth-video
+          path: output/baby-growth.mp4
+          if-no-files-found: warn
+          retention-days: 30

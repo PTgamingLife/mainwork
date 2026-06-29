@@ -10,3 +10,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# 寶寶成長影片產出
+output/
+*.mp4
