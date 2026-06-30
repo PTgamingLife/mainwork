@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>開心農場 · 點一下採收 🥬</title>
+<style>
+  :root {
+    --grass: #6fbf3a;
+    --grass-dark: #4f9624;
+    --soil: #6b4a2f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    font-family: "Segoe UI", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    user-select: none;
+  }
+  #scene {
+    position: fixed; inset: 0;
+    background-color: #bfe3b0;
+    /* 剛生成的卡通 3D 農場場景；若網域被擋會退回漸層 */
+    background-image:
+      linear-gradient(rgba(0,0,0,0) 55%, rgba(0,40,0,0.18) 100%),
+      url("https://d8j0ntlcm91z4.cloudfront.net/user_3E8E7dfEkimdmsd0LdokMgNgQuE/hf_20260630_044939_ec110664-6fcd-41ab-9a4b-87fbeaede5b6.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  /* 圖片載不出來時的後備漸層田地 */
+  #scene.fallback {
+    background-image:
+      linear-gradient(#bfe7ff 0%, #d8f3c8 38%, var(--grass) 60%, var(--grass-dark) 100%);
+  }
+
+  /* ===== 上方 HUD ===== */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; gap: 10px; justify-content: center; align-items: center;
+    padding: 12px; z-index: 30; flex-wrap: wrap;
+    pointer-events: none;
+  }
+  .stat {
+    background: rgba(255,255,255,0.92);
+    border: 3px solid #fff;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-weight: 800; font-size: clamp(16px, 4.2vw, 24px);
+    color: #3a5a1c; display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .stat .num { color: #d2691e; min-width: 1.5em; text-align: right; }
+  #title {
+    position: fixed; bottom: 14px; left: 0; right: 0; text-align: center;
+    color: #fff; font-weight: 800; font-size: clamp(13px, 3.6vw, 18px);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.55); z-index: 30; pointer-events: none;
+    letter-spacing: 1px;
+  }
+  #reset {
+    pointer-events: auto;
+    background: #ffb300; color: #5a3d00; border: 3px solid #fff;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); border-radius: 999px;
+    padding: 8px 16px; font-weight: 800; font-size: clamp(14px, 3.6vw, 20px);
+    cursor: pointer;
+  }
+  #reset:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+
+  /* ===== 蔬菜 ===== */
+  #field { position: fixed; inset: 0; z-index: 10; }
+  .crop {
+    position: absolute;
+    transform: translate(-50%, -50%) scale(var(--s, 1));
+    cursor: pointer;
+    transition: filter .15s ease;
+    will-change: transform;
+  }
+  .crop svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .crop.ready:hover { filter: drop-shadow(0 0 10px rgba(255,255,150,0.9)); }
+
+  .leaf { transform-origin: 50% 90%; transform: scale(0); transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+  .crop.sprout .leaf { transform: scale(0.35); }
+  .crop.growing .leaf { transform: scale(0.65); }
+  .crop.ready .leaf { transform: scale(1); }
+
+  .crop.ready { animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob {
+    0%,100% { transform: translate(-50%,-50%) scale(var(--s,1)); }
+    50%     { transform: translate(-50%,-52%) scale(var(--s,1)); }
+  }
+
+  /* 飄分 */
+  .pop {
+    position: fixed; z-index: 40; pointer-events: none;
+    font-weight: 900; font-size: 26px; color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,.5);
+    animation: floatUp .9s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { transform: translate(-50%,-50%) scale(.6); opacity: 0; }
+    20%  { transform: translate(-50%,-90%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%,-160%) scale(1); opacity: 0; }
+  }
+
+  /* 開場提示 */
+  #hint {
+    position: fixed; inset: 0; z-index: 50; display: flex;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(0,0,0,0.35); color: #fff; text-align: center; padding: 24px;
+    transition: opacity .4s ease;
+  }
+  #hint h1 { font-size: clamp(26px, 8vw, 52px); margin: 0 0 6px; text-shadow: 0 3px 10px rgba(0,0,0,.6); }
+  #hint p { font-size: clamp(15px, 4.4vw, 22px); margin: 4px 0; opacity: .95; }
+  #hint .play {
+    margin-top: 22px; background: #6fbf3a; color: #fff; border: 4px solid #fff;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.25); border-radius: 999px;
+    padding: 14px 40px; font-weight: 900; font-size: clamp(18px, 5vw, 26px); cursor: pointer;
+  }
+  #hint .play:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  #hint.hide { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="field"></div>
+
+  <div id="hud">
+    <div class="stat">🥬 <span>採收</span> <span class="num" id="harvest">0</span></div>
+    <div class="stat">🪙 <span>金幣</span> <span class="num" id="coins">0</span></div>
+    <button id="reset">🌱 全部重種</button>
+  </div>
+  <div id="title">點一下成熟的萵苣就能採收 · 採收後會重新長大</div>
+
+  <div id="hint">
+    <h1>🥬 開心農場</h1>
+    <p>畫面上的萵苣長大後會發光</p>
+    <p>用手指或滑鼠「點一下」就能採收!</p>
+    <button class="play" id="playBtn">開始採收</button>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  // 圖片載入失敗時退回漸層田地
+  (function checkBg() {
+    var img = new Image();
+    var url = "https://d8j0ntlcm91z4.cloudfront.net/user_3E8E7dfEkimdmsd0LdokMgNgQuE/hf_20260630_044939_ec110664-6fcd-41ab-9a4b-87fbeaede5b6.png";
+    img.onerror = function () { document.getElementById("scene").classList.add("fallback"); };
+    img.src = url;
+    setTimeout(function () { if (!img.complete) document.getElementById("scene").classList.add("fallback"); }, 4000);
+  })();
+
+  var field = document.getElementById("field");
+  var harvestEl = document.getElementById("harvest");
+  var coinsEl = document.getElementById("coins");
+
+  var harvest = 0, coins = 0;
+
+  // 卡通萵苣 SVG(層層包心)
+  function lettuceSVG() {
+    return '' +
+      '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<ellipse cx="50" cy="86" rx="26" ry="7" fill="rgba(0,0,0,0.18)"/>' +
+      '<g class="leaf">' +
+        '<path d="M50 84 C20 80 12 52 26 40 C18 24 40 14 50 26 C60 14 82 24 74 40 C88 52 80 80 50 84Z" fill="#3f8f1f"/>' +
+        '<path d="M50 80 C28 76 22 54 33 44 C27 30 44 24 50 34 C56 24 73 30 67 44 C78 54 72 76 50 80Z" fill="#5fb52f"/>' +
+        '<path d="M50 74 C36 72 30 56 39 48 C35 38 46 34 50 42 C54 34 65 38 61 48 C70 56 64 72 50 74Z" fill="#86d64a"/>' +
+        '<path d="M50 66 C42 65 38 56 43 50 C41 44 48 42 50 47 C52 42 59 44 57 50 C62 56 58 65 50 66Z" fill="#bdf07f"/>' +
+      '</g>' +
+      '</svg>';
+  }
+
+  // 透視田畦:每一排往後縮小、Y 較高;left 用百分比分布
+  // row: {y: %, size: px(基準), count, spread: 左右範圍%}
+  var rows = [
+    { y: 60,  size: 92, count: 5, left: 18, right: 82 },
+    { y: 66,  size: 100, count: 5, left: 14, right: 86 },
+    { y: 73,  size: 112, count: 6, left: 10, right: 90 },
+    { y: 82,  size: 128, count: 6, left: 6,  right: 94 },
+    { y: 92,  size: 146, count: 6, left: 4,  right: 96 }
+  ];
+
+  var crops = [];
+
+  function makeCrop(xPct, yPct, sizePx) {
+    var el = document.createElement("div");
+    el.className = "crop";
+    el.style.left = xPct + "%";
+    el.style.top = yPct + "%";
+    el.style.width = sizePx + "px";
+    el.style.height = sizePx + "px";
+    el.innerHTML = lettuceSVG();
+    field.appendChild(el);
+
+    var crop = { el: el, state: "seed", timer: null };
+    el.addEventListener("click", function (e) { onHarvest(crop, e); });
+    crops.push(crop);
+    grow(crop, Math.random() * 1800); // 隨機錯開生長
+    return crop;
+  }
+
+  function setState(crop, s) {
+    crop.state = s;
+    crop.el.classList.remove("seed", "sprout", "growing", "ready");
+    crop.el.classList.add(s);
+  }
+
+  // 生長流程:seed -> sprout -> growing -> ready
+  function grow(crop, delay) {
+    clearTimeout(crop.timer);
+    setState(crop, "seed");
+    crop.timer = setTimeout(function () {
+      setState(crop, "sprout");
+      crop.timer = setTimeout(function () {
+        setState(crop, "growing");
+        crop.timer = setTimeout(function () {
+          setState(crop, "ready");
+        }, 1600);
+      }, 1400);
+    }, delay || 0);
+  }
+
+  function onHarvest(crop, e) {
+    if (crop.state !== "ready") return;
+    harvest += 1;
+    var gain = 5 + Math.floor(Math.random() * 6); // 5~10 金幣
+    coins += gain;
+    harvestEl.textContent = harvest;
+    coinsEl.textContent = coins;
+
+    // 採收動畫
+    var svg = crop.el.querySelector(".leaf");
+    crop.el.classList.remove("ready");
+    crop.el.style.transition = "transform .25s ease, opacity .25s ease";
+    crop.el.style.transform = "translate(-50%,-50%) scale(0.1)";
+    crop.el.style.opacity = "0";
+
+    showPop(e, "+" + gain + " 🪙");
+    blip();
+
+    setTimeout(function () {
+      crop.el.style.transition = "";
+      crop.el.style.transform = "";
+      crop.el.style.opacity = "";
+      grow(crop, 400); // 重新長大
+    }, 260);
+  }
+
+  function showPop(e, txt) {
+    var p = document.createElement("div");
+    p.className = "pop";
+    p.textContent = txt;
+    var x = (e && e.clientX) || window.innerWidth / 2;
+    var y = (e && e.clientY) || window.innerHeight / 2;
+    p.style.left = x + "px";
+    p.style.top = y + "px";
+    document.body.appendChild(p);
+    setTimeout(function () { p.remove(); }, 900);
+  }
+
+  // 簡單音效(WebAudio,免素材)
+  var actx = null;
+  function blip() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(520, actx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(880, actx.currentTime + 0.08);
+      g.gain.setValueAtTime(0.15, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.18);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + 0.2);
+    } catch (err) {}
+  }
+
+  function buildField() {
+    field.innerHTML = "";
+    crops = [];
+    rows.forEach(function (r) {
+      for (var i = 0; i < r.count; i++) {
+        var t = r.count === 1 ? 0.5 : i / (r.count - 1);
+        var x = r.left + (r.right - r.left) * t;
+        // 加一點隨機讓排列自然
+        x += (Math.random() - 0.5) * 2;
+        var yy = r.y + (Math.random() - 0.5) * 1.5;
+        makeCrop(x, yy, r.size);
+      }
+    });
+  }
+
+  document.getElementById("reset").addEventListener("click", function () {
+    crops.forEach(function (c) { grow(c, Math.random() * 1500); });
+  });
+
+  document.getElementById("playBtn").addEventListener("click", function () {
+    document.getElementById("hint").classList.add("hide");
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  });
+
+  buildField();
+  window.addEventListener("resize", function () {
+    // 視窗大小改變時,蔬菜用 % 定位會自動跟著移動,毋需重建
+  });
+})();
+</script>
+</body>
+</html>
