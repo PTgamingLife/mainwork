@@ -96,21 +96,34 @@
   .tab svg{width:23px;height:23px;}
   .tab.active{color:var(--green-d);}
 
-  .ghouse{position:relative;border-radius:16px 16px 0 0;overflow:hidden;
-    background:linear-gradient(180deg,#bfe6f5,#dff0d6);padding:14px 0 6px;}
-  .ghouse svg{display:block;width:100%;height:64px;}
-  .ghouse .gh-label{position:absolute;top:10px;left:0;right:0;text-align:center;
-    color:#2f6d4a;font-weight:800;font-size:12.5px;letter-spacing:1px;}
-  .plotwrap{background:linear-gradient(180deg,#6b4628,#583a20);padding:10px;border-radius:0 0 16px 16px;
-    border:1px solid #4a3019;border-top:0;}
-  .plots{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;width:100%;}
-  .plot{position:relative;aspect-ratio:1/1;border-radius:7px;min-width:0;
-    background:radial-gradient(120% 120% at 50% 30%,#8a5a31,#5e3c20);
-    box-shadow:inset 0 2px 4px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.15);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .plot.empty::after{content:"";width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.18);}
-  .plot.mine{box-shadow:inset 0 2px 4px rgba(0,0,0,.35),0 0 0 2px var(--green),0 0 8px rgba(63,157,79,.6);}
-  .plot .sprout{width:80%;height:80%;}
+  .ghouse{position:relative;border-radius:20px 20px 0 0;overflow:hidden;
+    background:linear-gradient(180deg,#d4f1fb 0%,#bfe6ef 50%,#dff0d6 100%);padding:18px 0 12px;
+    box-shadow:inset 0 -6px 12px rgba(0,0,0,.04);}
+  .ghouse svg{display:block;width:100%;height:88px;}
+  .ghouse .gh-label{position:absolute;top:14px;left:0;right:0;text-align:center;
+    color:#2f6d4a;font-weight:900;font-size:13.5px;letter-spacing:4px;
+    text-shadow:0 1px 0 rgba(255,255,255,.6);}
+  .plotwrap{background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 26px),
+      linear-gradient(180deg,#825632 0%,#6b4628 40%,#553820 100%);
+    padding:16px 14px;border-radius:0 0 20px 20px;border:1px solid #43301c;border-top:0;
+    box-shadow:inset 0 10px 22px rgba(0,0,0,.30);}
+  .plots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;}
+  .plot{position:relative;aspect-ratio:1/1;border-radius:18px;min-width:0;cursor:pointer;
+    background:
+      radial-gradient(70% 55% at 50% 30%, #a06b3d 0%, #82542e 50%, #5f3d22 100%);
+    box-shadow:
+      inset 0 4px 8px rgba(0,0,0,.30), inset 0 -12px 16px rgba(0,0,0,.24),
+      0 0 0 3px #8a5a31, 0 0 0 6px #6b4421, 0 4px 7px rgba(0,0,0,.32);
+    display:flex;align-items:center;justify-content:center;transition:transform .12s;}
+  .plot:active{transform:scale(.95);}
+  .plot.empty::after{content:"";width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.28), rgba(0,0,0,.3));}
+  .plot.mine{box-shadow:inset 0 4px 8px rgba(0,0,0,.30),inset 0 -12px 16px rgba(0,0,0,.24),
+    0 0 0 3px var(--green),0 0 0 6px #fff,0 0 16px rgba(63,157,79,.75),0 4px 7px rgba(0,0,0,.32);}
+  .plot .sprout{width:72%;height:72%;filter:drop-shadow(0 5px 5px rgba(0,0,0,.32));}
+  .plot .plotnum{position:absolute;top:5px;left:8px;font-size:10px;font-weight:800;
+    color:rgba(255,255,255,.45);}
   .plot.new .sprout .s-grow{animation:sprout .7s cubic-bezier(.34,1.56,.64,1) both;}
   .sprout .s-grow{transform-origin:50% 92%;}
   @keyframes sprout{0%{transform:scale(.05)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
@@ -154,6 +167,46 @@
     background:#243024;color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:700;
     opacity:0;transition:opacity .25s, transform .25s;pointer-events:none;max-width:90%;text-align:center;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  /* 首頁視窗面板 */
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);display:flex;flex-direction:column;overflow:hidden;}
+  .panel.full{grid-column:1 / -1;}
+  .panel .phead{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:11px 13px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#f4faf3,#eaf6ec);}
+  .panel .phead .pt{font-size:13.5px;font-weight:800;color:var(--green-d);}
+  .panel .phead .pc{font-size:11px;font-weight:800;color:#fff;background:var(--green);
+    border-radius:999px;padding:2px 9px;min-width:22px;text-align:center;}
+  .panel .pbody{padding:9px;overflow-y:auto;max-height:40vh;-webkit-overflow-scrolling:touch;}
+  .panel.full .pbody{max-height:44vh;}
+  .panel .pempty{color:var(--muted);font-size:12.5px;text-align:center;padding:24px 6px;line-height:1.6;}
+  .mini{display:flex;gap:9px;align-items:center;padding:8px;border-radius:13px;background:#fafdf9;
+    border:1px solid var(--line);margin-bottom:8px;}
+  .mini:last-child{margin-bottom:0;}
+  .mini .veg-art{width:44px;height:44px;border-radius:11px;}
+  .mini .veg-art svg{width:35px;height:35px;}
+  .mini .m-main{flex:1;min-width:0;}
+  .mini .m-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mini .m-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .mini .m-price{font-size:15px;font-weight:900;color:var(--green-d);white-space:nowrap;}
+
+  /* 種植特點選擇鈕 */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;
+    font-size:14px;font-weight:700;color:#566;display:inline-flex;align-items:center;gap:6px;}
+  .chip.on{border-color:var(--green);background:var(--green-l);color:var(--green-d);}
+  .chip.on::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);}
+
+  /* 照片上傳 */
+  .photo-pick{display:flex;gap:12px;align-items:center;}
+  .photo-prev{width:78px;height:78px;border-radius:14px;border:1.5px dashed #cdd8cd;
+    background:#f6faf5;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;color:#9aa89a;}
+  .photo-prev img{width:100%;height:100%;object-fit:cover;}
+  .photo-prev svg{width:32px;height:32px;}
+  .photo-hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .veg-art img{width:100%;height:100%;object-fit:cover;}
 </style>
 </head>
 <body>
@@ -199,7 +252,7 @@ const API={
   async buyFresh(freshId,catty){ const s=session(); const {data,error}=await SB.rpc("farm_buy_fresh",{p_token:s.token,p_fresh_id:freshId,p_catty:catty}); if(error) throw error; return data; },
   async adminAddPre(o){ const s=session(); const {data,error}=await SB.rpc("farm_admin_add_pre",{p_token:s.token,p_name:o.name,p_feature:o.feature,p_art:o.art,p_target:o.qty,p_price:o.price}); if(error) throw error; return data; },
   async adminDelPre(id){ const s=session(); const {data,error}=await SB.rpc("farm_admin_del_pre",{p_token:s.token,p_id:id}); if(error) throw error; return data; },
-  async adminAddFresh(o){ const s=session(); const {data,error}=await SB.rpc("farm_admin_add_fresh",{p_token:s.token,p_name:o.name,p_feature:o.feature,p_art:o.art,p_total:o.qty,p_price:o.price}); if(error) throw error; return data; },
+  async adminAddFresh(o){ const s=session(); const {data,error}=await SB.rpc("farm_admin_add_fresh",{p_token:s.token,p_name:o.name,p_feature:o.feature,p_art:o.art,p_total:o.qty,p_price:o.price,p_image:o.image||null}); if(error) throw error; return data; },
   async adminDelFresh(id){ const s=session(); const {data,error}=await SB.rpc("farm_admin_del_fresh",{p_token:s.token,p_id:id}); if(error) throw error; return data; }
 };
 
@@ -251,8 +304,38 @@ var IC={
   out:'<svg viewBox="0 0 24 24" fill="none"><path d="M14 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 8l-4 4 4 4M6 12h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
-  refresh:'<svg viewBox="0 0 24 24" fill="none"><path d="M20 11a8 8 0 10-.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  refresh:'<svg viewBox="0 0 24 24" fill="none"><path d="M20 11a8 8 0 10-.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>'
 };
+/* 照片優先,否則用插畫 */
+function artImg(art,imageUrl){ return imageUrl ? '<img src="'+imageUrl+'" alt="">' : vegArt(art||"cabbage"); }
+/* 壓縮並縮放上傳照片成 data URL */
+function resizeImage(file,maxDim,q){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){
+      var s=Math.min(1,maxDim/Math.max(img.width,img.height));
+      var cw=Math.round(img.width*s), ch=Math.round(img.height*s);
+      var cv=document.createElement("canvas"); cv.width=cw; cv.height=ch;
+      cv.getContext("2d").drawImage(img,0,0,cw,ch);
+      try{ resolve(cv.toDataURL("image/jpeg",q)); }catch(e){ reject(e); }
+    };
+    img.onerror=reject;
+    var fr=new FileReader(); fr.onload=function(){ img.src=fr.result; }; fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+/* 首頁視窗面板 */
+function panel(title,count,inner,full){
+  return '<div class="panel'+(full?' full':'')+'"><div class="phead"><span class="pt">'+title+'</span><span class="pc">'+count+'</span></div>'+
+    '<div class="pbody">'+inner+'</div></div>';
+}
+function pempty(t){return '<div class="pempty">'+t+'</div>';}
+function miniCard(art,imageUrl,name,catty,pph,sub){
+  return '<div class="mini"><div class="veg-art">'+artImg(art,imageUrl)+'</div>'+
+    '<div class="m-main"><div class="m-name">'+name+'</div>'+
+      '<div class="m-sub">'+fmt(catty)+' 臺斤 · '+sub+'</div></div>'+
+    '<div class="m-price">$'+totalPrice(catty,pph)+'</div></div>';
+}
 
 /* =================== 版面元件 =================== */
 function appbar(title,sub,opts){
@@ -373,18 +456,18 @@ async function viewHome(){
   var activePre=myPre.filter(function(p){return p.status==="預購中";});
   var history=myPre.concat(myFresh).sort(byNew);
 
-  function preCard(p){ return orderCard(p.art,p.crop_name,p.catty,p.price_per_half,"預購種植",p.created_at,p.status,"第 "+(p.plot_index+1)+" 號菜圃"); }
-  function freshCard(o){ return orderCard(o.art,o.crop_name,o.catty,o.price_per_half,"新鮮採摘",o.created_at,o.status,"約 3 日後出貨"); }
+  function preMini(p){ return miniCard(p.art,null,p.crop_name,p.catty,p.price_per_half,"第 "+(p.plot_index+1)+" 號 · "+dateStr(p.created_at)); }
+  function freshMini(o){ return miniCard(o.art,o.image_url,o.crop_name,o.catty,o.price_per_half,"約3日後 · "+dateStr(o.created_at)); }
+  function histRow(it){ return it.plot_index!=null?preMini(it):freshMini(it); }
 
   app.innerHTML=
     appbar("主頁","哈囉,"+u.name,{logout:true,refresh:true})+
     '<div class="wrap">'+
-      sect("進行中的預購")+
-      (activePre.length?activePre.map(preCard).join(""):empty("目前沒有預購中的菜色,去「預購菜圃」逛逛吧"))+
-      sect("已訂購的新鮮蔬菜")+
-      (myFresh.length?myFresh.map(freshCard).join(""):empty("還沒有採購訂單,去「新鮮採摘」看看"))+
-      sect("過往訂購紀錄")+
-      (history.length?history.map(function(it){return it.plot_index!=null?preCard(it):freshCard(it);}).join(""):empty("尚無任何紀錄"))+
+      '<div class="panels">'+
+        panel("進行中的預購",activePre.length,activePre.length?activePre.map(preMini).join(""):pempty("尚無預購中的菜色"))+
+        panel("已訂購",myFresh.length,myFresh.length?myFresh.map(freshMini).join(""):pempty("尚無採購訂單"))+
+        panel("過往訂購紀錄",history.length,history.length?history.map(histRow).join(""):pempty("尚無任何紀錄"),true)+
+      '</div>'+
     '</div>'+tabbar("home");
 }
 function orderCard(art,name,catty,pph,kind,ts,status,note){
@@ -404,7 +487,7 @@ function orderCard(art,name,catty,pph,kind,ts,status,note){
 }
 
 /* =================== 預購菜圃(8x10 溫室格)=================== */
-var GH_COLS=8, GH_ROWS=10, GH_N=GH_COLS*GH_ROWS;
+var GH_COLS=3, GH_ROWS=20, GH_N=GH_COLS*GH_ROWS;
 async function viewPreorder(){
   loading();
   var u=session();
@@ -413,11 +496,12 @@ async function viewPreorder(){
 
   function plotCell(i){
     var po=byPlot[i];
+    var num='<span class="plotnum">'+(i+1)+'</span>';
     if(po){
       var mine=po.user_id===u.user_id;
-      return '<div class="plot '+(mine?'mine':'')+'" data-plot="'+i+'" data-occupied="1"><div class="sprout">'+sproutArt()+'</div></div>';
+      return '<div class="plot '+(mine?'mine':'')+'" data-plot="'+i+'" data-occupied="1">'+num+'<div class="sprout">'+sproutArt()+'</div></div>';
     }
-    return '<div class="plot empty" data-plot="'+i+'"></div>';
+    return '<div class="plot empty" data-plot="'+i+'">'+num+'</div>';
   }
   var cells=""; for(var i=0;i<GH_N;i++) cells+=plotCell(i);
 
@@ -527,7 +611,7 @@ async function viewFresh(){
   var list=await API.catalogFresh();
   var cards=list.length? list.map(function(c){
     var sold=c.remain_catty<=0;
-    return '<div class="card veg-card"><div class="veg-art">'+vegArt(c.art)+'</div>'+
+    return '<div class="card veg-card"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
       '<div class="veg-main"><div class="veg-name">'+c.name+'</div>'+
         '<div class="veg-feat">'+c.feature+'</div>'+
         '<div class="veg-meta">'+
@@ -552,7 +636,7 @@ function openBuyModal(c){
   var catty=Math.min(1,c.remain_catty);
   function body(){
     return '<h3>選購 · '+c.name+'</h3>'+
-      '<div class="card veg-card" style="margin-top:12px"><div class="veg-art">'+vegArt(c.art)+'</div>'+
+      '<div class="card veg-card" style="margin-top:12px"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
         '<div class="veg-main"><div class="veg-feat">'+c.feature+'</div>'+
         '<div class="veg-meta"><span class="tag amber">'+priceTag(c.price_per_half)+'</span>'+
         '<span class="tag">尚餘 '+fmt(c.remain_catty)+' 臺斤</span></div></div></div>'+
@@ -606,7 +690,7 @@ async function viewAdmin(){
       '<div class="stat"><div class="n">'+fresh.length+'</div><div class="l">上架品項</div></div>'+
       '<div class="stat"><div class="n">'+fmt(soldCatty)+'</div><div class="l">已售出臺斤</div></div></div>';
     var items=fresh.map(function(c){
-      return '<div class="adm-item"><div class="veg-art">'+vegArt(c.art)+'</div>'+
+      return '<div class="adm-item"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
         '<div class="info"><div class="nm">'+c.name+'</div><div class="mt">'+c.feature+'</div>'+
           '<div class="mt" style="color:#e8893a;font-weight:700;margin-top:5px">剩 '+fmt(c.remain_catty)+'/'+fmt(c.total_catty)+' 臺斤 · '+priceTag(c.price_per_half)+'</div></div>'+
         '<button class="linkbtn" data-delfresh="'+c.id+'">刪除</button></div>';
@@ -637,12 +721,21 @@ function artOptions(){
   return [["butter","奶油萵苣型"],["romaine","長葉萵苣型"],["bokchoy","青江/小白菜型"],["cabbage","結球高麗菜型"]]
     .map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join("");
 }
+var FEAT_OPTIONS=["溫室","不灑農藥","不灑化肥","當季"];
 function adminForm(kind){
   var qtyLabel=kind==="pre"?"目標種植數量(臺斤)":"上架數量(臺斤)";
+  var chips='<div class="chips" id="f_feat">'+FEAT_OPTIONS.map(function(f){
+      return '<button type="button" class="chip" data-feat="'+f+'">'+f+'</button>';}).join("")+'</div>';
+  var artField = kind==="pre"
+    ? '<div class="field"><label>圖樣</label><select id="f_art">'+artOptions()+'</select></div>'
+    : '<div class="field"><label>蔬菜照片(上傳或拍照)</label>'+
+        '<div class="photo-pick"><div class="photo-prev" id="f_prev">'+IC.camera+'</div>'+
+        '<div style="flex:1"><input id="f_photo" type="file" accept="image/*" capture="environment">'+
+        '<div class="photo-hint">可從相簿選擇,或手機直接拍照</div></div></div></div>';
   return '<div class="card">'+
     '<div class="field"><label>菜名</label><input id="f_name" placeholder="例如 奶油萵苣"></div>'+
-    '<div class="field"><label>種植特點</label><textarea id="f_feat" placeholder="例如 溫室水耕、葉片柔嫩、約 40 天採收"></textarea></div>'+
-    '<div class="field"><label>圖樣</label><select id="f_art">'+artOptions()+'</select></div>'+
+    '<div class="field"><label>種植特點(可複選)</label>'+chips+'</div>'+
+    artField+
     '<div class="row2">'+
       '<div class="field"><label>'+qtyLabel+'</label><input id="f_qty" type="number" inputmode="decimal" placeholder="臺斤"></div>'+
       '<div class="field"><label>每半臺斤價格($)</label><input id="f_price" type="number" inputmode="numeric" placeholder="元"></div>'+
@@ -652,17 +745,36 @@ function adminForm(kind){
 }
 function bindAdminForm(kind){
   var btn=document.getElementById("f_add"); if(!btn) return;
+  var feats=[];
+  document.querySelectorAll("#f_feat .chip").forEach(function(ch){
+    ch.onclick=function(){
+      ch.classList.toggle("on");
+      var f=ch.getAttribute("data-feat");
+      if(ch.classList.contains("on")){ if(feats.indexOf(f)<0) feats.push(f); }
+      else { feats=feats.filter(function(x){return x!==f;}); }
+    };
+  });
+  var imgData=null;
+  var photo=document.getElementById("f_photo");
+  if(photo){
+    photo.onchange=function(){
+      var file=photo.files&&photo.files[0]; if(!file) return;
+      resizeImage(file,640,0.7).then(function(d){ imgData=d; var p=document.getElementById("f_prev"); if(p) p.innerHTML='<img src="'+d+'">'; })
+        .catch(function(){ toast("照片讀取失敗"); });
+    };
+  }
   btn.onclick=async function(){
-    var name=val("f_name").trim(), feat=val("f_feat").trim(), art=val("f_art"),
+    var name=val("f_name").trim(), feature=feats.join("、"),
         qty=parseFloat(val("f_qty")), price=parseInt(val("f_price"),10);
     var err=document.getElementById("f_err");
-    if(!name||!feat){ err.textContent="請填寫菜名與種植特點"; return; }
+    if(!name){ err.textContent="請填寫菜名"; return; }
+    if(!feature){ err.textContent="請至少選一個種植特點"; return; }
     if(!(qty>0)){ err.textContent="請輸入有效數量(臺斤)"; return; }
     if(!(price>0)){ err.textContent="請輸入有效的每半臺斤價格"; return; }
     btn.disabled=true;
     try{
-      var r=kind==="pre"? await API.adminAddPre({name:name,feature:feat,art:art,qty:qty,price:price})
-                        : await API.adminAddFresh({name:name,feature:feat,art:art,qty:qty,price:price});
+      var r=kind==="pre"? await API.adminAddPre({name:name,feature:feature,art:val("f_art"),qty:qty,price:price})
+                        : await API.adminAddFresh({name:name,feature:feature,art:"cabbage",qty:qty,price:price,image:imgData});
       if(r&&r.error){ err.textContent=r.error; btn.disabled=false; return; }
       toast("已新增「"+name+"」"); viewAdmin();
     }catch(ex){ err.textContent="連線失敗,請稍後再試"; btn.disabled=false; }
