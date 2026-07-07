@@ -10,3 +10,13 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# secrets & machine-local
+scripts/credentials.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# tool artifacts / temp
+.playwright-mcp/
+.claude-flow/
+supabase/.temp/

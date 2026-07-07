@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>看健 — 大數據健康檢測</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="webview-banner" class="webview-banner">
+  ⚠️ 請在 Safari 或 Chrome 開啟以使用完整功能
+  <button onclick="copyText(location.href)">複製連結</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="app">
+
+<!-- ═══════════════════════════════════════ PAGE: LOGIN ═══ -->
+<div class="page active" id="page-login">
+  <div class="login-page">
+    <div class="login-bg">
+      <div class="login-content">
+        <img class="login-owl-img" src="img/mascot-main.png" alt="小健">
+        <div class="login-title">看 · 健</div>
+        <div class="login-sub">大數據健康分析 · 線上健檢系統</div>
+        <div class="login-divider"></div>
+
+        <div class="login-card">
+          <p class="login-tagline">根據醫藥大學大數據模型<br>TCM 資料集訓練結果判斷</p>
+          <div id="login-error" class="error-box" style="display:none"></div>
+          <button class="btn-google" id="btn-google-login" onclick="demoLogin()">
+            <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            <span class="btn-google-text">使用 Google 帳號登入</span>
+          </button>
+          <div class="login-secure-note">🔒 安全登入 · 資料隱私保障</div>
+        </div>
+
+        <div style="margin-top:20px;font-size:11px;color:rgba(255,255,255,.55);text-align:center;letter-spacing:1px;text-shadow:0 1px 4px rgba(0,0,0,.3)">
+          超艋健康團隊 © 2026
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: MAIN (首頁) ═══ -->
+<div class="page" id="page-main">
+  <div class="top-bar">
+    <span class="top-bar-brand">大數據健康任務</span>
+    <div class="top-bar-actions">
+      <button class="top-bar-btn" onclick="openShareFriendModal()">🤝 推薦</button>
+      <button class="top-bar-btn" onclick="logout()">登出</button>
+    </div>
+  </div>
+  <div style="padding:4px 16px 2px;font-size:12px;color:var(--text-hint)">每日打卡，積累健康資本</div>
+
+  <div class="main-content" style="padding-top:12px">
+
+    <!-- 吉祥物 Hero -->
+    <div class="mascot-hero">
+      <img class="mascot-hero-img" src="img/mascot-main.png" alt="小健">
+      <div class="mascot-hero-info">
+        <div class="mascot-hero-name">小健</div>
+        <div class="mascot-hero-tagline">您的 AI 健康小管家<br>精準觀察 · 智慧分析 · 安心守護</div>
+        <div class="mascot-hero-badges">
+          <span class="mascot-badge">🔬 精準觀察</span>
+          <span class="mascot-badge">📊 智慧分析</span>
+          <span class="mascot-badge">🛡️ 安心守護</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 豬公存錢筒 -->
+    <div class="piggy-section">
+      <div class="piggy-section-title">🐷 健康存錢筒</div>
+      <div class="piggy-section-sub">每完成一項任務，存入一枚健康幣</div>
+
+      <div class="piggy-box piggy-img-wrap">
+        <span class="piggy-emoji">🐷</span>
+        <div id="piggy-count-badge" class="piggy-count-badge">0/100</div>
+      </div>
+
+      <div class="piggy-bar">
+        <div id="piggy-bar-fill" class="piggy-bar-fill"></div>
+      </div>
+      <div class="piggy-bar-labels"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    </div>
+
+    <!-- 會員碼 -->
+    <div class="member-code-row">
+      <span class="member-code-label">我的會員碼</span>
+      <span class="member-code-val" id="main-member-code">-------</span>
+      <button class="copy-btn" onclick="copyText(document.getElementById('main-member-code').textContent)" title="複製">📋</button>
+      <button class="btn-outline" onclick="openShareFriendModal()">邀請朋友</button>
+    </div>
+
+    <!-- 14天任務 -->
+    <div class="task-card">
+      <div class="task-header">
+        <span class="task-header-emoji">⚡</span>
+        <span class="task-header-title">改善腸胃健康 — 14 天計劃</span>
+      </div>
+      <div id="task-list">
+        <div class="empty-state">載入中…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部導覽 -->
+  <nav class="bottom-nav" id="bottom-nav-main">
+    <button class="nav-tab active" data-page="page-main" onclick="showPage('page-main')">
+      <img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁
+    </button>
+    <button class="nav-tab" data-page="page-challenge" onclick="showPage('page-challenge')">
+      <img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測
+    </button>
+    <button class="nav-tab" data-page="page-bottle" onclick="showPage('page-bottle')">
+      <img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶
+    </button>
+    <button class="nav-tab" data-page="page-achievement" onclick="showPage('page-achievement')">
+      <img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就
+    </button>
+    <button class="nav-tab" data-page="page-history" onclick="showPage('page-history')">
+      <img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄
+    </button>
+    <button class="nav-tab" id="nav-admin" data-page="page-admin" onclick="showPage('page-admin')" style="display:none">
+      <img class="nav-tab-icon-img" src="img/tab-6.png" alt="">後台
+    </button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: CHALLENGE ═══ -->
+<div class="page" id="page-challenge">
+  <div class="top-bar">
+    <span class="top-bar-brand">大數據健康檢測</span>
+    <div class="top-bar-actions">
+      <button class="top-bar-btn" onclick="showPage('page-main')">← 返回</button>
+    </div>
+  </div>
+  <div style="padding:2px 16px 0;font-size:12px;color:var(--text-hint)">面舌診檢測</div>
+
+  <div class="challenge-content" style="padding-top:14px">
+
+    <!-- 次數 + 會員碼 -->
+    <div class="credits-bar">
+      <div class="credits-info">⏱ 剩餘次數：<span class="credits-num" id="credits-display">-</span> 次</div>
+      <button class="credit-badge" onclick="openCodeModal()">＋ 添加次數</button>
+    </div>
+
+    <div class="member-bar">
+      <span>會員碼：<span id="member-code-display">-------</span></span>
+      <button class="copy-btn" onclick="copyText(document.getElementById('member-code-display').textContent)">📋</button>
+    </div>
+
+    <!-- 步驟指示 -->
+    <div class="steps" id="steps-bar">
+      <div class="step-dot active" id="sdot-1">1</div>
+      <div class="step-line" id="sline-1"></div>
+      <div class="step-dot" id="sdot-2">2</div>
+      <div class="step-line" id="sline-2"></div>
+      <div class="step-dot" id="sdot-3">3</div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="step-1">
+      <div class="rcard">
+        <div class="section-title">📷 步驟一：臉部照片</div>
+        <p style="font-size:13px;color:var(--text-soft);line-height:1.8;margin-bottom:14px">請上傳清晰的正面面部照片。<br>光線均勻、卸妝自然狀態效果最佳。</p>
+        <div class="upload-zone" id="face-zone">
+          <div class="upload-ring-anim"></div>
+          <span class="upload-icon">📷</span>
+          <div class="upload-text">點擊上傳臉部照片</div>
+          <div class="upload-hint">卸妝、均勻光線效果最佳</div>
+        </div>
+        <input type="file" id="face-input" accept="image/*">
+        <button class="btn-gold" id="btn-step1" style="display:none" onclick="goStep(2)">下一步 →</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step-2" style="display:none">
+      <div class="rcard">
+        <div class="section-title">👅 步驟二：舌頭照片</div>
+        <p style="font-size:13px;color:var(--text-soft);line-height:1.8;margin-bottom:14px">自然伸出舌頭，光線充足拍攝。<br>建議早晨空腹、勿先刷牙進食。</p>
+        <div class="upload-zone" id="tongue-zone">
+          <div class="upload-ring-anim"></div>
+          <span class="upload-icon">👅</span>
+          <div class="upload-text">點擊上傳舌頭照片</div>
+          <div class="upload-hint">建議早晨空腹，自然光下拍攝</div>
+        </div>
+        <input type="file" id="tongue-input" accept="image/*">
+        <button class="btn-gold" id="btn-step2" style="display:none" onclick="goStep(3)">下一步 →</button>
+        <button class="btn-ghost" onclick="goStep(1)">← 返回</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step-3" style="display:none">
+      <div class="rcard">
+        <div class="section-title">✅ 步驟三：確認送出</div>
+        <p style="font-size:13px;color:var(--text-soft);margin-bottom:14px">請確認兩張照片後送出分析。</p>
+        <div class="thumb-row">
+          <div class="thumb-box"><img id="face-thumb" src="" alt="face"><div class="thumb-label">面部照片</div></div>
+          <div class="thumb-box"><img id="tongue-thumb" src="" alt="tongue"><div class="thumb-label">舌部照片</div></div>
+        </div>
+        <div style="background:rgba(196,154,90,.08);border-radius:var(--radius-sm);padding:10px 12px;border-left:3px solid var(--gold-main);font-size:12px;color:var(--text-soft);line-height:1.8;margin-bottom:14px">
+          ⚠️ 診斷前請勿刷舌苔、化濃妝或飲用深色飲品（咖啡、奶茶）<br>以確保 AI 識別準確度
+        </div>
+        <div id="analyze-error" class="error-box" style="display:none"></div>
+        <button class="btn-gold" id="btn-analyze" onclick="startAnalyze()">✦ 開始分析診斷</button>
+        <button class="btn-ghost" onclick="goStep(2)">← 返回</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="step-loading" style="display:none">
+      <div class="loading-card">
+        <div class="loading-ring-wrap">
+          <div class="loading-ring-1"></div>
+          <div class="loading-ring-2"></div>
+        </div>
+        <img class="loading-owl-img" src="img/mascot-analyze.png" alt="AI 分析中">
+        <div class="loading-text">正在進行面舌診分析</div>
+        <div class="loading-sub">AI 正在觀察面部氣色與舌象…</div>
+      </div>
+      <div class="carousel-box" style="margin-top:14px">
+        <div class="carousel-title">改變，只需每天十分鐘</div>
+        <div class="carousel-imgs">
+          <div class="carousel-track-inner" id="carousel-track"></div>
+        </div>
+        <div class="carousel-dots" id="carousel-dots"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-page="page-main" onclick="showPage('page-main')"><img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁</button>
+    <button class="nav-tab active" data-page="page-challenge" onclick="showPage('page-challenge')"><img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測</button>
+    <button class="nav-tab" data-page="page-bottle" onclick="showPage('page-bottle')"><img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶</button>
+    <button class="nav-tab" data-page="page-achievement" onclick="showPage('page-achievement')"><img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就</button>
+    <button class="nav-tab" data-page="page-history" onclick="showPage('page-history')"><img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄</button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: REPORT ═══ -->
+<div class="page" id="page-report">
+  <div class="top-bar">
+    <span class="top-bar-brand">☯ 超艋健康分析報告</span>
+    <div class="top-bar-actions">
+      <button class="top-bar-btn" onclick="showPage('page-history')">📋 紀錄</button>
+    </div>
+  </div>
+
+  <div class="report-content-wrap">
+    <div id="report-content"></div>
+
+    <a href="https://line.me/ti/p/ZC-w2BuPoi" target="_blank" rel="noopener" style="display:block;text-decoration:none;margin-bottom:10px">
+      <div style="width:100%;padding:14px;background:rgba(6,199,85,.1);border:1px solid rgba(6,199,85,.35);border-radius:var(--radius-md);text-align:center;font-size:15px;color:#06C755;letter-spacing:2px;font-weight:700">
+        💬 LINE 聯絡超艋健康團隊
+      </div>
+    </a>
+
+    <div class="action-row">
+      <button class="btn-share" onclick="downloadReport()">📸 下載報告</button>
+      <button class="btn-restart" onclick="restartDiagnosis()">🔄 重新診斷</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-page="page-main" onclick="showPage('page-main')"><img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁</button>
+    <button class="nav-tab active" data-page="page-challenge"><img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測</button>
+    <button class="nav-tab" data-page="page-bottle" onclick="showPage('page-bottle')"><img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶</button>
+    <button class="nav-tab" data-page="page-achievement" onclick="showPage('page-achievement')"><img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就</button>
+    <button class="nav-tab" data-page="page-history" onclick="showPage('page-history')"><img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄</button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: HISTORY ═══ -->
+<div class="page" id="page-history">
+  <div class="top-bar">
+    <span class="top-bar-brand">📋 診斷紀錄</span>
+    <div class="top-bar-actions">
+      <button id="history-admin-btn" class="top-bar-btn admin-only-btn" onclick="showPage('page-admin')" style="display:none;background:rgba(13,92,99,.12);border-color:rgba(13,92,99,.3);font-size:11px;padding:4px 10px">⚙️ 後台</button>
+      <button class="top-bar-btn" onclick="showPage('page-challenge')">＋ 新診斷</button>
+    </div>
+  </div>
+
+  <!-- 字型大小設定 -->
+  <div class="font-size-bar">
+    <span class="font-size-label">文字大小</span>
+    <div class="font-size-toggle">
+      <button id="fs-btn-md" class="fs-btn active" onclick="setFontSize('md')">中</button>
+      <button id="fs-btn-lg" class="fs-btn"        onclick="setFontSize('lg')">大</button>
+    </div>
+  </div>
+
+  <div style="padding:0 16px">
+    <div id="history-list"><div class="empty-state">載入中…</div></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-page="page-main" onclick="showPage('page-main')"><img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁</button>
+    <button class="nav-tab" data-page="page-challenge" onclick="showPage('page-challenge')"><img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測</button>
+    <button class="nav-tab" data-page="page-bottle" onclick="showPage('page-bottle')"><img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶</button>
+    <button class="nav-tab" data-page="page-achievement" onclick="showPage('page-achievement')"><img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就</button>
+    <button class="nav-tab active" data-page="page-history"><img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄</button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: BOTTLE ═══ -->
+<div class="page" id="page-bottle">
+  <div class="top-bar">
+    <span class="top-bar-brand">🫙 健康漂流瓶</span>
+  </div>
+  <div style="padding:0 16px">
+    <div class="bottle-compose">
+      <div class="section-title">發送漂流瓶</div>
+      <textarea class="bottle-textarea" id="bottle-textarea" placeholder="分享你的健康心聲、養生心得或今日感受…（最多 300 字）" maxlength="300"></textarea>
+      <div class="bottle-footer">
+        <select class="bottle-select" id="bottle-category">
+          <option>健康心聲</option>
+          <option>養生心得</option>
+          <option>今日感受</option>
+          <option>飲食記錄</option>
+          <option>運動分享</option>
+        </select>
+        <button class="bottle-send-btn" onclick="sendBottle()">🌊 送出</button>
+      </div>
+    </div>
+    <div class="section-title" style="padding:0">收到的漂流瓶</div>
+    <div id="bottle-list"><div class="empty-state">載入中…</div></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-page="page-main" onclick="showPage('page-main')"><img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁</button>
+    <button class="nav-tab" data-page="page-challenge" onclick="showPage('page-challenge')"><img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測</button>
+    <button class="nav-tab active" data-page="page-bottle"><img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶</button>
+    <button class="nav-tab" data-page="page-achievement" onclick="showPage('page-achievement')"><img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就</button>
+    <button class="nav-tab" data-page="page-history" onclick="showPage('page-history')"><img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄</button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: ACHIEVEMENT ═══ -->
+<div class="page" id="page-achievement">
+  <div class="top-bar">
+    <span class="top-bar-brand">🏆 成就獎章</span>
+  </div>
+  <div style="padding:8px 0">
+    <div class="achievement-grid" id="achievement-grid">
+      <div class="empty-state" style="grid-column:1/-1">載入中…</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-page="page-main" onclick="showPage('page-main')"><img class="nav-tab-icon-img" src="img/tab-1.png" alt="">首頁</button>
+    <button class="nav-tab" data-page="page-challenge" onclick="showPage('page-challenge')"><img class="nav-tab-icon-img" src="img/tab-2.png" alt="">檢測</button>
+    <button class="nav-tab" data-page="page-bottle" onclick="showPage('page-bottle')"><img class="nav-tab-icon-img" src="img/tab-3.png" alt="">漂流瓶</button>
+    <button class="nav-tab active" data-page="page-achievement"><img class="nav-tab-icon-img" src="img/tab-4.png" alt="">成就</button>
+    <button class="nav-tab" data-page="page-history" onclick="showPage('page-history')"><img class="nav-tab-icon-img" src="img/tab-5.png" alt="">記錄</button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: LEADERBOARD ═══ -->
+<div class="page" id="page-leaderboard">
+  <div class="top-bar">
+    <span class="top-bar-brand">🥇 排行榜</span>
+    <div class="top-bar-actions">
+      <button class="top-bar-btn" onclick="showPage('page-main')">← 返回</button>
+    </div>
+  </div>
+  <div style="padding:0 16px">
+    <div id="leaderboard-list"><div class="empty-state">載入中…</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PAGE: ADMIN ═══ -->
+<div class="page" id="page-admin">
+  <div class="top-bar">
+    <span class="top-bar-brand">⚙️ 管理者後台</span>
+    <div class="top-bar-actions">
+      <button class="top-bar-btn" onclick="logout()">登出</button>
+    </div>
+  </div>
+  <div style="padding:0 16px">
+
+    <div class="rcard">
+      <div class="section-title">📊 數據概覽</div>
+      <div id="admin-stats"></div>
+    </div>
+
+    <div class="rcard">
+      <div class="section-title">🔑 密碼設定</div>
+      <div class="code-setting-box">
+        <div class="code-setting-label">+1次 密碼（7位數）</div>
+        <div class="code-setting-row">
+          <input class="code-input" id="admin-code1-input" type="text" maxlength="7" placeholder="7位數字">
+          <button class="btn-update-code" onclick="updateCode(1)">更新</button>
+        </div>
+        <div id="admin-code1-result" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+      </div>
+      <div class="code-setting-box">
+        <div class="code-setting-label">+10次 密碼（7位數）</div>
+        <div class="code-setting-row">
+          <input class="code-input" id="admin-code10-input" type="text" maxlength="7" placeholder="7位數字">
+          <button class="btn-update-code" onclick="updateCode(10)">更新</button>
+        </div>
+        <div id="admin-code10-result" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-hint)">+100次密碼 7540336 為永久固定，不可修改。</div>
+    </div>
+
+    <div class="rcard">
+      <div class="section-title">👥 用戶管理</div>
+      <div id="admin-user-list"><div class="empty-state">載入中…</div></div>
+    </div>
+
+    <button class="btn-outline" style="width:100%;margin-bottom:16px" onclick="showPage('page-leaderboard');loadLeaderboard()">
+      🥇 查看排行榜
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════ MODALS ════════════════════ -->
+
+<!-- 增加次數 Modal -->
+<div class="modal-overlay" id="code-modal">
+  <div class="modal-box">
+    <div class="modal-title">🤝 增加檢測次數</div>
+    <div class="modal-sub">填入朋友的 7 位會員碼<br>每帳號限用一次，最多獲得 28 次</div>
+    <input class="modal-input" id="code-input-field" type="tel" maxlength="7" placeholder="7位會員碼">
+    <div class="modal-result" id="code-modal-result"></div>
+    <button class="btn-gold" onclick="submitCode()">確認填入</button>
+    <div class="modal-divider">或</div>
+    <button class="btn-ghost" style="margin-top:0" onclick="openPaymentModal()">💳 選擇付費方案 →</button>
+    <button class="btn-ghost" onclick="closeCodeModal()">取消</button>
+  </div>
+</div>
+
+<!-- 付費 Modal -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal-box">
+
+    <div id="payment-step1">
+      <div class="modal-title">購買檢測次數</div>
+      <div class="modal-sub">選擇方案，透過 LINE Pay 付款</div>
+      <div class="pay-plan-card" onclick="selectPlan('單次體驗',45,1)">
+        <div class="plan-name">單次體驗</div>
+        <div class="plan-price">NT$ 45 <span style="font-size:14px;font-weight:400">元</span></div>
+        <div class="plan-unit">1 次檢測</div>
+      </div>
+      <div class="pay-plan-card featured" onclick="selectPlan('三次套餐',120,3)">
+        <div class="plan-badge">🔥 最受歡迎</div>
+        <div class="plan-name">三次套餐</div>
+        <div class="plan-price">NT$ 120 <span style="font-size:14px;font-weight:400">元</span></div>
+        <div class="plan-unit">3 次 · 40元/次</div>
+      </div>
+      <div class="pay-plan-card" onclick="selectPlan('十次暢享',399,10)">
+        <div class="plan-name">十次暢享</div>
+        <div class="plan-price">NT$ 399 <span style="font-size:14px;font-weight:400">元</span></div>
+        <div class="plan-unit">10 次 · 39.9元/次</div>
+      </div>
+      <div style="background:var(--bg-secondary);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-hint);line-height:1.8;margin:14px 0">
+        購買前請詳閱服務條款。次數購買後不退費，有效期 365 天。
+      </div>
+      <button class="btn-ghost" onclick="closePaymentModal()">取消</button>
+    </div>
+
+    <div id="payment-step2" style="display:none">
+      <div class="modal-title">LINE Pay 付款</div>
+      <div style="text-align:center;margin-bottom:14px">
+        <div id="payment-plan-name" style="font-size:14px;color:var(--text-soft)"></div>
+        <div id="payment-price" style="font-size:28px;font-weight:700;color:var(--gold-main)"></div>
+      </div>
+      <div style="background:var(--bg-secondary);border-radius:var(--radius-sm);padding:14px;font-size:13px;color:var(--text-mid);line-height:2;margin-bottom:14px">
+        ① 點下方按鈕開啟 LINE 客服<br>
+        ② 告知方案名稱與帳號手機號碼<br>
+        ③ 依指示完成 LINE Pay 轉帳<br>
+        ④ 次數 5 分鐘內生效
+      </div>
+      <a href="https://line.me/ti/p/ZC-w2BuPoi" target="_blank" rel="noopener">
+        <button class="btn-line">💬 LINE 開啟客服付款</button>
+      </a>
+      <button class="btn-ghost" onclick="showPaymentStep1()">← 返回選擇方案</button>
+    </div>
+  </div>
+</div>
+
+<!-- 推薦朋友 Modal -->
+<div class="modal-overlay" id="share-friend-modal">
+  <div class="modal-box">
+    <div class="modal-title">🤝 推薦朋友</div>
+    <div class="modal-sub">分享你的 7 位會員碼給朋友<br>朋友填入後，雙方各獲得 1 次免費檢測</div>
+    <div class="share-code-box">
+      <div class="share-code-big" id="share-code-display">-------</div>
+      <div class="share-code-hint">你的專屬會員碼</div>
+    </div>
+    <button class="btn-gold" onclick="copyText(document.getElementById('share-code-display').textContent)">📋 複製會員碼</button>
+    <button class="btn-ghost" onclick="closeShareFriendModal()">關閉</button>
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<!-- ════════ 漂流瓶訊息 Modal ════════ -->
+<div id="bottle-msg-modal" class="bottle-msg-modal" onclick="closeBottleMessage()">
+  <div class="bottle-msg-card" onclick="event.stopPropagation()">
+    <div class="bottle-msg-top">
+      <span class="bottle-msg-icon">🫙</span>
+      <div class="bottle-msg-meta">
+        <div class="bottle-msg-anon">匿名旅人</div>
+        <div id="bottle-msg-time" class="bottle-msg-time"></div>
+      </div>
+      <span id="bottle-msg-cat" class="bottle-msg-cat"></span>
+    </div>
+    <p id="bottle-msg-text" class="bottle-msg-text"></p>
+    <button class="bottle-msg-close" onclick="closeBottleMessage()">關閉</button>
+  </div>
+</div>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script src="js/config.js?v=8"></script>
+<script src="js/utils.js?v=8"></script>
+<script src="js/report.js?v=8"></script>
+<script src="js/analyze.js?v=8"></script>
+<script src="js/features.js?v=8"></script>
+<script src="js/admin.js?v=8"></script>
+<script src="js/auth.js?v=8"></script>
+<script>
+// 上傳區初始化（DOM 就緒後）
+document.addEventListener('DOMContentLoaded', () => {
+  initUploads();
+});
+</script>
+</body>
+</html>

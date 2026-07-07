@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>超凡艋舺：天賦成長挑戰</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#001b44;--blue:#002f6c;--blue-mid:#224583;
+  --gold:#FFB800;--gold-dk:#E6A500;--gold-lt:#FFD700;
+  --bg:#f8f9fa;--white:#ffffff;
+  --gray:#747781;--gray-lt:#f3f4f5;
+  --text:#191c1d;--text2:#434750;
+  --green:#2e7d32;--green-lt:#e8f5e9;
+}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--bg);min-height:100vh;
+  max-width:430px;margin:0 auto;
+  overflow-x:hidden;color:var(--text);
+}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── HOME ── */
+.home-header{
+  background:linear-gradient(150deg,var(--navy) 0%,var(--blue) 100%);
+  padding:48px 20px 28px;color:#fff;position:relative;overflow:hidden;
+}
+.home-header::before{
+  content:'';position:absolute;top:-50px;right:-50px;
+  width:220px;height:220px;background:rgba(255,184,0,.07);border-radius:50%;
+}
+.home-header::after{
+  content:'';position:absolute;bottom:-70px;left:-60px;
+  width:260px;height:260px;background:rgba(255,184,0,.04);border-radius:50%;
+}
+.profile-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative;z-index:1}
+.avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;border:2.5px solid rgba(255,255,255,.3);flex-shrink:0;
+}
+.profile-info{flex:1}
+.profile-name{font-size:17px;font-weight:700;color:#fff;display:block}
+.profile-tag{font-size:11px;color:rgba(255,255,255,.65);font-family:'Plus Jakarta Sans',sans-serif}
+.tier-badge{
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:var(--navy);font-size:11px;font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  padding:4px 10px;border-radius:20px;letter-spacing:.05em;
+}
+.prog-card{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.15);border-radius:16px;
+  padding:16px;position:relative;z-index:1;
+}
+.prog-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-label span:first-child{
+  font-size:12px;color:rgba(255,255,255,.75);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+}
+.prog-pct{font-size:20px;font-weight:700;color:var(--gold)}
+.prog-track{background:rgba(255,255,255,.15);border-radius:10px;height:10px;overflow:hidden}
+.prog-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold),var(--gold-lt));
+  border-radius:10px;transition:width .9s ease;
+}
+.prog-meta{margin-top:8px;font-size:11px;color:rgba(255,255,255,.55);display:flex;justify-content:space-between}
+
+.gold-bar{
+  background:#fff;border-radius:12px;padding:12px 16px;
+  margin:16px 20px 0;display:flex;align-items:center;gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  border:1px solid rgba(255,184,0,.2);
+}
+.gold-icon{font-size:24px}
+.gold-info{flex:1}
+.gold-lbl{font-size:11px;color:var(--gray);font-family:'Plus Jakarta Sans',sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.gold-amt{font-size:22px;font-weight:700;color:var(--navy)}
+.streak-badge{
+  background:var(--gold);color:var(--navy);
+  font-size:11px;font-weight:700;padding:4px 9px;
+  border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;
+}
+
+.map-section{flex:1;padding:20px 20px 8px}
+.map-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.map-sub{font-size:12px;color:var(--gray);margin-bottom:20px}
+
+/* Hex map */
+.hex-map{display:flex;flex-direction:column;align-items:center;gap:0;position:relative}
+.hex-row{display:flex;gap:10px;margin-bottom:-12px}
+.hex-row.offset{margin-left:55px}
+.hex-node{position:relative;width:86px;height:100px;cursor:pointer;transition:transform .2s}
+.hex-node:hover:not(.locked){transform:scale(1.06)}
+.hex-node.locked{cursor:default;opacity:.6}
+.hex-shape{
+  width:86px;height:100px;
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all .3s;
+}
+.hex-node.done .hex-shape{background:linear-gradient(135deg,#1a6e2e,#2e7d32);box-shadow:0 4px 16px rgba(46,125,50,.4)}
+.hex-node.locked .hex-shape{background:linear-gradient(135deg,#c8cacc,#9ea3a8)}
+.hex-icon{font-size:22px;margin-bottom:2px}
+.hex-lbl{font-size:9px;font-weight:700;color:#fff;text-align:center;line-height:1.2;padding:0 6px;font-family:'Plus Jakarta Sans',sans-serif}
+.hex-num{
+  position:absolute;top:-8px;right:-4px;
+  background:var(--gold);color:var(--navy);
+  font-size:10px;font-weight:700;width:20px;height:20px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.hex-node.done .hex-num{background:#fff;color:var(--green)}
+.hex-stars{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);display:flex;gap:1px}
+.hex-star{font-size:9px}
+.hex-connector{width:2px;height:24px;background:linear-gradient(to bottom,#c4c6d2,var(--blue-mid));margin:0 auto;opacity:.35}
+@keyframes pulse-hex{
+  0%{box-shadow:0 4px 16px rgba(0,47,108,.5),0 0 0 0 rgba(255,184,0,.5)}
+  70%{box-shadow:0 4px 16px rgba(0,47,108,.5),0 0 0 14px rgba(255,184,0,0)}
+  100%{box-shadow:0 4px 16px rgba(0,47,108,.5),0 0 0 0 rgba(255,184,0,0)}
+}
+.hex-node.next-up .hex-shape{animation:pulse-hex 2s infinite}
+
+.bottom-nav{
+  background:#fff;border-top:1px solid rgba(0,0,0,.06);
+  padding:8px 0 20px;display:flex;justify-content:space-around;flex-shrink:0;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;cursor:pointer;flex:1}
+.nav-icon{font-size:20px}
+.nav-lbl{font-size:10px;color:var(--gray);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600}
+.nav-item.active .nav-lbl{color:var(--blue)}
+
+/* ── STAGE ── */
+.stage-header{
+  background:linear-gradient(150deg,var(--navy) 0%,var(--blue) 100%);
+  padding:48px 20px 20px;color:#fff;flex-shrink:0;
+}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.75);cursor:pointer;margin-bottom:14px}
+.stage-title{font-size:20px;font-weight:700;color:#fff;margin-bottom:3px}
+.stage-sub{font-size:13px;color:rgba(255,255,255,.65)}
+.score-row{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.1);padding:6px 12px;
+  border-radius:20px;margin-top:10px;display:inline-flex;
+}
+.score-row span{font-size:13px;color:rgba(255,255,255,.75)}
+.score-row strong{color:var(--gold)}
+.timer-track{width:100%;height:5px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:10px;overflow:hidden}
+.timer-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .1s linear}
+.stage-body{flex:1;padding:20px;overflow-y:auto;padding-bottom:40px}
+
+/* Cards */
+.inst-card{
+  background:#fff;border-radius:14px;padding:14px 16px;
+  margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.inst-icon2{font-size:26px;flex-shrink:0}
+.inst-title2{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.inst-txt{font-size:13px;color:var(--text2);line-height:1.5}
+
+/* Quiz */
+.quiz-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.q-num{font-size:11px;font-weight:700;color:var(--blue);font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.q-text{font-size:15px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:14px}
+.q-opts{display:flex;flex-direction:column;gap:9px}
+.q-opt{
+  padding:11px 14px;border-radius:11px;border:2px solid var(--gray-lt);
+  font-size:13px;color:var(--text2);cursor:pointer;transition:all .18s;
+  background:var(--gray-lt);
+}
+.q-opt:hover:not(.disabled){border-color:var(--blue);background:#fff;color:var(--blue)}
+.q-opt.correct{border-color:var(--green);background:var(--green-lt);color:var(--green);font-weight:600}
+.q-opt.wrong{border-color:#c62828;background:#ffebee;color:#c62828}
+.q-opt.disabled{cursor:default}
+
+/* Memory */
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mem-card{aspect-ratio:1;border-radius:11px;cursor:pointer;perspective:800px;transition:transform .15s}
+.mem-card:hover:not(.matched):not(.flipped){transform:scale(1.04)}
+.mem-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .45s;border-radius:11px}
+.mem-card.flipped .mem-inner,.mem-card.matched .mem-inner{transform:rotateY(180deg)}
+.mem-face,.mem-back{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  border-radius:11px;display:flex;align-items:center;justify-content:center;
+  backface-visibility:hidden;
+}
+.mem-face{background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;font-size:18px;font-weight:700}
+.mem-back{background:#fff;border:2px solid var(--gray-lt);font-size:26px;transform:rotateY(180deg)}
+.mem-card.matched .mem-back{background:var(--green-lt);border-color:var(--green)}
+
+/* Tap */
+.tap-arena{
+  background:#fff;border-radius:14px;min-height:280px;
+  position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.tap-hdr{text-align:center;font-size:16px;font-weight:700;color:var(--blue);padding:14px;border-bottom:1px solid var(--gray-lt)}
+.tap-field{position:relative;height:260px}
+.tap-bubble{
+  position:absolute;width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;cursor:pointer;transition:transform .12s;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+  animation:bpop .25s ease;
+}
+.tap-bubble:hover{transform:scale(1.12)}
+.tap-bubble.good{background:linear-gradient(135deg,#1565c0,#1976d2)}
+.tap-bubble.bad{background:linear-gradient(135deg,#b71c1c,#c62828)}
+@keyframes bpop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* Match */
+.match-wrap{display:flex;flex-direction:column;gap:10px}
+.match-cols{display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:center}
+.match-item{
+  background:#fff;border-radius:11px;padding:11px 10px;
+  text-align:center;font-size:12px;cursor:pointer;
+  border:2px solid var(--gray-lt);transition:all .18s;line-height:1.4;
+}
+.match-item:hover{border-color:var(--blue)}
+.match-item.sel{border-color:var(--gold);background:#fffde7}
+.match-item.matched{border-color:var(--green);background:var(--green-lt);cursor:default}
+.match-arrow{text-align:center;color:var(--gray);font-size:14px}
+.match-hint{text-align:center;margin-top:12px;font-size:12px;color:var(--gray)}
+
+.btn-start{
+  background:linear-gradient(135deg,var(--blue),var(--navy));
+  color:#fff;font-size:15px;font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  padding:15px;border-radius:50px;border:none;
+  cursor:pointer;width:100%;margin-top:8px;
+  box-shadow:0 4px 16px rgba(0,47,108,.3);
+}
+
+/* ── RESULT ── */
+.result-wrap{
+  background:linear-gradient(150deg,var(--navy),var(--blue));
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;padding:60px 24px 48px;
+  color:#fff;text-align:center;
+}
+.res-icon{font-size:60px;margin-bottom:14px;animation:popin .5s cubic-bezier(.175,.885,.32,1.275)}
+.res-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.res-sub{font-size:14px;color:rgba(255,255,255,.65);margin-bottom:28px}
+.stars-row{display:flex;gap:10px;margin-bottom:28px}
+.r-star{font-size:44px;opacity:.25;transition:all .35s}
+.r-star.earned{opacity:1;animation:starpop .4s cubic-bezier(.175,.885,.32,1.275) forwards}
+@keyframes starpop{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+.reward-card{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.15);border-radius:18px;
+  padding:20px;width:100%;max-width:300px;margin-bottom:28px;
+}
+.rw-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.rw-row:last-child{border-bottom:none}
+.rw-lbl{font-size:13px;color:rgba(255,255,255,.65)}
+.rw-val{font-size:15px;font-weight:700;color:var(--gold)}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:var(--navy);font-size:15px;font-weight:700;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  padding:15px 44px;border-radius:50px;border:none;cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,184,0,.4);transition:transform .2s,box-shadow .2s;
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(255,184,0,.5)}
+.btn-ghost{
+  background:rgba(255,255,255,.1);color:#fff;font-size:14px;font-weight:600;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  padding:13px 36px;border-radius:50px;border:1px solid rgba(255,255,255,.2);
+  cursor:pointer;margin-top:10px;
+}
+
+/* ── VICTORY ── */
+.victory-wrap{
+  background:linear-gradient(150deg,var(--navy),#002855);
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;padding:52px 24px 48px;
+  color:#fff;text-align:center;
+}
+.v-badge{
+  width:130px;height:130px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:60px;margin-bottom:20px;
+  box-shadow:0 0 0 10px rgba(255,184,0,.14),0 0 0 22px rgba(255,184,0,.07);
+  animation:badge-spin .8s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes badge-spin{from{transform:scale(0) rotate(-180deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes popin{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.v-title{font-size:28px;font-weight:700;margin-bottom:6px}
+.v-sub{font-size:14px;color:rgba(255,255,255,.65);margin-bottom:4px}
+.v-name{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:24px}
+.rank-pill{
+  background:linear-gradient(135deg,var(--gold),#ff8f00);
+  color:var(--navy);font-weight:700;padding:8px 22px;
+  border-radius:50px;font-size:13px;margin-bottom:24px;
+  font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.04em;
+}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:300px;margin-bottom:28px}
+.stat-card{background:rgba(255,255,255,.08);border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,.1)}
+.stat-val{font-size:26px;font-weight:700;color:var(--gold)}
+.stat-lbl{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px}
+
+/* Particles & Score pop */
+.particle{position:fixed;pointer-events:none;z-index:999;animation:pfly 1.2s forwards ease-out}
+@keyframes pfly{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(720deg) scale(0);opacity:0}}
+.score-pop{position:fixed;pointer-events:none;z-index:999;font-size:18px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.3);animation:srise .9s forwards ease-out}
+@keyframes srise{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-55px);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ════ HOME ════ -->
+<div class="screen active" id="homeScreen">
+  <div class="home-header">
+    <div class="profile-row">
+      <div class="avatar">🌟</div>
+      <div class="profile-info">
+        <span class="profile-name">超凡艋舺挑戰者</span>
+        <span class="profile-tag">#天賦成長 &nbsp;#策略達人</span>
+      </div>
+      <div class="tier-badge" id="tierBadge">銅牌</div>
+    </div>
+    <div class="prog-card">
+      <div class="prog-label">
+        <span>整體進度</span>
+        <span class="prog-pct" id="overallPct">0%</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="overallBar" style="width:0%"></div></div>
+      <div class="prog-meta">
+        <span id="progMeta">尚未開始挑戰</span>
+        <span>挑戰期：30天</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="gold-bar">
+    <div class="gold-icon">🏆</div>
+    <div class="gold-info">
+      <div class="gold-lbl">累積金幣</div>
+      <div class="gold-amt" id="goldDisplay">0</div>
+    </div>
+    <div class="streak-badge">🔥 第1天</div>
+  </div>
+
+  <div class="map-section">
+    <div class="map-title">🗺️ 成長地圖</div>
+    <div class="map-sub">點擊六邊形節點開始挑戰關卡</div>
+    <div class="hex-map" id="hexMap"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active"><div class="nav-icon">🗺️</div><div class="nav-lbl">旅程</div></div>
+    <div class="nav-item"><div class="nav-icon">⚡</div><div class="nav-lbl">任務</div></div>
+    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-lbl">分析</div></div>
+    <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-lbl">個人</div></div>
+  </div>
+</div>
+
+<!-- ════ STAGE ════ -->
+<div class="screen" id="stageScreen">
+  <div class="stage-header">
+    <div class="back-btn" onclick="goHome()">← 返回地圖</div>
+    <div class="stage-title" id="stageTitle">第一關</div>
+    <div class="stage-sub" id="stageSub">會議心得挑戰</div>
+    <div class="score-row">
+      <span>得分：</span><strong id="curScore">0</strong>
+      <span>&nbsp;|&nbsp;金幣：</span><strong id="curGold">0</strong><span> 🪙</span>
+    </div>
+    <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+  </div>
+  <div class="stage-body" id="stageBody"></div>
+</div>
+
+<!-- ════ RESULT ════ -->
+<div class="screen" id="resultScreen">
+  <div class="result-wrap">
+    <div class="res-icon" id="resIcon">🎉</div>
+    <div class="res-title" id="resTitle">關卡完成！</div>
+    <div class="res-sub" id="resSub">表現優異，繼續努力！</div>
+    <div class="stars-row">
+      <div class="r-star" id="rs1">⭐</div>
+      <div class="r-star" id="rs2">⭐</div>
+      <div class="r-star" id="rs3">⭐</div>
+    </div>
+    <div class="reward-card">
+      <div class="rw-row"><span class="rw-lbl">獲得金幣</span><span class="rw-val" id="rwGold">+200 🪙</span></div>
+      <div class="rw-row"><span class="rw-lbl">正確率</span><span class="rw-val" id="rwAcc">100%</span></div>
+      <div class="rw-row"><span class="rw-lbl">獲得星星</span><span class="rw-val" id="rwStars">⭐⭐⭐</span></div>
+      <div class="rw-row"><span class="rw-lbl">解鎖成就</span><span class="rw-val" id="rwBadge">🏅 達人</span></div>
+    </div>
+    <button class="btn-gold" id="nextBtn" onclick="nextStage()">繼續下一關 →</button>
+    <button class="btn-ghost" onclick="goHome()">返回地圖</button>
+  </div>
+</div>
+
+<!-- ════ VICTORY ════ -->
+<div class="screen" id="victoryScreen">
+  <div class="victory-wrap">
+    <div class="v-badge">🏆</div>
+    <div class="v-title">恭喜完成挑戰！</div>
+    <div class="v-sub">你已達成</div>
+    <div class="v-name">超凡艋舺·天賦成長挑戰</div>
+    <div class="rank-pill" id="finalRank">✨ 鑽石級達人</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="finGold">0</div><div class="stat-lbl">總金幣</div></div>
+      <div class="stat-card"><div class="stat-val" id="finStars">0</div><div class="stat-lbl">總星星</div></div>
+      <div class="stat-card"><div class="stat-val" id="finAcc">0%</div><div class="stat-lbl">平均正確率</div></div>
+      <div class="stat-card"><div class="stat-val">6</div><div class="stat-lbl">完成關卡</div></div>
+    </div>
+    <button class="btn-gold" onclick="restartGame()">再玩一次 🔄</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   GAME DATA
+═══════════════════════════════════ */
+const STAGES = [
+  {
+    id:1, title:'第一關', sub:'會議心得測驗', icon:'📋',
+    color:'linear-gradient(135deg,#1565c0,#1976d2)',
+    reward:150, badge:'🏅 會議達人', type:'quiz',
+    inst:{icon:'💡',title:'如何作答',text:'閱讀每道題目，選擇最正確的答案。每答對一題即獲得積分！'},
+    data:{
+      questions:[
+        {q:'參加業務會議後，最重要的第一步是什麼？',
+         opts:['立刻休息恢復精力','整理心得並記錄重點行動','等待上司指示再行動','分享到社群媒體'],correct:1},
+        {q:'在超凡艋舺挑戰中「天賦成長」的核心精神是？',
+         opts:['快速賺錢立即致富','持續學習以行動創造成果','等待機會被動接受','模仿他人照抄策略'],correct:1},
+        {q:'遇到業績瓶頸時最有效的方法是？',
+         opts:['立刻放棄另謀出路','分析問題根源調整策略','責怪市場環境不好','只增加時間不改方法'],correct:1},
+      ]
+    }
+  },
+  {
+    id:2, title:'第二關', sub:'產品示範記憶配對', icon:'🎯',
+    color:'linear-gradient(135deg,#6a1b9a,#7b1fa2)',
+    reward:200, badge:'🎯 展示達人', type:'memory',
+    inst:{icon:'🃏',title:'翻牌配對',text:'翻開卡片找到相同的圖案！記住位置，盡快完成所有配對。'},
+    data:{pairs:['🌟','💎','🚀','🌈','⚡','🏆','🎪','🌺']}
+  },
+  {
+    id:3, title:'第三關', sub:'邀約名單速點挑戰', icon:'👥',
+    color:'linear-gradient(135deg,#00695c,#00796b)',
+    reward:250, badge:'👥 人脈王', type:'tap',
+    inst:{icon:'👆',title:'快速邀約',text:'點擊藍色聯絡人頭像完成邀約！避免點到紅色干擾者，15秒內盡量多邀！'},
+    data:{
+      duration:15,
+      good:['👩','👨','👱','🧑','👲','🧔','👩‍💼','👨‍💼'],
+      bad:['😡','🙅','🚫']
+    }
+  },
+  {
+    id:4, title:'第四關', sub:'產品推廣配對挑戰', icon:'📦',
+    color:'linear-gradient(135deg,#e65100,#f57c00)',
+    reward:300, badge:'📦 推廣達人', type:'match',
+    inst:{icon:'🔗',title:'產品配對',text:'先點左側產品，再點右側說明完成配對！全部配對正確即過關。'},
+    data:{
+      pairs:[
+        {left:'🥤 紐崔萊',right:'優質天然營養補充'},
+        {left:'💊 雙X能量',right:'提升活力與專注力'},
+        {left:'🧴 雅典娜',right:'頂級護膚保養方案'},
+        {left:'🏠 家居清潔',right:'環保高效去汙配方'},
+      ]
+    }
+  },
+  {
+    id:5, title:'第五關', sub:'常客建立策略測驗', icon:'🤝',
+    color:'linear-gradient(135deg,#1b5e20,#2e7d32)',
+    reward:350, badge:'🤝 客戶之星', type:'quiz',
+    inst:{icon:'💡',title:'策略選擇',text:'根據情境選擇最佳的客戶維繫策略，建立穩固的常客關係！'},
+    data:{
+      questions:[
+        {q:'客戶購買後維持良好關係最重要的行動是？',
+         opts:['等客戶再次聯絡你','定期主動問候並關心使用成效','立刻推銷下一個產品','送禮物討好客戶'],correct:1},
+        {q:'客戶反映產品效果不如預期你應該？',
+         opts:['解釋是客戶使用方式錯誤','傾聽問題提供使用建議並跟進','直接退款了事','轉移話題不再提及'],correct:1},
+        {q:'如何讓客戶成為你的品牌大使？',
+         opts:['給予高額佣金','提供真實使用見證機會和良好體驗','要求客戶幫你宣傳','降低產品售價'],correct:1},
+      ]
+    }
+  },
+  {
+    id:6, title:'第六關', sub:'三個月成長計畫', icon:'🗓️',
+    color:'linear-gradient(135deg,#880e4f,#ad1457)',
+    reward:400, badge:'🏆 超凡達人', type:'quiz',
+    inst:{icon:'📅',title:'制定計畫',text:'為你的超凡挑戰制定三個月行動計畫！選擇最能創造成果的策略。'},
+    data:{
+      questions:[
+        {q:'【第一個月】最關鍵的行動優先項目是？',
+         opts:['廣泛宣傳增加曝光度','紮實建立5位核心客戶關係','立刻衝刺業績數字','參加所有培訓課程'],correct:1},
+        {q:'【第二個月】鞏固成果的最佳策略是？',
+         opts:['維持現狀不做改變','分析第一月成效優化薄弱環節','換一個完全不同的策略','增加工作時數解決問題'],correct:1},
+        {q:'【第三個月】達到「超凡」的關鍵行動是？',
+         opts:['休息等待新機會','複製成功模式並培育新夥伴','獨自衝刺不需團隊','降低標準確保達標'],correct:1},
+      ]
+    }
+  },
+];
+
+/* ═══════════════════════════════════
+   STATE
+═══════════════════════════════════ */
+let G = {
+  gold:0,
+  prog:[0,-1,-1,-1,-1,-1], // 0=open,-1=locked,1=done
+  stars:[0,0,0,0,0,0],
+  scores:[0,0,0,0,0,0],
+  cur:0,
+  score:0,
+  goldEarned:0,
+  timerID:null,
+  tapID:null,
+  timeLeft:0,
+  maxTime:60,
+};
+
+/* ═══════════════════════════════════
+   HOME
+═══════════════════════════════════ */
+function nextOpenStage(){
+  for(let i=0;i<G.prog.length;i++) if(G.prog[i]===0) return i;
+  return -1;
+}
+
+function renderMap(){
+  const map=document.getElementById('hexMap');
+  map.innerHTML='';
+  const layout=[[0],[1,2],[3],[4,5]];
+  layout.forEach((row,ri)=>{
+    const rDiv=document.createElement('div');
+    rDiv.className='hex-row'+(row.length>1&&ri%2===1?' offset':'');
+    if(row.length===1) rDiv.style.justifyContent='center';
+    row.forEach(si=>{
+      const s=STAGES[si];
+      const p=G.prog[si];
+      const stars=G.stars[si];
+      const isNext=si===nextOpenStage();
+      const cls='hex-node'+(p===1?' done':p===-1?' locked':isNext?' next-up':'');
+      const d=document.createElement('div');
+      d.className=cls;
+      if(p!==-1) d.onclick=()=>openStage(si);
+      const iconTxt=p===1?'✅':p===-1?'🔒':s.icon;
+      let starsHtml='';
+      if(stars>0) starsHtml='<div class="hex-stars">'+('⭐'.repeat(stars))+'</div>';
+      d.innerHTML=`
+        <div class="hex-shape" style="${p!==-1&&p!==1?'background:'+s.color:''}">
+          <div class="hex-icon">${iconTxt}</div>
+          <div class="hex-lbl">${s.title}</div>
+        </div>
+        <div class="hex-num">${si+1}</div>${starsHtml}`;
+      rDiv.appendChild(d);
+    });
+    map.appendChild(rDiv);
+    if(ri<layout.length-1){
+      const conn=document.createElement('div');
+      conn.className='hex-connector';
+      map.appendChild(conn);
+    }
+  });
+}
+
+function updateHome(){
+  const done=G.prog.filter(x=>x===1).length;
+  const pct=Math.round(done/STAGES.length*100);
+  document.getElementById('overallPct').textContent=pct+'%';
+  document.getElementById('overallBar').style.width=pct+'%';
+  document.getElementById('goldDisplay').textContent=G.gold.toLocaleString();
+  const nx=nextOpenStage();
+  document.getElementById('progMeta').textContent=nx>=0?`下一關：${STAGES[nx].sub}`:'全部完成！🎊';
+  const tier=pct>=100?'鑽石':pct>=66?'金牌':pct>=33?'銀牌':'銅牌';
+  document.getElementById('tierBadge').textContent=tier;
+}
+
+/* ═══════════════════════════════════
+   OPEN STAGE
+═══════════════════════════════════ */
+function openStage(si){
+  G.cur=si; G.score=0; G.goldEarned=0;
+  const s=STAGES[si];
+  document.getElementById('stageTitle').textContent=s.title+'：'+s.sub;
+  document.getElementById('stageSub').textContent=getTypeLabel(s.type);
+  document.getElementById('curScore').textContent='0';
+  document.getElementById('curGold').textContent='0';
+  document.getElementById('timerFill').style.background='var(--gold)';
+  buildStage(s);
+  showScreen('stageScreen');
+}
+function getTypeLabel(t){return{quiz:'📝 知識測驗',memory:'🃏 記憶配對',tap:'👆 速度挑戰',match:'🔗 配對遊戲'}[t]||''}
+
+/* ═══════════════════════════════════
+   STAGE BUILDER
+═══════════════════════════════════ */
+function buildStage(s){
+  const body=document.getElementById('stageBody');
+  body.innerHTML=`
+    <div class="inst-card">
+      <div class="inst-icon2">${s.inst.icon}</div>
+      <div><div class="inst-title2">${s.inst.title}</div><div class="inst-txt">${s.inst.text}</div></div>
+    </div>`;
+  if(s.type==='quiz') buildQuiz(s,body);
+  else if(s.type==='memory') buildMemory(s,body);
+  else if(s.type==='tap') buildTap(s,body);
+  else if(s.type==='match') buildMatch(s,body);
+}
+
+/* ── QUIZ ── */
+let QS={cur:0,correct:0,total:0,answered:[]};
+function buildQuiz(s,c){
+  QS={cur:0,correct:0,total:s.data.questions.length,answered:[]};
+  startTimer(s.data.questions.length*20);
+  s.data.questions.forEach((q,qi)=>{
+    const card=document.createElement('div');
+    card.className='quiz-card';
+    card.innerHTML=`
+      <div class="q-num">問題 ${qi+1} / ${QS.total}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="q-opts">
+        ${q.opts.map((o,oi)=>`<div class="q-opt" id="q${qi}o${oi}" onclick="answerQ(${qi},${oi},${q.correct})">${o}</div>`).join('')}
+      </div>`;
+    c.appendChild(card);
+  });
+  const btn=document.createElement('div');
+  btn.style.padding='8px 0 40px';
+  btn.innerHTML=`<button class="btn-start" onclick="submitQuiz()">提交答案 ✓</button>`;
+  c.appendChild(btn);
+}
+function answerQ(qi,oi,correct){
+  if(QS.answered.includes(qi)) return;
+  QS.answered.push(qi);
+  const ok=oi===correct;
+  STAGES[G.cur].data.questions[qi].opts.forEach((_,i)=>{
+    const el=document.getElementById(`q${qi}o${i}`);
+    el.classList.add('disabled');
+    if(i===correct) el.classList.add('correct');
+    else if(i===oi&&!ok) el.classList.add('wrong');
+  });
+  if(ok){QS.correct++;addScore(50);scorePop('+50','#FFB800');}
+  else scorePop('✗','#ef5350');
+  if(QS.answered.length===QS.total) setTimeout(submitQuiz,700);
+}
+function submitQuiz(){
+  stopTimer();
+  const acc=Math.round(QS.correct/QS.total*100);
+  showResult(acc===100?3:acc>=66?2:1,acc);
+}
+
+/* ── MEMORY ── */
+let MS={flipped:[],matched:0,total:0,canFlip:true,t0:0};
+function buildMemory(s,c){
+  const pairs=[...s.data.pairs];
+  const all=[...pairs,...pairs].sort(()=>Math.random()-.5);
+  MS={flipped:[],matched:0,total:pairs.length,canFlip:true,t0:Date.now()};
+  startTimer(90);
+  const grid=document.createElement('div');
+  grid.className='mem-grid';
+  all.forEach((em,i)=>{
+    const card=document.createElement('div');
+    card.className='mem-card';
+    card.dataset.em=em;
+    card.innerHTML=`<div class="mem-inner"><div class="mem-face">?</div><div class="mem-back">${em}</div></div>`;
+    card.onclick=()=>flipCard(card);
+    grid.appendChild(card);
+  });
+  c.appendChild(grid);
+}
+function flipCard(card){
+  if(!MS.canFlip||card.classList.contains('flipped')||card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  MS.flipped.push(card);
+  if(MS.flipped.length===2){
+    MS.canFlip=false;
+    const[a,b]=MS.flipped;
+    if(a.dataset.em===b.dataset.em){
+      a.classList.add('matched'); b.classList.add('matched');
+      MS.matched++; addScore(100); scorePop('+100 配對！','#FFB800');
+      MS.flipped=[]; MS.canFlip=true;
+      if(MS.matched===MS.total){
+        stopTimer();
+        const t=Math.round((Date.now()-MS.t0)/1000);
+        setTimeout(()=>showResult(t<30?3:t<60?2:1,100),400);
+      }
+    } else {
+      setTimeout(()=>{a.classList.remove('flipped');b.classList.remove('flipped');MS.flipped=[];MS.canFlip=true;},900);
+    }
+  }
+}
+
+/* ── TAP ── */
+let TS={score:0};
+function buildTap(s,c){
+  TS={score:0};
+  const arena=document.createElement('div');
+  arena.className='tap-arena';
+  arena.innerHTML=`<div class="tap-hdr" id="tapHdr">點擊藍色頭像邀約！👥</div><div class="tap-field" id="tapField"></div>`;
+  c.appendChild(arena);
+  startTimer(s.data.duration);
+  let cnt=0;
+  G.tapID=setInterval(()=>{
+    if(cnt>=25){clearInterval(G.tapID);return;} cnt++;
+    spawnBubble(s.data);
+  },700);
+}
+function spawnBubble(d){
+  const field=document.getElementById('tapField');
+  if(!field) return;
+  const isGood=Math.random()>.25;
+  const b=document.createElement('div');
+  b.className=`tap-bubble ${isGood?'good':'bad'}`;
+  b.style.left=Math.max(8,Math.random()*(field.offsetWidth-70))+'px';
+  b.style.top=Math.max(8,Math.random()*(field.offsetHeight-70))+'px';
+  b.textContent=isGood?d.good[Math.floor(Math.random()*d.good.length)]:d.bad[Math.floor(Math.random()*d.bad.length)];
+  b.onclick=e=>{
+    e.stopPropagation();
+    if(isGood){addScore(20);TS.score++;scorePop('+20','#FFB800');}
+    else{addScore(-10);scorePop('-10','#ef5350');}
+    const hdr=document.getElementById('tapHdr');
+    if(hdr) hdr.textContent=`邀約達成 ${TS.score} 人！👥`;
+    b.remove();
+  };
+  field.appendChild(b);
+  setTimeout(()=>{if(b.parentNode)b.remove();},2200);
+}
+
+/* ── MATCH ── */
+let MH={sel:null,matched:0,total:0};
+function buildMatch(s,c){
+  MH={sel:null,matched:0,total:s.data.pairs.length};
+  startTimer(60);
+  const rights=s.data.pairs.map(p=>p.right).sort(()=>Math.random()-.5);
+  const wrap=document.createElement('div');
+  wrap.className='match-wrap';
+  s.data.pairs.forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.className='match-cols';
+    row.innerHTML=`
+      <div class="match-item" id="L${i}" data-idx="${i}" data-side="L" onclick="doMatch(this)">${p.left}</div>
+      <div class="match-arrow">→</div>
+      <div class="match-item" id="R${i}" data-val="${rights[i]}" data-side="R" onclick="doMatch(this)">${rights[i]}</div>`;
+    wrap.appendChild(row);
+  });
+  const hint=document.createElement('div');
+  hint.className='match-hint';
+  hint.textContent='先選左側產品，再選右側說明';
+  wrap.appendChild(hint);
+  c.appendChild(wrap);
+}
+function doMatch(el){
+  if(el.classList.contains('matched')) return;
+  const side=el.dataset.side;
+  if(!MH.sel){
+    if(side!=='L') return;
+    document.querySelectorAll('.match-item.sel').forEach(e=>e.classList.remove('sel'));
+    el.classList.add('sel'); MH.sel=el;
+  } else {
+    if(side==='L'){
+      MH.sel.classList.remove('sel');
+      el.classList.add('sel'); MH.sel=el; return;
+    }
+    const leftIdx=parseInt(MH.sel.dataset.idx);
+    const correctRight=STAGES[G.cur].data.pairs[leftIdx].right;
+    if(el.dataset.val===correctRight){
+      MH.sel.classList.remove('sel');
+      MH.sel.classList.add('matched');
+      el.classList.add('matched');
+      MH.matched++; addScore(75); scorePop('+75 配對！','#FFB800');
+      if(MH.matched===MH.total){stopTimer();setTimeout(()=>showResult(3,100),400);}
+    } else {
+      el.style.borderColor='#c62828';
+      setTimeout(()=>el.style.borderColor='',600);
+      scorePop('✗ 錯誤！','#ef5350');
+    }
+    MH.sel.classList.remove('sel'); MH.sel=null;
+  }
+}
+
+/* ═══════════════════════════════════
+   TIMER
+═══════════════════════════════════ */
+function startTimer(sec){
+  G.maxTime=sec; G.timeLeft=sec;
+  clearInterval(G.timerID);
+  document.getElementById('timerFill').style.width='100%';
+  document.getElementById('timerFill').style.background='var(--gold)';
+  G.timerID=setInterval(()=>{
+    G.timeLeft--;
+    const pct=G.timeLeft/G.maxTime*100;
+    document.getElementById('timerFill').style.width=pct+'%';
+    if(pct<30) document.getElementById('timerFill').style.background='#ef5350';
+    if(G.timeLeft<=0){stopTimer();timeUp();}
+  },1000);
+}
+function stopTimer(){
+  clearInterval(G.timerID);
+  clearInterval(G.tapID);
+}
+function timeUp(){
+  const s=STAGES[G.cur];
+  const pct=Math.min(100,Math.round(G.score/(s.reward)*80));
+  showResult(pct>=80?2:1,pct);
+}
+
+/* ═══════════════════════════════════
+   SCORE
+═══════════════════════════════════ */
+function addScore(pts){
+  G.score=Math.max(0,G.score+pts);
+  if(pts>0) G.goldEarned+=Math.round(pts*.5);
+  document.getElementById('curScore').textContent=G.score;
+  document.getElementById('curGold').textContent=G.goldEarned;
+}
+function scorePop(txt,color){
+  const p=document.createElement('div');
+  p.className='score-pop';
+  p.textContent=txt; p.style.color=color;
+  p.style.left=(window.innerWidth/2+Math.random()*60-30)+'px';
+  p.style.top=(window.innerHeight/2-40)+'px';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),950);
+}
+
+/* ═══════════════════════════════════
+   RESULT
+═══════════════════════════════════ */
+function showResult(stars,acc){
+  stopTimer();
+  const s=STAGES[G.cur];
+  const gold=Math.round(s.reward*(stars/3));
+  G.gold+=gold;
+  G.prog[G.cur]=1;
+  G.stars[G.cur]=stars;
+  G.scores[G.cur]=acc;
+  if(G.cur+1<STAGES.length) G.prog[G.cur+1]=0;
+
+  document.getElementById('rwGold').textContent='+'+gold+' 🪙';
+  document.getElementById('rwAcc').textContent=acc+'%';
+  document.getElementById('rwStars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('rwBadge').textContent=s.badge;
+  document.getElementById('resTitle').textContent=stars===3?'完美表現！':stars===2?'很棒！':'關卡完成！';
+  document.getElementById('resSub').textContent=s.sub+' 已完成';
+  document.getElementById('resIcon').textContent=stars===3?'🏆':stars===2?'🎉':'✅';
+
+  const isLast=G.cur===STAGES.length-1;
+  const nb=document.getElementById('nextBtn');
+  nb.textContent=isLast?'查看最終成果 🏆':'繼續下一關 →';
+  nb.onclick=isLast?showVictory:nextStage;
+
+  showScreen('resultScreen');
+  setTimeout(()=>{
+    for(let i=1;i<=stars;i++){
+      setTimeout(()=>{
+        document.getElementById('rs'+i).classList.add('earned');
+        particles();
+      },i*320);
+    }
+  },300);
+}
+
+function nextStage(){
+  const nx=nextOpenStage();
+  if(nx>=0) openStage(nx); else goHome();
+}
+
+function showVictory(){
+  const ts=G.stars.reduce((a,b)=>a+b,0);
+  const aa=Math.round(G.scores.reduce((a,b)=>a+b,0)/STAGES.length);
+  const rank=ts>=16?'💎 鑽石級超凡達人':ts>=12?'🥇 金牌業務精英':'🥈 銀牌成長達人';
+  document.getElementById('finalRank').textContent=rank;
+  document.getElementById('finGold').textContent=G.gold.toLocaleString();
+  document.getElementById('finStars').textContent=ts+'/18';
+  document.getElementById('finAcc').textContent=aa+'%';
+  showScreen('victoryScreen');
+  setTimeout(()=>{for(let i=0;i<6;i++) setTimeout(particles,i*350);},400);
+}
+
+/* ═══════════════════════════════════
+   PARTICLES
+═══════════════════════════════════ */
+function particles(){
+  const ems=['⭐','🌟','🏆','💫','✨','🎊','🪙','💎'];
+  for(let i=0;i<10;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.textContent=ems[Math.floor(Math.random()*ems.length)];
+    p.style.left=(20+Math.random()*60)+'vw';
+    p.style.top=(25+Math.random()*40)+'vh';
+    p.style.setProperty('--dx',(Math.random()-0.5)*280+'px');
+    p.style.setProperty('--dy',(Math.random()-1.8)*180+'px');
+    p.style.animationDelay=(Math.random()*.4)+'s';
+    p.style.fontSize=(14+Math.random()*16)+'px';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1600);
+  }
+}
+
+/* ═══════════════════════════════════
+   NAV
+═══════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHome(){
+  stopTimer();
+  updateHome();
+  renderMap();
+  showScreen('homeScreen');
+}
+function restartGame(){
+  G={gold:0,prog:[0,-1,-1,-1,-1,-1],stars:[0,0,0,0,0,0],scores:[0,0,0,0,0,0],
+     cur:0,score:0,goldEarned:0,timerID:null,tapID:null,timeLeft:0,maxTime:60};
+  goHome();
+}
+
+/* ═══════════════════════════════════
+   INIT
+═══════════════════════════════════ */
+window.addEventListener('load',()=>{
+  renderMap();
+  updateHome();
+});
+</script>
+</body>
+</html>

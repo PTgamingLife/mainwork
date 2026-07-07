@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>選擇座位 · Joyful揪福漢堡</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f0f0ee; }
+    #hdr {
+      background:#fff; border-bottom:3px solid #FF006E;
+      padding:.7rem 1.5rem; display:flex; align-items:center;
+      justify-content:space-between; position:sticky; top:0; z-index:100;
+    }
+    #hdr h1 { font-size:.95rem; font-weight:900; letter-spacing:3px; }
+    #hdr h1 em { color:#FF006E; font-style:normal; }
+    #hdr a { font-size:.78rem; color:#FF006E; text-decoration:none; font-weight:700; letter-spacing:1px; }
+    .layout { display:grid; grid-template-columns:1fr 270px; min-height:calc(100vh - 50px); }
+    .map-col { padding:1.2rem; display:flex; flex-direction:column; align-items:center; gap:.8rem; overflow:auto; }
+    #seatmap { width:100%; max-width:820px; }
+    .legend { display:flex; gap:1.2rem; flex-wrap:wrap; }
+    .li { display:flex; align-items:center; gap:.4rem; font-size:.73rem; color:#666; }
+    .lbox { width:14px; height:9px; border:1px solid rgba(0,0,0,.2); }
+    .panel { background:#fff; border-left:3px solid #e8e8e8; padding:1.5rem; display:flex; flex-direction:column; }
+    .p-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#aaa; text-align:center; }
+    .p-empty .ico { font-size:2.5rem; margin-bottom:.8rem; }
+    .p-empty p { font-size:.82rem; line-height:1.6; }
+    .p-info { display:none; flex-direction:column; }
+    .p-info.on { display:flex; }
+    .pi-tag { font-size:.62rem; letter-spacing:3px; color:#999; font-weight:700; text-transform:uppercase; margin-bottom:.3rem; }
+    .pi-id { font-size:2.2rem; font-weight:900; line-height:1; margin-bottom:.3rem; }
+    .pi-sub { font-size:.85rem; color:#666; margin-bottom:1rem; }
+    .pi-status { font-size:.83rem; font-weight:700; display:flex; align-items:center; gap:.5rem; margin-bottom:1.8rem; padding:.6rem; background:#f7f7f7; }
+    .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .book-btn {
+      display:block; padding:.9rem; background:#FF006E; color:#fff;
+      border:none; font-size:.85rem; font-weight:900; letter-spacing:2px;
+      cursor:pointer; text-align:center; text-decoration:none;
+      font-family:inherit; transition:opacity .15s; margin-top:auto;
+    }
+    .book-btn:hover { opacity:.85; }
+    .book-btn.dis { background:#ccc; pointer-events:none; }
+    .pi-note { font-size:.75rem; color:#999; margin-top:.8rem; line-height:1.5; }
+    @media(max-width:700px) {
+      .layout { grid-template-columns:1fr; }
+      .panel { border-left:none; border-top:3px solid #e8e8e8; min-height:220px; }
+    }
+  </style>
+</head>
+<body>
+<div id="hdr">
+  <h1><em>●</em> 揪福 · 選擇座位</h1>
+  <a href="index.html">← 返回官網</a>
+</div>
+<div class="layout">
+  <div class="map-col">
+    <svg id="seatmap" viewBox="80 10 760 440" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="legend">
+      <div class="li"><div class="lbox" style="background:#f5f5f0"></div>可訂位</div>
+      <div class="li"><div class="lbox" style="background:#FF006E"></div>已選擇</div>
+      <div class="li"><div class="lbox" style="background:#ffd0d0"></div>已訂位</div>
+      <div class="li"><div class="lbox" style="background:#8B5E3C"></div>椅子</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="p-empty" id="emptyState">
+      <div class="ico">🍔</div>
+      <p>點選地圖上的桌位<br>查看詳情並訂位</p>
+    </div>
+    <div class="p-info" id="tableInfo">
+      <div class="pi-tag">選擇的桌位</div>
+      <div class="pi-id" id="piId">—</div>
+      <div class="pi-sub" id="piSub"></div>
+      <div class="pi-status" id="piStatus"></div>
+      <a class="book-btn" id="bookBtn" href="#">訂這桌 →</a>
+      <p class="pi-note" id="piNote"></p>
+    </div>
+  </div>
+</div>
+<script>
+// ── Isometric core ──────────────────────────────────────────────
+const OX=450, OY=430, UX=34, UY=17, UZ=30;
+function iso(gx,gy,gz=0){ return [OX+(gx-gy)*UX, OY-(gx+gy)*UY-gz*UZ]; }
+function fp(pts,fill,stroke='#00000015',sw=.8){
+  return `<polygon points="${pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+}
+function box(gx,gy,w,d,h,c,id=''){
+  const top=[iso(gx,gy,h),iso(gx+w,gy,h),iso(gx+w,gy+d,h),iso(gx,gy+d,h)];
+  const frt=[iso(gx,gy,0),iso(gx+w,gy,0),iso(gx+w,gy,h),iso(gx,gy,h)];
+  const rgt=[iso(gx+w,gy,0),iso(gx+w,gy+d,0),iso(gx+w,gy+d,h),iso(gx+w,gy,h)];
+  const a=id?`id="t-${id}" class="tbl" onclick="pick('${id}')" style="cursor:pointer"`:'';
+  return `<g ${a}>${fp(frt,c.f)}${fp(rgt,c.r)}${fp(top,c.t)}</g>`;
+}
+function chair(gx,gy){
+  const s=.32;
+  return box(gx,gy,s,s,.65,{t:'#8B5E3C',f:'#7a4f30',r:'#6b3f22'});
+}
+
+// ── Room layout ─────────────────────────────────────────────────
+const RW=12, RD=8, WH=2.8;
+
+// Tables (based on actual restaurant photos)
+// x=0 left wall, x=12 right wall; y=0 front, y=8 back(windows)
+const TBLS=[
+  {id:'A1',gx:.4, gy:6.2,w:1.3,d:.9,seats:2},
+  {id:'A2',gx:.4, gy:4.1,w:1.3,d:.9,seats:2},
+  {id:'A3',gx:.4, gy:2.0,w:1.3,d:.9,seats:2},
+  {id:'B1',gx:3.9,gy:6.0,w:1.7,d:1.1,seats:4},
+  {id:'B2',gx:3.9,gy:3.5,w:1.7,d:1.1,seats:4},
+  {id:'B3',gx:3.9,gy:1.1,w:1.7,d:1.1,seats:4},
+  {id:'C1',gx:6.7,gy:6.0,w:1.7,d:1.1,seats:4},
+  {id:'C2',gx:6.7,gy:3.5,w:1.7,d:1.1,seats:4},
+  {id:'C3',gx:6.7,gy:1.1,w:1.7,d:1.1,seats:4},
+  {id:'D1',gx:9.4,gy:4.2,w:1.7,d:1.1,seats:4},
+  {id:'D2',gx:9.4,gy:1.8,w:1.7,d:1.1,seats:4},
+];
+const OCCUPIED=new Set(['A3','B2','C3']); // demo
+let selected=null;
+
+function getC(t){
+  if(selected===t.id) return {t:'#FF006E',f:'#cc0050',r:'#aa0040'};
+  if(OCCUPIED.has(t.id)) return {t:'#ffd0d0',f:'#f0b0b0',r:'#e0a0a0'};
+  return {t:'#f5f5f0',f:'#dddbd5',r:'#cccac4'};
+}
+
+function drawChairs(t){
+  const {gx,gy,w,d,seats}=t; const g=.1,cs=.32;
+  let s='';
+  // back chairs (render before table for correct depth)
+  const n2=seats-Math.min(seats,2);
+  for(let i=0;i<n2;i++) s+=chair(gx+(w/(n2+1))*(i+1)-cs/2, gy+d+g);
+  return s;
+}
+function drawFrontChairs(t){
+  const {gx,gy,w,seats}=t; const g=.1,cs=.32;
+  let s='';
+  const n=Math.min(seats,2);
+  for(let i=0;i<n;i++) s+=chair(gx+(w/(n+1))*(i+1)-cs/2, gy-g-cs);
+  return s;
+}
+
+function lbl(t){
+  const [x,y]=iso(t.gx+t.w/2, t.gy+t.d/2, .42);
+  const fill=selected===t.id?'#fff':'#333';
+  return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="900" fill="${fill}" font-family="sans-serif" pointer-events="none">${t.id}</text>`;
+}
+
+function draw(){
+  let svg='';
+  // Back wall (y=RD)
+  svg+=fp([iso(0,RD),iso(RW,RD),iso(RW,RD,WH),iso(0,RD,WH)],'#d4d4cc','#a8a8a0');
+  // Windows on back wall: two sets
+  [[1,5.5],[6.2,10.5]].forEach(([x1,x2])=>{
+    svg+=fp([iso(x1,RD,.32),iso(x2,RD,.32),iso(x2,RD,WH*.88),iso(x1,RD,WH*.88)],'#acd6ec','#88b0d0',1);
+    // window frame divider
+    const mx=(x1+x2)/2;
+    const [bx1,by1]=iso(mx,RD,.32); const [bx2,by2]=iso(mx,RD,WH*.88);
+    svg+=`<line x1="${bx1.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${bx2.toFixed(1)}" y2="${by2.toFixed(1)}" stroke="#88b0d0" stroke-width="2"/>`;
+  });
+  // Left wall (x=0)
+  svg+=fp([iso(0,0),iso(0,RD),iso(0,RD,WH),iso(0,0,WH)],'#c8c8c0','#a0a0a0');
+  // Mirror on left wall
+  svg+=fp([iso(0,1.8,WH*.18),iso(0,6.2,WH*.18),iso(0,6.2,WH*.86),iso(0,1.8,WH*.86)],'#b4d4e8','#86a8c0',1.2);
+  // Right wall (x=RW)
+  svg+=fp([iso(RW,0),iso(RW,RD),iso(RW,RD,WH),iso(RW,0,WH)],'#b8b8b0','#909090');
+  // Teal display on right wall
+  svg+=fp([iso(RW,1,WH*.08),iso(RW,5.5,WH*.08),iso(RW,5.5,WH*.88),iso(RW,1,WH*.88)],'#12b0a8','#009090',1.2);
+  // Floor
+  svg+=fp([iso(0,0),iso(RW,0),iso(RW,RD),iso(0,RD)],'#e4e4dc','#c8c8c0');
+  // Wooden counter/divider
+  svg+=box(2.3,2.2,1.5,3.6,.95,{t:'#d4a06a',f:'#c09050',r:'#a87838'});
+  // Glasses on counter (small dots as decoration)
+  for(let i=0;i<5;i++){
+    const [gx2,gy2]=iso(2.6+i*.25, 3.8, 1.02);
+    svg+=`<ellipse cx="${gx2.toFixed(1)}" cy="${gy2.toFixed(1)}" rx="5" ry="3" fill="#cce8f0" stroke="#88b0c0" stroke-width=".6"/>`;
+  }
+
+  // Sort tables: descending gx+gy = back first
+  const sorted=[...TBLS].sort((a,b)=>(b.gx+b.gy)-(a.gx+a.gy));
+  for(const t of sorted){
+    svg+=drawChairs(t);
+    svg+=box(t.gx,t.gy,t.w,t.d,.35,getC(t),t.id);
+    svg+=drawFrontChairs(t);
+    svg+=lbl(t);
+  }
+  document.getElementById('seatmap').innerHTML=svg;
+}
+
+function pick(id){
+  const t=TBLS.find(t=>t.id===id); if(!t) return;
+  selected=id; draw();
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('tableInfo').className='p-info on';
+  document.getElementById('piId').textContent=id+' 桌';
+  document.getElementById('piSub').textContent=`${t.seats} 人桌`;
+  const occ=OCCUPIED.has(id);
+  document.getElementById('piStatus').innerHTML=
+    `<span class="dot" style="background:${occ?'#FF6B00':'#00F0FF'}"></span>${occ?'此桌已有訂位':'可訂位 · Available'}`;
+  const btn=document.getElementById('bookBtn');
+  const note=document.getElementById('piNote');
+  if(occ){
+    btn.className='book-btn dis'; btn.textContent='此桌已訂位'; btn.removeAttribute('href');
+    note.textContent='';
+  } else {
+    sessionStorage.setItem('reserveTable', id);
+    btn.className='book-btn'; btn.textContent=`訂 ${id} 桌 →`; btn.href='index.html';
+    note.textContent='點擊後將跳轉訂位頁面，桌號已自動帶入。';
+  }
+}
+draw();
+</script>
+</body>
+</html>

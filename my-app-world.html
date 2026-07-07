@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>我的APP小世界 🖍️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #2a2a2a;
+            --paper: #fdf9f0;
+            --red: #ff6b6b;
+            --yellow: #ffd93d;
+            --teal: #4ecdc4;
+            --mint: #a8e6cf;
+            --orange: #ffb347;
+            --purple: #c3a6ff;
+            --pink: #ff8fab;
+            --blue: #74b9ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Caveat', cursive;
+            background: var(--paper);
+            background-image:
+                repeating-linear-gradient(transparent, transparent 27px, rgba(150,180,255,0.12) 27px, rgba(150,180,255,0.12) 28px),
+                linear-gradient(90deg, transparent 34px, rgba(255,120,120,0.08) 34px, rgba(255,120,120,0.08) 36px, transparent 36px);
+            min-height: 100vh;
+            color: var(--ink);
+            overflow-x: hidden;
+        }
+
+        /* ─── Screen System ─── */
+        .screen { display: none; min-height: 100vh; flex-direction: column; }
+        .screen.active { display: flex; }
+
+        /* ─── Reusable Button ─── */
+        .btn {
+            border: 2.5px solid var(--ink);
+            border-radius: 14px 10px 16px 10px / 10px 16px 10px 14px;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+            box-shadow: 3px 3px 0 var(--ink);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+        .btn:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+        .btn:active { transform: translate(1px,1px);   box-shadow: 2px 2px 0 var(--ink); }
+        .btn-full  { width: 100%; padding: 12px; font-size: 1.25rem; }
+        .btn-sm    { padding: 6px 14px; font-size: 1rem; }
+        .btn-red    { background: var(--red);    color: white; }
+        .btn-yellow { background: var(--yellow); color: var(--ink); }
+        .btn-ghost  { background: #f0f0f0;       color: #555; }
+        .btn-teal   { background: var(--teal);   color: white; }
+
+        /* ─── Input ─── */
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 1rem; color: #666; margin-bottom: 4px; }
+        .field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2.5px solid var(--ink);
+            border-radius: 12px 10px 14px 10px / 10px 14px 10px 12px;
+            font-family: 'Caveat', cursive;
+            font-size: 1.1rem;
+            background: #fffef8;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field input:focus {
+            border-color: var(--red);
+            box-shadow: 3px 3px 0 rgba(255,107,107,0.25);
+        }
+
+        .err-msg { color: #e74c3c; font-size: 0.95rem; text-align: center; min-height: 20px; margin-top: 6px; }
+
+        /* ════════════════════════════════════
+             LOGIN SCREEN
+        ════════════════════════════════════ */
+        #loginScreen {
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(150deg, #fff9e6 0%, #ffe4e1 45%, #e8f5ff 100%);
+        }
+
+        .login-wrap { width: 100%; max-width: 390px; }
+
+        /* Hero mascot */
+        .hero { text-align: center; margin-bottom: 18px; }
+        .app-title {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.1;
+        }
+        .app-title em { color: var(--red); font-style: normal; }
+        .tagline { font-size: 1.1rem; color: #999; margin-top: 4px; }
+
+        /* Card */
+        .login-card {
+            background: white;
+            border: 3px solid var(--ink);
+            border-radius: 22px 16px 24px 16px / 16px 24px 16px 22px;
+            padding: 28px;
+            box-shadow: 6px 6px 0 var(--ink);
+            transform: rotate(-0.4deg);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border: 2.5px solid var(--ink);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1; padding: 9px; border: none;
+            background: transparent;
+            font-family: 'Caveat', cursive; font-size: 1.15rem;
+            cursor: pointer; color: #aaa; transition: all 0.2s;
+        }
+        .tab-btn.active { background: var(--red); color: white; font-weight: 700; }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ════════════════════════════════════
+             HOME SCREEN
+        ════════════════════════════════════ */
+        #homeScreen { background: var(--paper); }
+
+        .topbar {
+            background: white;
+            border-bottom: 3px solid var(--ink);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 3px 0 var(--ink);
+            flex-shrink: 0;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar-title { font-size: 1.6rem; font-weight: 700; }
+
+        .user-badge {
+            background: var(--yellow);
+            border: 2px solid var(--ink);
+            border-radius: 20px;
+            padding: 3px 13px;
+            font-size: 1rem; font-weight: 600;
+            transform: rotate(-1deg);
+            display: inline-block;
+        }
+
+        .main { flex: 1; padding: 24px 20px; max-width: 960px; margin: 0 auto; width: 100%; }
+
+        .sec-title {
+            font-size: 1.3rem; color: #666;
+            margin-bottom: 18px;
+            padding-bottom: 6px;
+            border-bottom: 2px dashed #ddd;
+        }
+
+        /* App Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+            gap: 16px;
+        }
+
+        .app-tile {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 7px;
+            padding: 15px 8px 13px;
+            background: white;
+            border: 2.5px solid var(--ink);
+            border-radius: 18px 14px 20px 12px / 12px 20px 14px 18px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: box-shadow 0.15s, transform 0.15s;
+            position: relative;
+            user-select: none;
+        }
+        .app-tile:nth-child(3n)   { transform: rotate(0.7deg); }
+        .app-tile:nth-child(3n+1) { transform: rotate(-0.5deg); }
+        .app-tile:nth-child(3n+2) { transform: rotate(0.3deg); }
+        .app-tile:hover { transform: rotate(0) translateY(-3px) !important; box-shadow: 5px 5px 0 var(--ink); }
+
+        .tile-emoji { font-size: 2.4rem; line-height: 1; }
+        .tile-name  { font-size: 0.85rem; text-align: center; line-height: 1.2; word-break: break-word; max-width: 90px; }
+
+        .tile-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 5px;
+            border-radius: 0 0 16px 10px;
+        }
+
+        .tile-del {
+            position: absolute; top: -8px; right: -8px;
+            width: 22px; height: 22px;
+            background: var(--red); border: 2px solid var(--ink); border-radius: 50%;
+            font-size: 0.7rem; font-weight: 800; color: white;
+            display: none; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 2;
+        }
+        .app-tile:hover .tile-del { display: flex; }
+
+        /* Add tile */
+        .add-tile {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 7px;
+            padding: 15px 8px;
+            border: 2.5px dashed #bbb;
+            border-radius: 18px;
+            cursor: pointer;
+            color: #bbb;
+            transition: all 0.18s;
+            transform: rotate(1deg);
+        }
+        .add-tile:hover { border-color: var(--teal); color: var(--teal); transform: rotate(1deg) scale(1.05); }
+        .add-icon { font-size: 2rem; }
+        .add-text { font-size: 0.85rem; }
+
+        .empty-hint {
+            grid-column: 1 / -1;
+            text-align: center; padding: 32px 20px;
+            color: #ccc; font-size: 1.1rem; line-height: 1.8;
+        }
+
+        /* ════════════════════════════════════
+             ADD APP MODAL
+        ════════════════════════════════════ */
+        .overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.42);
+            z-index: 100; align-items: center; justify-content: center; padding: 20px;
+        }
+        .overlay.open { display: flex; }
+
+        .modal {
+            background: #fffef8;
+            border: 3px solid var(--ink);
+            border-radius: 22px 16px 24px 16px / 16px 24px 16px 22px;
+            padding: 28px;
+            width: 100%; max-width: 430px;
+            box-shadow: 8px 8px 0 var(--ink);
+            transform: rotate(-0.4deg);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-title { font-size: 1.7rem; font-weight: 700; text-align: center; margin-bottom: 20px; }
+
+        .pick-label { font-size: 1rem; color: #666; margin-bottom: 6px; display: block; }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            max-height: 108px; overflow-y: auto;
+            border: 2px solid #eee; border-radius: 10px;
+            padding: 6px; margin-bottom: 14px;
+        }
+        .ep {
+            font-size: 1.4rem; text-align: center; cursor: pointer;
+            padding: 3px; border-radius: 6px; border: 2px solid transparent;
+        }
+        .ep:hover { background: #ffe0e0; }
+        .ep.sel   { border-color: var(--red); background: #ffe0e0; }
+
+        .color-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .cp {
+            width: 30px; height: 30px; border-radius: 50%;
+            cursor: pointer; border: 3px solid transparent;
+            transition: transform 0.12s, border-color 0.12s;
+        }
+        .cp:hover { transform: scale(1.15); }
+        .cp.sel   { border-color: var(--ink); transform: scale(1.25); }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+        .modal-btns .btn { flex: 1; }
+
+        /* ════════════════════════════════════
+             APP VIEWER
+        ════════════════════════════════════ */
+        #viewer {
+            display: none; position: fixed; inset: 0;
+            z-index: 200; flex-direction: column; background: white;
+        }
+        #viewer.open { display: flex; }
+
+        .viewer-bar {
+            background: white;
+            border-bottom: 3px solid var(--ink);
+            padding: 10px 14px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 3px 0 var(--ink);
+            flex-shrink: 0;
+        }
+        .viewer-name { font-size: 1.15rem; font-weight: 700; white-space: nowrap; }
+        .viewer-url  { font-size: 0.9rem; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        #appFrame { flex: 1; border: none; width: 100%; }
+
+        .blocked-view {
+            display: none; flex: 1;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; padding: 40px; text-align: center;
+        }
+        .blocked-view.show { display: flex; }
+        .blocked-icon { font-size: 4.5rem; }
+        .blocked-text { font-size: 1.25rem; color: #888; line-height: 1.6; max-width: 300px; }
+
+        /* ─── Background deco stick figures ─── */
+        .bg-sf {
+            position: fixed; pointer-events: none; opacity: 0.055; z-index: 0;
+        }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: var(--ink); color: white;
+            padding: 10px 22px; border-radius: 30px;
+            font-size: 1rem; z-index: 999;
+            transition: transform 0.3s;
+            white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<!-- Background decoration stick figures -->
+<svg class="bg-sf" style="bottom:-10px;right:-30px;width:220px" viewBox="0 0 100 150">
+    <circle cx="50" cy="20" r="14" fill="none" stroke="#333" stroke-width="4"/>
+    <line x1="50" y1="34" x2="50" y2="90" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="57" x2="22" y2="71" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="57" x2="78" y2="71" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="90" x2="32" y2="135" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="90" x2="68" y2="135" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+</svg>
+<svg class="bg-sf" style="top:80px;left:-25px;width:130px;transform:scaleX(-1) rotate(8deg)" viewBox="0 0 100 150">
+    <circle cx="50" cy="20" r="14" fill="none" stroke="#333" stroke-width="4"/>
+    <line x1="50" y1="34" x2="50" y2="90" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="52" x2="18" y2="42" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="52" x2="82" y2="60" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="90" x2="30" y2="135" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+    <line x1="50" y1="90" x2="70" y2="135" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+</svg>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="loginScreen" class="screen active">
+    <div class="login-wrap">
+
+        <!-- Hero mascot -->
+        <div class="hero">
+            <svg viewBox="0 0 130 190" width="100" height="140" style="display:block;margin:0 auto 12px">
+                <!-- Crayon scribble halo -->
+                <ellipse cx="65" cy="185" rx="32" ry="5" fill="rgba(0,0,0,0.06)"/>
+                <!-- Hair (yellow crayon) -->
+                <path d="M42 18 Q47 8 53 16 Q58 5 65 14 Q72 4 77 15 Q83 8 88 18"
+                      fill="none" stroke="#ffd93d" stroke-width="4" stroke-linecap="round"/>
+                <!-- Head -->
+                <circle cx="65" cy="28" r="20" fill="#fff" stroke="#2a2a2a" stroke-width="3.5"/>
+                <!-- Eyes -->
+                <circle cx="57" cy="24" r="3.2" fill="#2a2a2a"/>
+                <circle cx="73" cy="24" r="3.2" fill="#2a2a2a"/>
+                <!-- Shine in eyes -->
+                <circle cx="58.5" cy="22.5" r="1.2" fill="white"/>
+                <circle cx="74.5" cy="22.5" r="1.2" fill="white"/>
+                <!-- Smile -->
+                <path d="M55 33 Q65 43 75 33" fill="none" stroke="#2a2a2a" stroke-width="2.5" stroke-linecap="round"/>
+                <!-- Rosy cheeks -->
+                <ellipse cx="52" cy="32" rx="6" ry="4" fill="rgba(255,150,150,0.25)"/>
+                <ellipse cx="78" cy="32" rx="6" ry="4" fill="rgba(255,150,150,0.25)"/>
+                <!-- Body -->
+                <line x1="65" y1="48" x2="65" y2="118" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Left arm (waving up) -->
+                <line x1="65" y1="72" x2="36" y2="55" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="36" y1="55" x2="24" y2="38" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Right arm (holding device) -->
+                <line x1="65" y1="72" x2="94" y2="82" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Device -->
+                <rect x="88" y="76" width="26" height="36" rx="4" fill="white" stroke="#2a2a2a" stroke-width="2.5"/>
+                <rect x="91" y="80" width="20" height="22" rx="2" fill="#74b9ff"/>
+                <!-- App icons on device -->
+                <rect x="92" y="81" width="8" height="8" rx="1.5" fill="#ff6b6b" opacity="0.9"/>
+                <rect x="102" y="81" width="8" height="8" rx="1.5" fill="#ffd93d" opacity="0.9"/>
+                <rect x="92" y="91" width="8" height="8" rx="1.5" fill="#a8e6cf" opacity="0.9"/>
+                <rect x="102" y="91" width="8" height="8" rx="1.5" fill="#c3a6ff" opacity="0.9"/>
+                <!-- Left leg -->
+                <line x1="65" y1="118" x2="45" y2="165" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Right leg -->
+                <line x1="65" y1="118" x2="85" y2="165" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Shoes -->
+                <ellipse cx="42" cy="168" rx="11" ry="5.5" fill="#2a2a2a"/>
+                <ellipse cx="88" cy="168" rx="11" ry="5.5" fill="#2a2a2a"/>
+            </svg>
+            <div class="app-title">我的<em>APP</em>世界</div>
+            <div class="tagline">✏️ 把你的網頁都收藏在這裡！</div>
+        </div>
+
+        <div class="login-card">
+            <div class="tabs">
+                <button class="tab-btn active" id="tabLoginBtn" onclick="switchTab('login')">登入</button>
+                <button class="tab-btn" id="tabRegBtn" onclick="switchTab('reg')">註冊</button>
+            </div>
+
+            <!-- Login pane -->
+            <div class="tab-pane active" id="loginPane">
+                <div class="field">
+                    <label>👤 帳號</label>
+                    <input type="text" id="lUser" placeholder="輸入帳號…" autocomplete="username">
+                </div>
+                <div class="field">
+                    <label>🔑 密碼</label>
+                    <input type="password" id="lPass" placeholder="輸入密碼…" autocomplete="current-password">
+                </div>
+                <button class="btn btn-red btn-full" onclick="doLogin()">登入 →</button>
+                <div class="err-msg" id="loginErr"></div>
+            </div>
+
+            <!-- Register pane -->
+            <div class="tab-pane" id="regPane">
+                <div class="field">
+                    <label>👤 帳號</label>
+                    <input type="text" id="rUser" placeholder="設定帳號（至少2字）…" autocomplete="username">
+                </div>
+                <div class="field">
+                    <label>🔑 密碼</label>
+                    <input type="password" id="rPass" placeholder="設定密碼（至少4字）…" autocomplete="new-password">
+                </div>
+                <div class="field">
+                    <label>🔑 確認密碼</label>
+                    <input type="password" id="rPass2" placeholder="再輸入一次…" autocomplete="new-password">
+                </div>
+                <button class="btn btn-yellow btn-full" onclick="doRegister()">建立帳號 ✓</button>
+                <div class="err-msg" id="regErr"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     HOME SCREEN
+══════════════════════════════════════ -->
+<div id="homeScreen" class="screen">
+    <div class="topbar">
+        <div class="topbar-title">🖍️ 我的APP世界</div>
+        <div style="display:flex;align-items:center;gap:10px">
+            <div class="user-badge" id="userBadge">👤</div>
+            <button class="btn btn-ghost btn-sm" onclick="doLogout()">登出</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="sec-title">✨ 我的應用程式</div>
+        <div class="app-grid" id="appGrid"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ADD APP OVERLAY
+══════════════════════════════════════ -->
+<div class="overlay" id="addOverlay">
+    <div class="modal">
+        <div class="modal-title">✏️ 新增APP</div>
+
+        <div class="field">
+            <label>🌐 網址</label>
+            <input type="url" id="aUrl" placeholder="https://…">
+        </div>
+        <div class="field">
+            <label>📝 名稱（留空自動抓取）</label>
+            <input type="text" id="aName" placeholder="APP名稱…">
+        </div>
+
+        <span class="pick-label">🎭 圖示</span>
+        <div class="emoji-grid" id="emojiGrid"></div>
+
+        <span class="pick-label">🖍️ 主題色</span>
+        <div class="color-row" id="colorRow"></div>
+
+        <div class="err-msg" id="addErr"></div>
+
+        <div class="modal-btns">
+            <button class="btn btn-ghost" onclick="closeAdd()">取消</button>
+            <button class="btn btn-red"   onclick="saveApp()">新增 ✓</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP VIEWER
+══════════════════════════════════════ -->
+<div id="viewer">
+    <div class="viewer-bar">
+        <button class="btn btn-red btn-sm" onclick="closeViewer()">← 返回</button>
+        <span class="viewer-name" id="vName"></span>
+        <span class="viewer-url"  id="vUrl"></span>
+        <button class="btn btn-ghost btn-sm" onclick="openTab()" style="white-space:nowrap;flex-shrink:0">🔗 新分頁</button>
+    </div>
+    <iframe id="appFrame" allow="fullscreen; autoplay; payment"></iframe>
+    <div class="blocked-view" id="blockedView">
+        <div class="blocked-icon">🚫</div>
+        <div class="blocked-text">這個網站<br>不允許被嵌入顯示<br><br>請點「新分頁」開啟</div>
+        <button class="btn btn-teal" style="width:auto;padding:10px 28px" onclick="openTab()">🔗 在新分頁開啟</button>
+    </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   DATA
+══════════════════════════════════════ */
+const DB  = 'appworld_db';
+const SES = 'appworld_ses';
+
+const getData = ()  => JSON.parse(localStorage.getItem(DB) || '{"users":{}}');
+const setData = d   => localStorage.setItem(DB, JSON.stringify(d));
+const getUser = ()  => sessionStorage.getItem(SES);
+const setUser = u   => sessionStorage.setItem(SES, u);
+const clearUser = () => sessionStorage.removeItem(SES);
+
+function hash(s) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = (Math.imul(33, h) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+}
+
+/* ══════════════════════════════════════
+   SCREENS
+══════════════════════════════════════ */
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* ══════════════════════════════════════
+   AUTH
+══════════════════════════════════════ */
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById(tab + 'Pane').classList.add('active');
+    document.getElementById('tab' + (tab === 'login' ? 'Login' : 'Reg') + 'Btn').classList.add('active');
+}
+
+function doLogin() {
+    const u = document.getElementById('lUser').value.trim();
+    const p = document.getElementById('lPass').value;
+    const err = document.getElementById('loginErr');
+    if (!u || !p) { err.textContent = '請填寫帳號和密碼'; return; }
+    const data = getData();
+    const user = data.users[u];
+    if (!user || user.pw !== hash(p)) { err.textContent = '帳號或密碼錯誤'; return; }
+    err.textContent = '';
+    setUser(u);
+    enterHome(u);
+}
+
+function doRegister() {
+    const u = document.getElementById('rUser').value.trim();
+    const p = document.getElementById('rPass').value;
+    const p2 = document.getElementById('rPass2').value;
+    const err = document.getElementById('regErr');
+    if (!u || !p) { err.textContent = '請填寫帳號和密碼'; return; }
+    if (u.length < 2) { err.textContent = '帳號至少 2 個字元'; return; }
+    if (p.length < 4) { err.textContent = '密碼至少 4 個字元'; return; }
+    if (p !== p2) { err.textContent = '兩次密碼不一致'; return; }
+    const data = getData();
+    if (data.users[u]) { err.textContent = '帳號已被使用'; return; }
+    data.users[u] = { pw: hash(p), apps: [] };
+    setData(data);
+    err.textContent = '';
+    setUser(u);
+    enterHome(u);
+    toast('🎉 歡迎加入！帳號建立成功');
+}
+
+function doLogout() {
+    clearUser();
+    showScreen('loginScreen');
+    document.getElementById('lUser').value = '';
+    document.getElementById('lPass').value = '';
+    document.getElementById('loginErr').textContent = '';
+}
+
+/* ══════════════════════════════════════
+   HOME
+══════════════════════════════════════ */
+function enterHome(username) {
+    document.getElementById('userBadge').textContent = '👤 ' + username;
+    showScreen('homeScreen');
+    renderGrid(username);
+}
+
+const EMOJIS = ['🌐','🎮','🎵','🎬','📷','📚','💬','📧','🛒','🏠','💼','🎨',
+                '📊','🔧','⚙️','🌍','🎯','🏆','🌈','🚀','⭐','💡','🔍','🍎',
+                '🐱','🦊','🎪','🎲','🏖️','🎸','📱','💻','🎭','🌺','🍕','☕','🧩','🎃'];
+
+const COLORS = ['#ff6b6b','#ffd93d','#4ecdc4','#a8e6cf','#ffb347',
+                '#c3a6ff','#ff8fab','#74b9ff','#f9ca24','#6ab04c'];
+
+let pickedEmoji = EMOJIS[0];
+let pickedColor = COLORS[0];
+let currentUrl  = '';
+
+function escH(s) {
+    return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escA(s) { return escH(s).replace(/'/g,'&#39;'); }
+
+function renderGrid(username) {
+    const data = getData();
+    const apps = data.users[username]?.apps || [];
+    const grid = document.getElementById('appGrid');
+
+    let html = '';
+
+    if (apps.length === 0) {
+        html += `<div class="empty-hint">這裡還空空的～<br>點右側的 <strong>＋</strong> 來新增第一個APP吧！🖍️</div>`;
+    }
+
+    apps.forEach((app, i) => {
+        html += `
+        <div class="app-tile" data-url="${escA(app.url)}" data-name="${escA(app.name)}">
+            <div class="tile-del" data-idx="${i}">✕</div>
+            <div class="tile-emoji">${app.emoji}</div>
+            <div class="tile-name">${escH(app.name)}</div>
+            <div class="tile-bar" style="background:${app.color}"></div>
+        </div>`;
+    });
+
+    html += `
+    <div class="add-tile" id="addTile">
+        <div class="add-icon">＋</div>
+        <div class="add-text">新增APP</div>
+    </div>`;
+
+    grid.innerHTML = html;
+
+    grid.onclick = e => {
+        const del = e.target.closest('[data-idx]');
+        if (del) { e.stopPropagation(); deleteApp(parseInt(del.dataset.idx)); return; }
+        if (e.target.closest('#addTile')) { openAdd(); return; }
+        const tile = e.target.closest('.app-tile');
+        if (tile) openApp(tile.dataset.url, tile.dataset.name);
+    };
+}
+
+function deleteApp(idx) {
+    const u = getUser();
+    const data = getData();
+    const name = data.users[u].apps[idx]?.name || 'APP';
+    data.users[u].apps.splice(idx, 1);
+    setData(data);
+    renderGrid(u);
+    toast(`🗑️ 已移除「${name}」`);
+}
+
+/* ══════════════════════════════════════
+   ADD MODAL
+══════════════════════════════════════ */
+function openAdd() {
+    pickedEmoji = EMOJIS[0];
+    pickedColor = COLORS[0];
+
+    document.getElementById('emojiGrid').innerHTML =
+        EMOJIS.map((em, i) => `<div class="ep${i===0?' sel':''}" data-em="${em}">${em}</div>`).join('');
+
+    document.getElementById('colorRow').innerHTML =
+        COLORS.map((c, i) => `<div class="cp${i===0?' sel':''}" data-col="${c}" style="background:${c}"></div>`).join('');
+
+    document.getElementById('aUrl').value = '';
+    document.getElementById('aName').value = '';
+    document.getElementById('addErr').textContent = '';
+    document.getElementById('addOverlay').classList.add('open');
+
+    document.getElementById('emojiGrid').onclick = e => {
+        const ep = e.target.closest('[data-em]');
+        if (!ep) return;
+        document.querySelectorAll('.ep').forEach(x => x.classList.remove('sel'));
+        ep.classList.add('sel');
+        pickedEmoji = ep.dataset.em;
+    };
+
+    document.getElementById('colorRow').onclick = e => {
+        const cp = e.target.closest('[data-col]');
+        if (!cp) return;
+        document.querySelectorAll('.cp').forEach(x => x.classList.remove('sel'));
+        cp.classList.add('sel');
+        pickedColor = cp.dataset.col;
+    };
+}
+
+function closeAdd() {
+    document.getElementById('addOverlay').classList.remove('open');
+}
+
+function saveApp() {
+    let url  = document.getElementById('aUrl').value.trim();
+    const nm = document.getElementById('aName').value.trim();
+    const err = document.getElementById('addErr');
+
+    if (!url) { err.textContent = '請輸入網址'; return; }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+    try { new URL(url); } catch { err.textContent = '網址格式不正確'; return; }
+
+    const name = nm || (() => {
+        try { return new URL(url).hostname.replace('www.',''); } catch { return url; }
+    })();
+
+    const u    = getUser();
+    const data = getData();
+    data.users[u].apps.push({ id: Date.now().toString(), name, url, emoji: pickedEmoji, color: pickedColor });
+    setData(data);
+    closeAdd();
+    renderGrid(u);
+    toast(`✅ 已新增「${name}」`);
+}
+
+/* ══════════════════════════════════════
+   APP VIEWER
+══════════════════════════════════════ */
+let blockTimer;
+
+function openApp(url, name) {
+    currentUrl = url;
+    document.getElementById('vName').textContent = name;
+    document.getElementById('vUrl').textContent  = url;
+
+    const frame   = document.getElementById('appFrame');
+    const blocked = document.getElementById('blockedView');
+
+    blocked.classList.remove('show');
+    frame.style.display = 'block';
+    frame.src = url;
+
+    clearTimeout(blockTimer);
+
+    frame.onerror = () => { showBlocked(); };
+
+    frame.onload = () => {
+        clearTimeout(blockTimer);
+        try {
+            // If we can read document it's same-origin — OK
+            const _ = frame.contentWindow.document;
+        } catch {
+            // Cross-origin is normal — frame still loaded fine
+        }
+    };
+
+    // Fallback: if nothing loaded after 12s show blocked notice
+    blockTimer = setTimeout(() => {
+        const rect = frame.getBoundingClientRect();
+        if (rect.width === 0) showBlocked();
+    }, 12000);
+
+    document.getElementById('viewer').classList.add('open');
+}
+
+function showBlocked() {
+    clearTimeout(blockTimer);
+    document.getElementById('appFrame').style.display = 'none';
+    document.getElementById('blockedView').classList.add('show');
+}
+
+function closeViewer() {
+    clearTimeout(blockTimer);
+    document.getElementById('viewer').classList.remove('open');
+    const frame = document.getElementById('appFrame');
+    frame.src = 'about:blank';
+    frame.style.display = 'block';
+    document.getElementById('blockedView').classList.remove('show');
+    currentUrl = '';
+}
+
+function openTab() {
+    if (currentUrl) window.open(currentUrl, '_blank');
+}
+
+/* ══════════════════════════════════════
+   KEYBOARD SHORTCUTS
+══════════════════════════════════════ */
+document.getElementById('lPass').addEventListener('keydown',  e => e.key === 'Enter' && doLogin());
+document.getElementById('lUser').addEventListener('keydown',  e => e.key === 'Enter' && doLogin());
+document.getElementById('rPass2').addEventListener('keydown', e => e.key === 'Enter' && doRegister());
+document.getElementById('aUrl').addEventListener('keydown',   e => e.key === 'Enter' && document.getElementById('aName').focus());
+document.getElementById('aName').addEventListener('keydown',  e => e.key === 'Enter' && saveApp());
+
+// Close modal on backdrop click
+document.getElementById('addOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeAdd();
+});
+
+// ESC to close viewer
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (document.getElementById('viewer').classList.contains('open')) closeViewer();
+        if (document.getElementById('addOverlay').classList.contains('open')) closeAdd();
+    }
+});
+
+/* ══════════════════════════════════════
+   AUTO LOGIN
+══════════════════════════════════════ */
+window.addEventListener('load', () => {
+    const u = getUser();
+    if (u) {
+        const data = getData();
+        if (data.users[u]) { enterHome(u); return; }
+    }
+    // Clear stale session
+    clearUser();
+});
+</script>
+
+</body>
+</html>

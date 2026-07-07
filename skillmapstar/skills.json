@@ -1,0 +1,55 @@
+{
+  "core": {
+    "id": "core",
+    "name": "技能核心",
+    "summary": "我用 /done 一次次累積下來的技能總集。每顆星是一個經驗,線代表彼此相關。"
+  },
+  "skills": [
+    {
+      "id": "pre-mortem",
+      "name": "Pre-mortem 風險分析",
+      "category": "規劃",
+      "summary": "上線前先假設『已經失敗』再反推風險;把風險分成老虎(真威脅)、紙老虎(假威脅)、大象(沒人敢提的大問題),先擋掉會炸的。",
+      "tags": [
+        "風險分析",
+        "規劃",
+        "pre-mortem",
+        "決策",
+        "上線前檢查"
+      ]
+    },
+    {
+      "id": "supabase-edge-proxy",
+      "name": "Supabase Edge 金鑰代理",
+      "category": "後端/API",
+      "summary": "網頁要呼叫需要金鑰的外部 API 時,用 Supabase Edge Function 當 proxy;金鑰只存 Edge secrets,絕不放前端。內含 CORS 範本與常見坑。",
+      "tags": [
+        "supabase",
+        "edge-function",
+        "api",
+        "proxy",
+        "cors",
+        "anthropic",
+        "金鑰",
+        "網頁",
+        "後端"
+      ]
+    },
+    {
+      "id": "web-test",
+      "name": "網頁 Playwright 測試",
+      "category": "測試",
+      "summary": "每次改網頁後必跑;小改動跑 smoke test,功能/邏輯改動跑完整測試,用 Playwright 實際開啟網頁操作驗證。",
+      "tags": [
+        "playwright",
+        "測試",
+        "網頁",
+        "html",
+        "js",
+        "css",
+        "smoke-test",
+        "驗證"
+      ]
+    }
+  ]
+}

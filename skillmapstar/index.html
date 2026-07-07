@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkillMap Star · 技能星圖</title>
+<style>
+  :root {
+    --bg: #05060f;
+    --fg: #e8ecff;
+    --muted: #8b93b8;
+    --accent: #7dd3fc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif; }
+  #canvas-wrap { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .panel { position: fixed; z-index: 10; backdrop-filter: blur(8px);
+    background: rgba(12, 14, 30, 0.72); border: 1px solid rgba(125, 211, 252, 0.18);
+    border-radius: 14px; }
+
+  #title { top: 18px; left: 18px; padding: 14px 18px; max-width: 280px; }
+  #title h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+  #title p { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+  #title .count { color: var(--accent); font-weight: 600; }
+
+  #legend { bottom: 18px; left: 18px; padding: 12px 14px; font-size: 12px; }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  #legend .dot { width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+  #legend .hint { margin-top: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+  #info { top: 18px; right: 18px; width: 300px; padding: 0; overflow: hidden;
+    transform: translateX(120%); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  #info.show { transform: translateX(0); }
+  #info .head { padding: 14px 16px 10px; border-bottom: 1px solid rgba(125,211,252,0.14); }
+  #info .cat { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 99px;
+    color: #05060f; font-weight: 700; margin-bottom: 8px; }
+  #info h2 { margin: 0; font-size: 17px; }
+  #info .body { padding: 12px 16px 16px; }
+  #info .summary { font-size: 13px; line-height: 1.7; color: #d6dcff; margin: 0 0 12px; }
+  #info .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  #info .tag { font-size: 11px; color: var(--accent); background: rgba(125,211,252,0.1);
+    border: 1px solid rgba(125,211,252,0.2); border-radius: 6px; padding: 2px 7px; }
+  #info .links { margin-top: 12px; font-size: 11px; color: var(--muted); }
+  #info .links b { color: var(--fg); }
+  #info .close { position: absolute; top: 10px; right: 12px; cursor: pointer; color: var(--muted);
+    font-size: 18px; line-height: 1; background: none; border: none; }
+  #info .close:hover { color: var(--fg); }
+
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    z-index: 20; font-size: 13px; color: var(--muted); transition: opacity .4s; }
+  #loading.hide { opacity: 0; pointer-events: none; }
+
+  @media (max-width: 600px) {
+    #info { width: calc(100vw - 36px); }
+    #title { max-width: calc(100vw - 36px); }
+  }
+</style>
+</head>
+<body>
+<div id="canvas-wrap"></div>
+
+<div id="title" class="panel">
+  <h1>SkillMap Star ✦</h1>
+  <p>我用 <b>/done</b> 累積的技能星圖。目前 <span class="count" id="skill-count">0</span> 顆星<br>
+     拖曳旋轉 · 滾輪縮放 · 點星看內容</p>
+</div>
+
+<div id="info" class="panel">
+  <button class="close" id="info-close">×</button>
+  <div class="head">
+    <span class="cat" id="info-cat"></span>
+    <h2 id="info-name"></h2>
+  </div>
+  <div class="body">
+    <p class="summary" id="info-summary"></p>
+    <div class="tags" id="info-tags"></div>
+    <div class="links" id="info-links"></div>
+  </div>
+</div>
+
+<div id="legend" class="panel">
+  <div id="legend-rows"></div>
+  <div class="hint">━ 粗亮線 = 內容重疊越多<br>· 細暗線 = 各自連回核心</div>
+</div>
+
+<div id="loading">正在生成技能星圖…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---- 後備資料(直接開檔 file:// 無法 fetch 時使用) ----
+const FALLBACK = {
+  core: { id: "core", name: "技能核心", summary: "我用 /done 累積的技能總集。" },
+  skills: [
+    { id:"pre-mortem", name:"Pre-mortem 風險分析", category:"規劃",
+      summary:"上線前先假設『已經失敗』再反推風險;分成老虎/紙老虎/大象。",
+      tags:["風險分析","規劃","pre-mortem","決策","上線前檢查"] },
+    { id:"supabase-edge-proxy", name:"Supabase Edge 金鑰代理", category:"後端/API",
+      summary:"用 Supabase Edge Function 當 proxy 呼叫需金鑰的 API,金鑰只存 secrets。",
+      tags:["supabase","edge-function","api","proxy","cors","anthropic","金鑰","網頁","後端"] },
+    { id:"web-test", name:"網頁 Playwright 測試", category:"測試",
+      summary:"改網頁後必跑;小改動 smoke、大改動完整測試,Playwright 實際操作驗證。",
+      tags:["playwright","測試","網頁","html","js","css","smoke-test","驗證"] }
+  ]
+};
+
+const CATEGORY_COLORS = {
+  "規劃": 0xff8c42, "後端/API": 0x38bdf8, "測試": 0x4ade80,
+  "前端": 0xa78bfa, "資料": 0xf472b6, "工具": 0xfacc15, "其他": 0x94a3b8
+};
+const colorFor = c => CATEGORY_COLORS[c] ?? CATEGORY_COLORS["其他"];
+
+let scene, camera, renderer, controls, raycaster, pointer;
+let nodeMeshes = [], coreMesh, edgeLines = [];
+let DATA, hovered = null, selected = null;
+
+init();
+
+async function loadData() {
+  try {
+    const res = await fetch("skills.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("no file");
+    return await res.json();
+  } catch (e) {
+    return FALLBACK;
+  }
+}
+
+// fibonacci 球面分佈
+function spherePoints(n, radius) {
+  const pts = [];
+  const offset = 2 / n, inc = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = i * offset - 1 + offset / 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const phi = i * inc;
+    pts.push(new THREE.Vector3(Math.cos(phi) * r, y, Math.sin(phi) * r).multiplyScalar(radius));
+  }
+  return pts;
+}
+
+function sharedTagCount(a, b) {
+  const sb = new Set(b.tags || []);
+  return (a.tags || []).filter(t => sb.has(t)).length;
+}
+
+async function init() {
+  DATA = await loadData();
+  const skills = DATA.skills || [];
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05060f, 0.012);
+
+  camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1000);
+  camera.position.set(0, 6, 34);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  document.getElementById("canvas-wrap").appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.6;
+  controls.minDistance = 14;
+  controls.maxDistance = 70;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const pl = new THREE.PointLight(0xffffff, 1.1); pl.position.set(20, 30, 20); scene.add(pl);
+
+  addStarfield();
+
+  // 核心
+  coreMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1.7, 32, 32),
+    new THREE.MeshStandardMaterial({ color: 0xfff1b8, emissive: 0xffcf66, emissiveIntensity: 1.4, roughness: 0.3 })
+  );
+  coreMesh.userData = { core: true, ...DATA.core };
+  scene.add(coreMesh);
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(2.6, 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffd87a, transparent: true, opacity: 0.12 })
+  );
+  scene.add(glow);
+
+  // 技能星點
+  const positions = spherePoints(Math.max(skills.length, 1), 12);
+  skills.forEach((s, i) => {
+    const col = colorFor(s.category);
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.85, 24, 24),
+      new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.9, roughness: 0.4 })
+    );
+    mesh.position.copy(positions[i]);
+    mesh.userData = { ...s, index: i, baseColor: col };
+    scene.add(mesh);
+    // 光暈
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(1.3, 24, 24),
+      new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.16 })
+    );
+    halo.position.copy(positions[i]); mesh.userData.halo = halo; scene.add(halo);
+    // 文字標籤
+    mesh.userData.label = makeLabel(s.name, positions[i], col);
+    nodeMeshes.push(mesh);
+  });
+
+  buildEdges(skills);
+
+  raycaster = new THREE.Raycaster();
+  pointer = new THREE.Vector2(-2, -2);
+
+  window.addEventListener("resize", onResize);
+  renderer.domElement.addEventListener("pointermove", onPointerMove);
+  renderer.domElement.addEventListener("click", onClick);
+  document.getElementById("info-close").addEventListener("click", () => closeInfo());
+
+  document.getElementById("skill-count").textContent = skills.length;
+  buildLegend(skills);
+  document.getElementById("loading").classList.add("hide");
+
+  animate();
+}
+
+function buildEdges(skills) {
+  // 每顆星 → 核心(細暗線)
+  nodeMeshes.forEach(m => {
+    edgeLines.push(makeLine(coreMesh.position, m.position, 0x3a4170, 0.35, 1));
+  });
+  // 星 ↔ 星:有共用 tag 才連,越多越粗亮
+  for (let i = 0; i < skills.length; i++) {
+    for (let j = i + 1; j < skills.length; j++) {
+      const shared = sharedTagCount(skills[i], skills[j]);
+      const sameCat = skills[i].category === skills[j].category;
+      if (shared >= 1 || sameCat) {
+        const strength = Math.min((shared + (sameCat ? 1 : 0)) / 4, 1);
+        const col = new THREE.Color(colorFor(skills[i].category)).lerp(new THREE.Color(colorFor(skills[j].category)), 0.5);
+        edgeLines.push(makeLine(nodeMeshes[i].position, nodeMeshes[j].position,
+          col.getHex(), 0.3 + strength * 0.55, 1, [skills[i].id, skills[j].id]));
+      }
+    }
+  }
+}
+
+function makeLine(a, b, color, opacity, _w, pair) {
+  const geo = new THREE.BufferGeometry().setFromPoints([a.clone(), b.clone()]);
+  const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+  const line = new THREE.Line(geo, mat);
+  line.userData = { baseOpacity: opacity, pair };
+  scene.add(line);
+  return line;
+}
+
+function makeLabel(text, pos, color) {
+  const cvs = document.createElement("canvas");
+  const ctx = cvs.getContext("2d");
+  ctx.font = "26px 'Microsoft JhengHei', sans-serif";
+  const w = ctx.measureText(text).width + 20;
+  cvs.width = w; cvs.height = 40;
+  ctx.font = "26px 'Microsoft JhengHei', sans-serif";
+  ctx.fillStyle = "#" + new THREE.Color(color).getHexString();
+  ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 6;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, 10, 22);
+  const tex = new THREE.CanvasTexture(cvs);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.9 }));
+  spr.scale.set(w / 26 * 1.6, 1.6, 1);
+  spr.position.copy(pos).multiplyScalar(1.16);
+  scene.add(spr);
+  return spr;
+}
+
+function addStarfield() {
+  const g = new THREE.BufferGeometry();
+  const n = 1400, arr = [];
+  for (let i = 0; i < n; i++) {
+    const r = 80 + Math.random() * 140;
+    const t = Math.random() * Math.PI * 2, p = Math.acos(2 * Math.random() - 1);
+    arr.push(r * Math.sin(p) * Math.cos(t), r * Math.sin(p) * Math.sin(t), r * Math.cos(p));
+  }
+  g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9fb0ff, size: 0.6, transparent: true, opacity: 0.7 })));
+}
+
+function buildLegend(skills) {
+  const cats = [...new Set(skills.map(s => s.category))];
+  const rows = document.getElementById("legend-rows");
+  rows.innerHTML = `<div class="row"><span class="dot" style="color:#ffcf66;background:#ffcf66"></span>核心</div>` +
+    cats.map(c => {
+      const hex = "#" + new THREE.Color(colorFor(c)).getHexString();
+      return `<div class="row"><span class="dot" style="color:${hex};background:${hex}"></span>${c}</div>`;
+    }).join("");
+}
+
+function onResize() {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}
+
+function onPointerMove(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+}
+
+function pick() {
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects([coreMesh, ...nodeMeshes], false);
+  return hits.length ? hits[0].object : null;
+}
+
+function onClick() {
+  const obj = pick();
+  if (!obj || obj.userData.core) { if (obj && obj.userData.core) showCore(); return; }
+  selectNode(obj);
+}
+
+function showCore() {
+  const d = DATA.core || {};
+  document.getElementById("info-cat").textContent = "核心";
+  document.getElementById("info-cat").style.background = "#ffcf66";
+  document.getElementById("info-name").textContent = d.name || "技能核心";
+  document.getElementById("info-summary").textContent = d.summary || "";
+  document.getElementById("info-tags").innerHTML = "";
+  document.getElementById("info-links").innerHTML = `<b>${nodeMeshes.length}</b> 顆技能星環繞`;
+  document.getElementById("info").classList.add("show");
+}
+
+function selectNode(obj) {
+  selected = obj;
+  const s = obj.userData;
+  const hex = "#" + new THREE.Color(s.baseColor).getHexString();
+  document.getElementById("info-cat").textContent = s.category;
+  document.getElementById("info-cat").style.background = hex;
+  document.getElementById("info-name").textContent = s.name;
+  document.getElementById("info-summary").textContent = s.summary;
+  document.getElementById("info-tags").innerHTML = (s.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+  // 找相連的技能
+  const related = [];
+  edgeLines.forEach(l => {
+    if (l.userData.pair && l.userData.pair.includes(s.id)) {
+      const other = l.userData.pair.find(x => x !== s.id);
+      const om = nodeMeshes.find(m => m.userData.id === other);
+      if (om) related.push(om.userData.name);
+    }
+  });
+  document.getElementById("info-links").innerHTML = related.length
+    ? `<b>重疊相關:</b> ${related.join("、")}`
+    : `<b>獨立技能</b>(只連回核心)`;
+  document.getElementById("info").classList.add("show");
+  highlight(s.id);
+}
+
+function highlight(id) {
+  edgeLines.forEach(l => {
+    const on = l.userData.pair && l.userData.pair.includes(id);
+    l.material.opacity = on ? 0.95 : l.userData.baseOpacity * 0.25;
+  });
+  nodeMeshes.forEach(m => {
+    const isSel = m.userData.id === id;
+    m.material.emissiveIntensity = isSel ? 1.8 : 0.5;
+    if (m.userData.halo) m.userData.halo.material.opacity = isSel ? 0.3 : 0.08;
+  });
+}
+
+function closeInfo() {
+  document.getElementById("info").classList.remove("show");
+  selected = null;
+  edgeLines.forEach(l => l.material.opacity = l.userData.baseOpacity);
+  nodeMeshes.forEach(m => {
+    m.material.emissiveIntensity = 0.9;
+    if (m.userData.halo) m.userData.halo.material.opacity = 0.16;
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  // hover 偵測
+  const obj = pick();
+  const newHover = obj && !obj.userData.core ? obj : null;
+  if (newHover !== hovered) {
+    hovered = newHover;
+    renderer.domElement.style.cursor = obj ? "pointer" : "default";
+  }
+  // 核心呼吸
+  const t = performance.now() * 0.001;
+  coreMesh.material.emissiveIntensity = 1.2 + Math.sin(t * 1.5) * 0.3;
+  // 標籤面向相機
+  nodeMeshes.forEach(m => { if (m.userData.label) m.userData.label.material.opacity = 0.9; });
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>

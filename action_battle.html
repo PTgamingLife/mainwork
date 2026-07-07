@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>動作對戰遊戲</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; }
+    #info { color: #eee; margin-bottom: 10px; font-size: 14px; text-align: center; line-height: 1.8; }
+    #info span { color: #f0c040; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <span>WASD / 方向鍵</span> 移動 &nbsp;|&nbsp;
+    <span>J / Z</span> 近戰攻擊 &nbsp;|&nbsp;
+    <span>K / X</span> 衝刺 &nbsp;|&nbsp;
+    <span>Space</span> 翻滾閃避 &nbsp;|&nbsp;
+    <span>R</span> 重新開始
+  </div>
+  <div id="game"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script>
+  const W = 800, H = 500;
+
+  class BattleScene extends Phaser.Scene {
+    constructor() { super('BattleScene'); }
+
+    create() {
+      this.cameras.main.setBackgroundColor('#16213e');
+
+      // 持久 Graphics 物件
+      this.arenaGfx    = this.add.graphics().setDepth(0);
+      this.particleGfx = this.add.graphics().setDepth(8);
+      this.uiGfx       = this.add.graphics().setDepth(20);
+
+      this.drawArena();
+      this.spawnPlayer();
+      this.spawnEnemies(3);
+      this.setupInput();
+      this.setupUI();
+
+      this.score      = 0;
+      this.wave       = 1;
+      this.gameOver   = false;
+      this.particles  = [];
+      this._waveLock  = false;
+    }
+
+    // ── 場地（只畫一次）──
+    drawArena() {
+      const g = this.arenaGfx;
+      // 地板
+      g.fillStyle(0x0f3460, 1);
+      g.fillRect(40, 40, W - 80, H - 80);
+      // 格線
+      g.lineStyle(1, 0x1a4a7a, 0.4);
+      for (let x = 40; x <= W - 40; x += 50) {
+        g.beginPath(); g.moveTo(x, 40); g.lineTo(x, H - 40); g.strokePath();
+      }
+      for (let y = 40; y <= H - 40; y += 50) {
+        g.beginPath(); g.moveTo(40, y); g.lineTo(W - 40, y); g.strokePath();
+      }
+      // 邊框
+      g.lineStyle(3, 0x4cc9f0, 1);
+      g.strokeRoundedRect(40, 40, W - 80, H - 80, 8);
+    }
+
+    // ── 玩家 ──
+    spawnPlayer() {
+      this.player = {
+        x: W / 2, y: H / 2,
+        vx: 0, vy: 0,
+        speed: 180,
+        hp: 100, maxHp: 100,
+        facing: 1,
+        state: 'idle',
+        stateTimer:    0,
+        attackCooldown: 0,
+        rollCooldown:   0,
+        dashCooldown:   0,
+        invincible:     0,
+        comboCount: 0,
+        comboTimer: 0,
+        dashVx: 0, dashVy: 0,
+        gfx:    this.add.graphics().setDepth(10),
+        shadow: this.add.graphics().setDepth(9),
+      };
+    }
+
+    // ── 敵人 ──
+    spawnEnemies(count) {
+      this.enemies = [];
+      const enemyColors = [0xff6b6b, 0xffd93d, 0x6bcb77];
+      for (let i = 0; i < count; i++) {
+        let ex, ey;
+        do {
+          ex = Phaser.Math.Between(80, W - 80);
+          ey = Phaser.Math.Between(80, H - 80);
+        } while (Phaser.Math.Distance.Between(ex, ey, W / 2, H / 2) < 160);
+
+        const maxHp = 40 + this.wave * 10;
+        this.enemies.push({
+          x: ex, y: ey,
+          vx: 0, vy: 0,
+          speed: Phaser.Math.Between(70, 110),
+          hp: maxHp, maxHp,
+          facing: -1,
+          state: 'chase',
+          stateTimer:    0,
+          attackTimer:   Phaser.Math.Between(800, 1800),
+          stunTimer:     0,
+          knockVx: 0, knockVy: 0,
+          colorIdx: i % 3,
+          bodyColor: enemyColors[i % 3],
+          gfx:    this.add.graphics().setDepth(10),
+          shadow: this.add.graphics().setDepth(9),
+        });
+      }
+    }
+
+    // ── 輸入 ──
+    setupInput() {
+      this.keys = this.input.keyboard.addKeys({
+        up:      Phaser.Input.Keyboard.KeyCodes.UP,
+        down:    Phaser.Input.Keyboard.KeyCodes.DOWN,
+        left:    Phaser.Input.Keyboard.KeyCodes.LEFT,
+        right:   Phaser.Input.Keyboard.KeyCodes.RIGHT,
+        w: Phaser.Input.Keyboard.KeyCodes.W,
+        s: Phaser.Input.Keyboard.KeyCodes.S,
+        a: Phaser.Input.Keyboard.KeyCodes.A,
+        d: Phaser.Input.Keyboard.KeyCodes.D,
+        attack:  Phaser.Input.Keyboard.KeyCodes.J,
+        attackZ: Phaser.Input.Keyboard.KeyCodes.Z,
+        dash:    Phaser.Input.Keyboard.KeyCodes.K,
+        dashX:   Phaser.Input.Keyboard.KeyCodes.X,
+        roll:    Phaser.Input.Keyboard.KeyCodes.SPACE,
+        restart: Phaser.Input.Keyboard.KeyCodes.R,
+      });
+    }
+
+    // ── UI 文字 ──
+    setupUI() {
+      this.scoreText = this.add.text(W / 2, 12, '分數: 0', {
+        fontSize: '16px', fill: '#f0c040', fontStyle: 'bold'
+      }).setOrigin(0.5, 0).setDepth(21);
+
+      this.waveText = this.add.text(W - 10, 12, 'Wave 1', {
+        fontSize: '14px', fill: '#4cc9f0'
+      }).setOrigin(1, 0).setDepth(21);
+
+      this.hpText = this.add.text(20, 14, 'HP: 100', {
+        fontSize: '13px', fill: '#ffffff'
+      }).setDepth(22);
+
+      this.comboText = this.add.text(W / 2, H / 2 - 70, '', {
+        fontSize: '30px', fill: '#ff6b6b', fontStyle: 'bold',
+        stroke: '#000', strokeThickness: 5
+      }).setOrigin(0.5).setDepth(25).setAlpha(0);
+    }
+
+    // ══ update ══
+    update(time, delta) {
+      if (this.gameOver) {
+        if (Phaser.Input.Keyboard.JustDown(this.keys.restart)) this.scene.restart();
+        return;
+      }
+      const dt = delta / 1000;
+
+      this.updatePlayer(dt, time);
+      this.updateEnemies(dt);
+      this.checkBodyCollisions();
+      this.updateParticles(dt);
+      this.drawAll(time);
+      this.drawUI();
+      this.checkWave();
+    }
+
+    // ── 玩家 ──
+    updatePlayer(dt, t) {
+      const p = this.player;
+      const k = this.keys;
+
+      p.stateTimer     = Math.max(0, p.stateTimer     - dt * 1000);
+      p.attackCooldown = Math.max(0, p.attackCooldown - dt * 1000);
+      p.rollCooldown   = Math.max(0, p.rollCooldown   - dt * 1000);
+      p.dashCooldown   = Math.max(0, p.dashCooldown   - dt * 1000);
+      p.invincible     = Math.max(0, p.invincible     - dt * 1000);
+      p.comboTimer     = Math.max(0, p.comboTimer     - dt * 1000);
+      if (p.comboTimer === 0) p.comboCount = 0;
+
+      const dashing   = p.state === 'dash'   && p.stateTimer > 0;
+      const rolling   = p.state === 'roll'   && p.stateTimer > 0;
+      const attacking = p.state === 'attack' && p.stateTimer > 0;
+
+      // 方向輸入
+      let mx = 0, my = 0;
+      if (k.left.isDown  || k.a.isDown)  mx = -1;
+      if (k.right.isDown || k.d.isDown)  mx =  1;
+      if (k.up.isDown    || k.w.isDown)  my = -1;
+      if (k.down.isDown  || k.s.isDown)  my =  1;
+      if (mx !== 0 && my !== 0) { mx *= 0.707; my *= 0.707; }
+
+      if (dashing) {
+        p.vx = p.dashVx; p.vy = p.dashVy;
+      } else if (!rolling && !attacking) {
+        p.vx = mx * p.speed;
+        p.vy = my * p.speed;
+        if (mx !== 0) p.facing = mx > 0 ? 1 : -1;
+        p.state = (mx !== 0 || my !== 0) ? 'run' : 'idle';
+      }
+
+      // 衝刺
+      if ((k.dash.isDown || k.dashX.isDown) && p.dashCooldown === 0 && !dashing && !rolling) {
+        const dx = mx !== 0 ? mx : p.facing;
+        const dy = my;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        p.dashVx = (dx / len) * 400;
+        p.dashVy = (dy / len) * 400;
+        p.state = 'dash'; p.stateTimer = 160;
+        p.dashCooldown = 800; p.invincible = 160;
+        this.spawnTrail(p.x, p.y, 0x4cc9f0);
+      }
+
+      // 翻滾
+      if (Phaser.Input.Keyboard.JustDown(k.roll) && p.rollCooldown === 0 && !dashing) {
+        const dx = mx !== 0 ? mx : p.facing;
+        const dy = my;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        p.vx = (dx / len) * 300; p.vy = (dy / len) * 300;
+        p.state = 'roll'; p.stateTimer = 260;
+        p.rollCooldown = 600; p.invincible = 260;
+      }
+
+      // 攻擊
+      const atkJust = Phaser.Input.Keyboard.JustDown(k.attack) || Phaser.Input.Keyboard.JustDown(k.attackZ);
+      if (atkJust && p.attackCooldown === 0) {
+        p.state = 'attack'; p.stateTimer = 200;
+        p.attackCooldown = 320;
+        p.comboCount++;
+        p.comboTimer = 900;
+        p.vx = p.facing * 70; p.vy = 0;
+        this.doPlayerAttack();
+      }
+
+      // 移動 + 邊界
+      p.x = Phaser.Math.Clamp(p.x + p.vx * dt, 58, W - 58);
+      p.y = Phaser.Math.Clamp(p.y + p.vy * dt, 58, H - 58);
+
+      // 摩擦
+      if (!dashing) { p.vx *= 0.7; p.vy *= 0.7; }
+    }
+
+    doPlayerAttack() {
+      const p = this.player;
+      const reach = 55;
+      const ax = p.x + p.facing * reach;
+      const ay = p.y;
+      const isFinisher = p.comboCount >= 3;
+      const dmg = isFinisher ? 22 : 12;
+
+      this.spawnHitEffect(ax, ay, isFinisher ? 0xf0c040 : 0xffffff, isFinisher ? 10 : 6);
+
+      this.enemies.forEach(e => {
+        if (e.hp <= 0) return;
+        if (Math.abs(ax - e.x) < 52 && Math.abs(ay - e.y) < 42) {
+          e.hp -= dmg;
+          e.knockVx = p.facing * 240;
+          e.knockVy = (Math.random() - 0.5) * 130;
+          e.stunTimer = isFinisher ? 450 : 220;
+          this.cameras.main.shake(80, 0.005);
+          this.spawnHitEffect(e.x, e.y - 10, 0xff4444, 8);
+          if (e.hp <= 0) {
+            this.score += 100 * this.wave;
+            this.spawnDeathEffect(e.x, e.y, e.bodyColor);
+          }
+        }
+      });
+
+      // 連段文字
+      if (p.comboCount >= 2) {
+        const labels = ['', '', '2 HIT!', '3 HIT!!', 'COMBO!!!', 'AMAZING!!'];
+        const label = p.comboCount < labels.length ? labels[p.comboCount] : `${p.comboCount} HIT!!!`;
+        this.comboText.setText(label).setAlpha(1).setY(p.y - 60);
+        this.tweens.killTweensOf(this.comboText);
+        this.tweens.add({
+          targets: this.comboText, alpha: 0, y: p.y - 90, duration: 700, ease: 'Power2'
+        });
+      }
+    }
+
+    // ── 敵人 ──
+    updateEnemies(dt) {
+      const p = this.player;
+      this.enemies.forEach(e => {
+        if (e.hp <= 0) return;
+
+        e.stateTimer  = Math.max(0, e.stateTimer  - dt * 1000);
+        e.attackTimer = Math.max(0, e.attackTimer - dt * 1000);
+        e.stunTimer   = Math.max(0, e.stunTimer   - dt * 1000);
+        e.knockVx *= 0.80; e.knockVy *= 0.80;
+
+        if (e.stunTimer > 0) {
+          e.x = Phaser.Math.Clamp(e.x + e.knockVx * dt, 58, W - 58);
+          e.y = Phaser.Math.Clamp(e.y + e.knockVy * dt, 58, H - 58);
+          return;
+        }
+
+        const dist  = Phaser.Math.Distance.Between(e.x, e.y, p.x, p.y);
+        const angle = Math.atan2(p.y - e.y, p.x - e.x);
+        e.facing = Math.cos(angle) > 0 ? 1 : -1;
+
+        if (dist > 46) {
+          e.vx = Math.cos(angle) * e.speed;
+          e.vy = Math.sin(angle) * e.speed;
+          e.state = 'chase';
+        } else if (e.attackTimer === 0) {
+          e.state = 'attack'; e.stateTimer = 300;
+          e.attackTimer = Phaser.Math.Between(900, 1800);
+
+          if (p.invincible === 0) {
+            p.hp -= 12;
+            p.invincible = 500;
+            p.vx = -e.facing * 200; p.vy = -80;
+            this.cameras.main.shake(200, 0.009);
+            this.spawnHitEffect(p.x, p.y, 0xff0000, 8);
+            if (p.hp <= 0) { p.hp = 0; this.triggerGameOver(); }
+          }
+        } else {
+          e.vx = 0; e.vy = 0;
+          e.state = 'idle';
+        }
+
+        e.x = Phaser.Math.Clamp(e.x + (e.vx + e.knockVx) * dt, 58, W - 58);
+        e.y = Phaser.Math.Clamp(e.y + (e.vy + e.knockVy) * dt, 58, H - 58);
+      });
+    }
+
+    // ── 玩家與敵人體積推開 ──
+    checkBodyCollisions() {
+      const p = this.player;
+      this.enemies.forEach(e => {
+        if (e.hp <= 0) return;
+        const dx = p.x - e.x, dy = p.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 30 && dist > 0) {
+          const push = (30 - dist) / dist * 0.5;
+          p.x += dx * push; p.y += dy * push;
+          e.x -= dx * push; e.y -= dy * push;
+        }
+      });
+    }
+
+    // ── 粒子 ──
+    spawnHitEffect(x, y, color, count = 8) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd   = 80 + Math.random() * 130;
+        this.particles.push({
+          x, y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          life: 0.35, maxLife: 0.35,
+          color, size: 3 + Math.random() * 3,
+          type: 'spark',
+        });
+      }
+    }
+
+    spawnTrail(x, y, color) {
+      for (let i = 0; i < 6; i++) {
+        this.particles.push({
+          x: x + (Math.random() - 0.5) * 22,
+          y: y + (Math.random() - 0.5) * 22,
+          vx: 0, vy: 0,
+          life: 0.22, maxLife: 0.22,
+          color, size: 9 + Math.random() * 8,
+          type: 'trail',
+        });
+      }
+    }
+
+    spawnDeathEffect(x, y, color) {
+      for (let i = 0; i < 20; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd   = 60 + Math.random() * 200;
+        this.particles.push({
+          x, y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          life: 0.65, maxLife: 0.65,
+          color, size: 4 + Math.random() * 6,
+          type: 'spark',
+        });
+      }
+    }
+
+    updateParticles(dt) {
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const pt = this.particles[i];
+        pt.life -= dt;
+        if (pt.life <= 0) { this.particles.splice(i, 1); continue; }
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.vx *= 0.86; pt.vy *= 0.86;
+      }
+    }
+
+    // ══ 繪製 ══
+    drawAll(t) {
+      const p = this.player;
+
+      // 粒子
+      this.particleGfx.clear();
+      this.particles.forEach(pt => {
+        const a = pt.life / pt.maxLife;
+        this.particleGfx.fillStyle(pt.color, a);
+        if (pt.type === 'trail') {
+          this.particleGfx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+        } else {
+          this.particleGfx.fillCircle(pt.x, pt.y, pt.size * a);
+        }
+      });
+
+      // 敵人
+      this.enemies.forEach(e => {
+        e.gfx.clear(); e.shadow.clear();
+        if (e.hp <= 0) return;
+        this.drawCharacter(e.gfx, e.shadow, e.x, e.y, e.facing, false, e.stunTimer > 0, e.state, t, e.bodyColor);
+        this.drawHpBar(e.gfx, e.x, e.y - 32, e.hp, e.maxHp, 0xff4444);
+      });
+
+      // 玩家
+      p.gfx.clear(); p.shadow.clear();
+      this.drawCharacter(p.gfx, p.shadow, p.x, p.y, p.facing, true, false, p.state, t, 0x4cc9f0);
+
+      // 無敵閃爍
+      p.gfx.setAlpha(p.invincible > 0 && Math.floor(t / 80) % 2 === 0 ? 0.3 : 1);
+
+      // 攻擊範圍提示
+      if (p.state === 'attack' && p.stateTimer > 0) {
+        p.gfx.fillStyle(0xffffff, 0.12);
+        p.gfx.fillEllipse(p.x + p.facing * 46, p.y, 82, 50);
+      }
+    }
+
+    drawCharacter(g, sg, x, y, facing, isPlayer, stunned, state, t, bodyColor) {
+      const armorColor = Phaser.Display.Color.IntegerToColor(bodyColor);
+      armorColor.darken(35);
+      const armor = armorColor.color;
+      const limb  = Phaser.Display.Color.IntegerToColor(bodyColor);
+      limb.darken(55);
+      const limbC = limb.color;
+
+      const bob      = state === 'run' ? Math.sin(t * 0.016) * 3 : 0;
+      const sqX      = state === 'attack' ? 1.15 : 1;
+      const sqY      = state === 'attack' ? 0.85 : 1;
+      const alpha    = stunned ? 0.55 : 1;
+
+      // 陰影
+      sg.fillStyle(0x000000, 0.2);
+      sg.fillEllipse(x, y + 19, 36, 9);
+
+      // 身體
+      g.fillStyle(bodyColor, alpha);
+      g.fillRoundedRect(x - 10 * sqX, y - 18 + bob, 20 * sqX, 26 * sqY, 5);
+
+      // 護甲
+      g.fillStyle(armor, alpha);
+      g.fillRoundedRect(x - 9 * sqX, y - 14 + bob, 18 * sqX, 14 * sqY, 3);
+
+      // 頭
+      g.fillStyle(bodyColor, alpha);
+      g.fillCircle(x, y - 24 + bob, 10);
+
+      // 髮型
+      g.fillStyle(isPlayer ? 0xf0c040 : 0xeeeeee, alpha);
+      g.fillRoundedRect(x - 8, y - 34 + bob, 16, 8, 4);
+
+      // 眼睛
+      g.fillStyle(0xffffff, 1);
+      const ex = x + facing * 3;
+      g.fillCircle(ex, y - 25 + bob, 2.5);
+      g.fillStyle(0x111111, 1);
+      g.fillCircle(ex + facing * 1, y - 25 + bob, 1.2);
+
+      // 腿
+      const swing = state === 'run' ? Math.sin(t * 0.016) * 7 : 0;
+      g.fillStyle(limbC, alpha);
+      g.fillRect(x - 8, y + 8 + bob, 7, 14 + swing);
+      g.fillRect(x + 1, y + 8 + bob, 7, 14 - swing);
+
+      // 手臂
+      const armSwing = state === 'run' ? Math.sin(t * 0.016) * 6 : 0;
+      const atkSwing = state === 'attack' ? facing * 16 : 0;
+      g.fillStyle(limbC, alpha);
+      g.fillRect(x - 14, y - 12 + bob + armSwing, 5, 14);
+      g.fillRect(x +  9, y - 12 + bob - armSwing + atkSwing, 5, 14);
+
+      // 劍（玩家才有）
+      if (isPlayer) {
+        const wx = x + facing * 18;
+        const wy = y - 10 + bob + atkSwing;
+        g.fillStyle(0xcccccc, 1);
+        g.fillRect(wx - 2, wy - 18, 4, 22);
+        g.fillStyle(0x888888, 1);
+        g.fillRect(wx - 7, wy - 8, 14, 3);
+        g.fillStyle(0xf0c040, 1);
+        g.fillRect(wx - 2, wy - 20, 4, 4);
+      }
+    }
+
+    drawHpBar(g, x, y, hp, maxHp, color) {
+      const bw = 42, bh = 5;
+      g.fillStyle(0x222222, 0.9);
+      g.fillRect(x - bw / 2, y, bw, bh);
+      g.fillStyle(color, 1);
+      g.fillRect(x - bw / 2, y, bw * Math.max(0, hp / maxHp), bh);
+      g.lineStyle(1, 0x000000, 0.6);
+      g.strokeRect(x - bw / 2, y, bw, bh);
+    }
+
+    drawUI() {
+      this.uiGfx.clear();
+      const p = this.player;
+
+      // HP 背景框
+      this.uiGfx.fillStyle(0x000000, 0.6);
+      this.uiGfx.fillRoundedRect(10, 10, 200, 30, 6);
+      this.uiGfx.lineStyle(2, 0x4cc9f0, 1);
+      this.uiGfx.strokeRoundedRect(10, 10, 200, 30, 6);
+
+      // HP 條
+      const hpRatio = Math.max(0, p.hp / p.maxHp);
+      const hpColor = hpRatio > 0.6 ? 0x4cc9f0 : hpRatio > 0.3 ? 0xf0c040 : 0xff4444;
+      this.uiGfx.fillStyle(hpColor, 1);
+      this.uiGfx.fillRoundedRect(15, 15, 190 * hpRatio, 20, 4);
+
+      this.hpText.setText(`HP  ${p.hp} / ${p.maxHp}`);
+      this.scoreText.setText(`分數: ${this.score}`);
+      this.waveText.setText(`Wave ${this.wave}`);
+
+      // 技能冷卻圖示
+      this.drawCooldownIcon(52,  H - 28, p.dashCooldown,   800, 0x4cc9f0,  'K');
+      this.drawCooldownIcon(90,  H - 28, p.rollCooldown,   600, 0xf0c040, 'SP');
+      this.drawCooldownIcon(128, H - 28, p.attackCooldown, 320, 0xff6b6b,  'J');
+    }
+
+    drawCooldownIcon(x, y, cd, maxCd, color, label) {
+      const r = 14;
+      this.uiGfx.fillStyle(0x111111, 0.8);
+      this.uiGfx.fillCircle(x, y, r);
+
+      if (cd > 0) {
+        // 灰色弧：冷卻中
+        this.uiGfx.lineStyle(3, 0x444444, 1);
+        this.uiGfx.beginPath();
+        this.uiGfx.arc(x, y, r - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - cd / maxCd), false);
+        this.uiGfx.strokePath();
+      } else {
+        // 亮色：可用
+        this.uiGfx.lineStyle(2, color, 1);
+        this.uiGfx.strokeCircle(x, y, r - 1);
+      }
+    }
+
+    // ── 下一波 ──
+    checkWave() {
+      if (this._waveLock) return;
+      const alive = this.enemies.filter(e => e.hp > 0).length;
+      if (alive > 0) return;
+
+      this._waveLock = true;
+      this.player.hp = Math.min(this.player.maxHp, this.player.hp + 30);
+      this.time.delayedCall(1400, () => {
+        this.wave++;
+        this.enemies.forEach(e => { e.gfx.destroy(); e.shadow.destroy(); });
+        this.spawnEnemies(3 + this.wave);
+        this.showBanner(`Wave ${this.wave}`, '#f0c040');
+        this._waveLock = false;
+      });
+    }
+
+    showBanner(text, fill = '#f0c040') {
+      const txt = this.add.text(W / 2, H / 2, text, {
+        fontSize: '50px', fill, fontStyle: 'bold', stroke: '#000', strokeThickness: 7
+      }).setOrigin(0.5).setDepth(30).setAlpha(0);
+      this.tweens.add({ targets: txt, alpha: 1, duration: 350,
+        onComplete: () => this.tweens.add({ targets: txt, alpha: 0, delay: 800, duration: 400,
+          onComplete: () => txt.destroy() }) });
+    }
+
+    // ── 遊戲結束 ──
+    triggerGameOver() {
+      this.gameOver = true;
+      this.cameras.main.shake(700, 0.02);
+
+      const ov = this.add.graphics().setDepth(50);
+      ov.fillStyle(0x000000, 0.72);
+      ov.fillRect(0, 0, W, H);
+
+      this.add.text(W / 2, H / 2 - 60, 'GAME OVER', {
+        fontSize: '54px', fill: '#ff4444', fontStyle: 'bold', stroke: '#000', strokeThickness: 8
+      }).setOrigin(0.5).setDepth(51);
+
+      this.add.text(W / 2, H / 2 + 5, `最終分數: ${this.score}　Wave ${this.wave}`, {
+        fontSize: '22px', fill: '#f0c040'
+      }).setOrigin(0.5).setDepth(51);
+
+      const btn = this.add.text(W / 2, H / 2 + 55, '[ 按 R 重新開始 ]', {
+        fontSize: '20px', fill: '#4cc9f0'
+      }).setOrigin(0.5).setDepth(51);
+      this.tweens.add({ targets: btn, alpha: 0, yoyo: true, repeat: -1, duration: 600 });
+    }
+  }
+
+  new Phaser.Game({
+    type: Phaser.AUTO,
+    width: W, height: H,
+    parent: 'game',
+    backgroundColor: '#16213e',
+    scene: [BattleScene],
+    audio: { noAudio: true },
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+﻿{
+    "version":  "0.0.1",
+    "configurations":  [
+                           {
+                               "name":  "mind-map-ai (Flask)",
+                               "runtimeExecutable":  "python",
+                               "runtimeArgs":  [
+                                                   "mind-map-ai/app.py"
+                                               ],
+                               "port":  5000,
+                               "autoPort":  true
+                           },
+                           {
+                               "name":  "curve-app (Static)",
+                               "runtimeExecutable":  "npx",
+                               "runtimeArgs":  [
+                                                   "serve",
+                                                   "curve-app"
+                                               ],
+                               "port":  8080,
+                               "autoPort":  true
+                           },
+                           {
+                               "name":  "Static Files Root",
+                               "runtimeExecutable":  "npx",
+                               "runtimeArgs":  [
+                                                   "serve",
+                                                   "."
+                                               ],
+                               "port":  3001,
+                               "autoPort":  true
+                           },
+                           {
+                               "name":  "facialmonitor",
+                               "runtimeExecutable":  "npx",
+                               "runtimeArgs":  [
+                                                   "serve",
+                                                   "facialmonitor",
+                                                   "-l",
+                                                   "4201"
+                                               ],
+                               "port":  4201,
+                               "autoPort":  false
+                           },
+                           {
+                               "name":  "health-quest-rpg",
+                               "runtimeExecutable":  "npm",
+                               "runtimeArgs":  [
+                                                   "--prefix",
+                                                   "health-quest-rpg",
+                                                   "run",
+                                                   "dev"
+                                               ],
+                               "port":  5173,
+                               "autoPort":  true
+                           },
+                           {
+                               "name":  "joyful-restaurant",
+                               "runtimeExecutable":  "npx",
+                               "runtimeArgs":  [
+                                                   "serve",
+                                                   "src",
+                                                   "-p",
+                                                   "3456"
+                                               ],
+                               "port":  3456,
+                               "autoPort":  false
+                           },
+                           {
+                               "name":  "sprint28",
+                               "runtimeExecutable":  "npx",
+                               "runtimeArgs":  [
+                                                   "serve",
+                                                   "sprint28-challenge",
+                                                   "-p",
+                                                   "8000"
+                                               ],
+                               "port":  8000,
+                               "autoPort":  true
+                           }
+                       ]
+}
