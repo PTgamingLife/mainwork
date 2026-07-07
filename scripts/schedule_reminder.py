@@ -69,14 +69,30 @@ def _get_tomorrow_events() -> list[dict]:
     start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
     end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=0)
 
-    result = service.events().list(
-        calendarId="primary",
-        timeMin=start.isoformat(),
-        timeMax=end.isoformat(),
-        singleEvents=True,
-        orderBy="startTime",
-    ).execute()
-    return result.get("items", [])
+    # Fetch from all calendars the user can access
+    cal_list = service.calendarList().list().execute()
+    cal_ids = [c["id"] for c in cal_list.get("items", [])]
+
+    all_events = []
+    seen = set()
+    for cal_id in cal_ids:
+        try:
+            result = service.events().list(
+                calendarId=cal_id,
+                timeMin=start.isoformat(),
+                timeMax=end.isoformat(),
+                singleEvents=True,
+                orderBy="startTime",
+            ).execute()
+            for e in result.get("items", []):
+                if e["id"] not in seen:
+                    seen.add(e["id"])
+                    all_events.append(e)
+        except Exception:
+            pass
+
+    all_events.sort(key=lambda e: e["start"].get("dateTime", e["start"].get("date", "")))
+    return all_events
 
 
 def _format_event(event: dict) -> dict:
