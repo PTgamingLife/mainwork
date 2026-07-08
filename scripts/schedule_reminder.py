@@ -1,15 +1,14 @@
 """
 Daily Schedule Reminder — runs at 22:00 Taiwan time via GitHub Actions.
-Fetches tomorrow's Google Calendar events, generates reminders with GPT-4o,
+Fetches tomorrow's iCloud (CalDAV) events, generates reminders with GPT-4o,
 sends via LINE.
 """
 import os
 import sys
 import io
-import json
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).parent.parent
@@ -23,9 +22,7 @@ if hasattr(sys.stderr, "buffer"):
 from dotenv import load_dotenv
 load_dotenv(ROOT / "config" / ".env")
 
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
+import caldav
 from openai import OpenAI
 from src.database import get_line_target
 from src.line_sender import _push, _broadcast
@@ -45,69 +42,57 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def _get_calendar_service():
-    creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
-    if not creds_json:
-        raise ValueError("GOOGLE_CREDENTIALS_JSON 未設定")
-    creds_data = json.loads(creds_json)
-    creds = Credentials(
-        token=creds_data.get("token", ""),
-        refresh_token=creds_data["refresh_token"],
-        token_uri=creds_data.get("token_uri", "https://oauth2.googleapis.com/token"),
-        client_id=creds_data["client_id"],
-        client_secret=creds_data["client_secret"],
-        scopes=creds_data.get("scopes", ["https://www.googleapis.com/auth/calendar.readonly"]),
-    )
-    if creds.expired or not creds.valid:
-        creds.refresh(Request())
-    return build("calendar", "v3", credentials=creds, cache_discovery=False)
-
-
 def _get_tomorrow_events() -> list[dict]:
-    service = _get_calendar_service()
+    apple_id = os.environ["APPLE_ID"]
+    app_password = os.environ["APPLE_APP_PASSWORD"]
+
     tomorrow = datetime.now(TZ) + timedelta(days=1)
     start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
     end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=0)
 
-    # Fetch from all calendars the user can access
-    cal_list = service.calendarList().list().execute()
-    cal_ids = [c["id"] for c in cal_list.get("items", [])]
+    client = caldav.DAVClient(
+        url="https://caldav.icloud.com",
+        username=apple_id,
+        password=app_password,
+    )
+    principal = client.principal()
+    calendars = principal.calendars()
+    log.info(f"找到 {len(calendars)} 個日曆")
 
     all_events = []
     seen = set()
-    for cal_id in cal_ids:
+    for cal in calendars:
         try:
-            result = service.events().list(
-                calendarId=cal_id,
-                timeMin=start.isoformat(),
-                timeMax=end.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-            ).execute()
-            for e in result.get("items", []):
-                if e["id"] not in seen:
-                    seen.add(e["id"])
-                    all_events.append(e)
-        except Exception:
-            pass
+            events = cal.date_search(start=start, end=end, expand=True)
+            for e in events:
+                summary = str(e.vobject_instance.vevent.summary.value) if hasattr(e.vobject_instance.vevent, "summary") else "（無標題）"
+                vevent = e.vobject_instance.vevent
 
-    all_events.sort(key=lambda e: e["start"].get("dateTime", e["start"].get("date", "")))
+                dtstart = vevent.dtstart.value
+                if isinstance(dtstart, datetime):
+                    dtstart = dtstart.astimezone(TZ)
+                    time_str = dtstart.strftime("%H:%M")
+                else:
+                    time_str = "全天"
+
+                location = str(vevent.location.value) if hasattr(vevent, "location") else ""
+                description = str(vevent.description.value)[:150] if hasattr(vevent, "description") else ""
+
+                uid = str(vevent.uid.value) if hasattr(vevent, "uid") else summary
+                if uid not in seen:
+                    seen.add(uid)
+                    all_events.append({
+                        "time": time_str,
+                        "name": summary,
+                        "location": location,
+                        "description": description,
+                        "_sort": dtstart if isinstance(dtstart, datetime) else datetime.combine(dtstart, datetime.min.time(), tzinfo=TZ),
+                    })
+        except Exception as ex:
+            log.warning(f"日曆讀取失敗: {ex}")
+
+    all_events.sort(key=lambda e: e["_sort"])
     return all_events
-
-
-def _format_event(event: dict) -> dict:
-    start_raw = event["start"].get("dateTime", event["start"].get("date", ""))
-    if "T" in start_raw:
-        dt = datetime.fromisoformat(start_raw).astimezone(TZ)
-        time_str = dt.strftime("%H:%M")
-    else:
-        time_str = "全天"
-    return {
-        "time": time_str,
-        "name": event.get("summary", "（無標題）"),
-        "location": event.get("location", ""),
-        "description": (event.get("description", "") or "")[:150],
-    }
 
 
 def _generate_reminder(events: list[dict]) -> str:
@@ -154,8 +139,7 @@ def _generate_reminder(events: list[dict]) -> str:
 def run():
     log.info("開始撈取明天行程...")
     try:
-        raw = _get_tomorrow_events()
-        events = [_format_event(e) for e in raw]
+        events = _get_tomorrow_events()
         log.info(f"取得 {len(events)} 個行程")
 
         reminder = _generate_reminder(events)
@@ -168,7 +152,7 @@ def run():
         else:
             _broadcast(msgs)
 
-        log.info(f"行程提醒已發送 ✅")
+        log.info("行程提醒已發送 ✅")
 
     except Exception as e:
         log.error(f"發送失敗: {e}")
