@@ -63,7 +63,7 @@ def _get_tomorrow_events() -> list[dict]:
     seen = set()
     for cal in calendars:
         try:
-            events = cal.date_search(start=start, end=end, expand=True)
+            events = cal.search(start=start, end=end, event=True, expand=True)
             for e in events:
                 summary = str(e.vobject_instance.vevent.summary.value) if hasattr(e.vobject_instance.vevent, "summary") else "（無標題）"
                 vevent = e.vobject_instance.vevent

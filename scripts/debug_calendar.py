@@ -32,7 +32,7 @@ for i, cal in enumerate(calendars):
     try:
         name = cal.name or f"日曆{i}"
         print(f"\n[{i+1}] {name}")
-        events = cal.date_search(start=start, end=end, expand=True)
+        events = cal.search(start=start, end=end, event=True, expand=True)
         if events:
             for e in events:
                 v = e.vobject_instance.vevent
