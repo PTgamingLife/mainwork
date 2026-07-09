@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "currency": "TWD",
+    "household": ["先生", "太太"],
+    "updated": "2026-07-09",
+    "note": "以下皆為【範例數字】,請換成你們的真實資料。可以直接對 Claude 說『把月薪改成 X』『房貸餘額是 Y』來更新。"
+  },
+  "accounts": [
+    { "name": "共同活存(台幣)", "type": "bank", "liquid": true, "balance": 180000 },
+    { "name": "先生數位帳戶", "type": "bank", "liquid": true, "balance": 90000 },
+    { "name": "太太數位帳戶", "type": "bank", "liquid": true, "balance": 75000 },
+    { "name": "現金", "type": "cash", "liquid": true, "balance": 15000 }
+  ],
+  "income": [
+    { "source": "先生月薪", "owner": "先生", "amount": 62000, "freq": "monthly", "note": "稅後" },
+    { "source": "太太月薪", "owner": "太太", "amount": 55000, "freq": "monthly", "note": "稅後" },
+    { "source": "年終獎金(攤月)", "owner": "共同", "amount": 15000, "freq": "monthly", "note": "年終約 2 個月,攤到每月估算" }
+  ],
+  "expenses": [
+    { "category": "居住", "item": "房貸月供", "amount": 32000, "freq": "monthly", "owner": "共同", "fixed": true },
+    { "category": "居住", "item": "管理費/水電瓦斯網路", "amount": 6500, "freq": "monthly", "owner": "共同", "fixed": true },
+    { "category": "飲食", "item": "三餐/採買", "amount": 22000, "freq": "monthly", "owner": "共同", "fixed": false },
+    { "category": "交通", "item": "油錢/大眾運輸/機車", "amount": 6000, "freq": "monthly", "owner": "共同", "fixed": false },
+    { "category": "保險", "item": "夫妻保費(攤月)", "amount": 8000, "freq": "monthly", "owner": "共同", "fixed": true },
+    { "category": "通訊", "item": "手機/串流訂閱", "amount": 2500, "freq": "monthly", "owner": "共同", "fixed": true },
+    { "category": "娛樂", "item": "外食/旅遊/嗜好", "amount": 10000, "freq": "monthly", "owner": "共同", "fixed": false },
+    { "category": "其他", "item": "日用/醫療/雜支", "amount": 7000, "freq": "monthly", "owner": "共同", "fixed": false }
+  ],
+  "loans": [
+    {
+      "name": "自住房貸",
+      "principal": 9000000,
+      "balance": 7850000,
+      "rate": 0.021,
+      "termMonths": 360,
+      "monthlyPayment": 32000,
+      "startDate": "2023-01-01"
+    }
+  ],
+  "assets": [
+    { "name": "自住房產(市值估)", "value": 13000000 },
+    { "name": "股票/ETF", "value": 450000 },
+    { "name": "勞退自提累積", "value": 220000 }
+  ],
+  "goals": [
+    { "name": "緊急預備金(6 個月支出)", "target": 500000, "current": 360000 },
+    { "name": "換車頭期款", "target": 300000, "current": 80000 }
+  ],
+  "transactions": [
+    { "date": "2026-07-05", "type": "income", "category": "薪資", "amount": 62000, "owner": "先生", "note": "7 月薪水" },
+    { "date": "2026-07-05", "type": "income", "category": "薪資", "amount": 55000, "owner": "太太", "note": "7 月薪水" },
+    { "date": "2026-07-06", "type": "expense", "category": "居住", "amount": 32000, "owner": "共同", "note": "7 月房貸" },
+    { "date": "2026-07-08", "type": "expense", "category": "飲食", "amount": 3200, "owner": "太太", "note": "全聯採買" }
+  ]
+}
