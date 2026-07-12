@@ -17,15 +17,16 @@ set -e
 
 BASE="https://d8j0ntlcm91z4.cloudfront.net/user_3E8E7dfEkimdmsd0LdokMgNgQuE"
 
-# --- 依播放順序列出片段 (檔名 : 來源) ---
+# --- 依播放順序列出片段 (檔名 : 來源) ---  ※ 新版劇情 (唱兩遍)
 declare -a FILES=(
   "intro.mp4|$BASE/hf_20260712_032107_748e28eb-27ee-41a5-9117-3e62986f9ea4.mp4"   # 片頭 Logo
-  "s1.mp4|$BASE/hf_20260712_005116_7417e349-efff-4f05-9409-8437957f82fb.mp4"       # 1 一閃一閃亮晶晶 POV
-  "s2.mp4|$BASE/hf_20260711_165634_9c86033a-9024-4bf7-86e2-bf6ffe7d6791.mp4"       # 2 滿天都是小星星 3rd
-  "s3.mp4|$BASE/hf_20260712_005119_15d7ff5d-46e3-4cfb-8ac2-1dc3412df0c7.mp4"       # 3 掛在天上放光明 POV
-  "s4.mp4|$BASE/hf_20260712_005122_9954e5f1-9db8-4ada-8e0a-83d933b42715.mp4"       # 4 好像許多小眼睛 特寫
+  "s1.mp4|$BASE/hf_20260712_135954_1e8cde5b-3af3-468e-b8e5-bafc93959127.mp4"       # 1 一閃一閃亮晶晶 左前45° 眼睛飛星
+  "s2.mp4|$BASE/hf_20260712_135956_a04390c6-1337-4fe6-80cc-aeabd408bf4a.mp4"       # 2 滿天都是小星星 POV左 8星彈出
+  "s3.mp4|$BASE/hf_20260712_135959_ec8d4d32-5899-4473-a5ad-0e35b5a4864a.mp4"       # 3 掛在天上放光明 POV直 喇叭閃3次
+  "s4.mp4|$BASE/hf_20260712_151102_a5bcb194-4fda-4de0-b2e7-1eb26eacda9a.mp4"       # 4 好像許多小眼睛 POV右 星滑左
+  "s5.mp4|$BASE/hf_20260712_151105_5ec11b72-90ba-4e4a-b827-96da1a2754c5.mp4"       # 5 一閃一閃亮晶晶 右前45° 眼睛飛星
   "s6.mp4|$BASE/hf_20260712_005124_0f1a55e4-addd-4a0e-b08a-fc4a9f3c6c18.mp4"       # 6 滿天都是小星星 拉遠
-  "end.mp4|$BASE/hf_20260711_164956_1cf6c8bf-7559-4c9f-8f80-fc80552b8c13.mp4"      # 片尾 開回玩具庫
+  "end.mp4|$BASE/hf_20260712_151108_d8c49380-b214-4000-83f8-a62f29ffb820.mp4"      # 片尾 微笑→倒車入庫→閉眼
 )
 
 echo "==> 下載片段..."
@@ -45,17 +46,24 @@ norm s1.mp4  n_s1.mp4
 norm s2.mp4  n_s2.mp4
 norm s3.mp4  n_s3.mp4
 norm s4.mp4  n_s4.mp4
+norm s5.mp4  n_s5.mp4
 norm s6.mp4  n_s6.mp4
 norm end.mp4 n_end.mp4
 
-echo "==> 依順序串接 (鏡頭5 = 再放一次鏡頭1)..."
+echo "==> 依順序串接 (第 1-6 播兩遍後接片尾)..."
 cat > list.txt <<EOF
 file 'n_intro.mp4'
 file 'n_s1.mp4'
 file 'n_s2.mp4'
 file 'n_s3.mp4'
 file 'n_s4.mp4'
+file 'n_s5.mp4'
+file 'n_s6.mp4'
 file 'n_s1.mp4'
+file 'n_s2.mp4'
+file 'n_s3.mp4'
+file 'n_s4.mp4'
+file 'n_s5.mp4'
 file 'n_s6.mp4'
 file 'n_end.mp4'
 EOF
