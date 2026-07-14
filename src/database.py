@@ -303,3 +303,114 @@ def mark_analysis_completed():
         )
     except Exception:
         pass
+
+
+# ── E-invoice / spending (electronic invoices table) ───────────────────────
+
+def _local_invoice_file() -> Path:
+    f = Path(__file__).parent.parent / "logs" / "invoices.jsonl"
+    f.parent.mkdir(exist_ok=True)
+    return f
+
+
+def get_existing_inv_nums() -> set[str]:
+    """Invoice numbers already stored — used to de-dupe on each fetch."""
+    nums: set[str] = set()
+    # Supabase first
+    try:
+        resp = requests.get(
+            _url("invoices"),
+            headers=_headers(),
+            params={"select": "inv_num"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            nums |= {r["inv_num"] for r in resp.json()}
+    except Exception:
+        pass
+    # Local fallback
+    f = _local_invoice_file()
+    if f.exists():
+        for line in f.read_text(encoding="utf-8").splitlines():
+            try:
+                nums.add(json.loads(line)["inv_num"])
+            except Exception:
+                continue
+    return nums
+
+
+def save_invoice(header: dict, category: str, items: list[dict]) -> bool:
+    """
+    Persist one invoice (header + items). header keys: invNum, invDate,
+    sellerName, amount. Idempotent per inv_num (merge-duplicates on Supabase).
+    """
+    inv_num = header["invNum"]
+    row = {
+        "inv_num": inv_num,
+        "inv_date": header.get("invDate", ""),
+        "seller_name": header.get("sellerName", ""),
+        "amount": int(header.get("amount") or 0),
+        "category": category,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    ok = False
+    # Supabase (best-effort)
+    try:
+        resp = requests.post(
+            _url("invoices"),
+            headers=_headers("resolution=merge-duplicates,return=minimal"),
+            json=row,
+            timeout=10,
+        )
+        ok = resp.status_code in (200, 201, 204)
+        if ok and items:
+            item_rows = [{
+                "inv_num": inv_num,
+                "description": it.get("description", ""),
+                "quantity": int(it.get("quantity") or 1),
+                "unit_price": int(it.get("unitPrice") or 0),
+                "amount": int(it.get("amount") or 0),
+            } for it in items]
+            requests.post(
+                _url("invoice_items"),
+                headers=_headers("return=minimal"),
+                json=item_rows,
+                timeout=10,
+            )
+    except Exception:
+        ok = False
+
+    # Always append locally
+    with open(_local_invoice_file(), "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({**row, "items": items}, ensure_ascii=False) + "\n")
+    return ok
+
+
+def load_month_invoices(year_month: str) -> list[dict]:
+    """
+    Return [{seller_name, amount, category, inv_date}] for a given 'YYYY/MM'.
+    Supabase first, local fallback.
+    """
+    out: list[dict] = []
+    try:
+        resp = requests.get(
+            _url("invoices"),
+            headers=_headers(),
+            params={"inv_date": f"like.{year_month}*",
+                    "select": "seller_name,amount,category,inv_date"},
+            timeout=10,
+        )
+        if resp.status_code == 200 and resp.json():
+            return resp.json()
+    except Exception:
+        pass
+    f = _local_invoice_file()
+    if f.exists():
+        for line in f.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(line)
+                if str(r.get("inv_date", "")).startswith(year_month):
+                    out.append(r)
+            except Exception:
+                continue
+    return out
