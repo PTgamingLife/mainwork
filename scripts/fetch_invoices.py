@@ -7,6 +7,7 @@ Usage:
   python scripts/fetch_invoices.py --test         # 用假資料跑完整流程,不推播
   python scripts/fetch_invoices.py --days N        # 往回抓 N 天 (預設 2)
   python scripts/fetch_invoices.py --report        # 只發本月消費整理到 LINE
+  python scripts/fetch_invoices.py --finance       # 抓完同步進家庭財務 data.json
 """
 import os
 import sys
@@ -50,12 +51,13 @@ log = logging.getLogger(__name__)
 def parse_args():
     test = "--test" in sys.argv
     report_only = "--report" in sys.argv
+    finance = "--finance" in sys.argv  # sync into household-finance/data.json
     days = 2
     if "--days" in sys.argv:
         i = sys.argv.index("--days")
         if i + 1 < len(sys.argv):
             days = int(sys.argv[i + 1])
-    return test, report_only, days
+    return test, report_only, days, finance
 
 
 def fetch_and_store(days: int, test_mode: bool) -> int:
@@ -97,13 +99,26 @@ def build_month_report() -> tuple[dict, dict]:
     return summary, budget
 
 
-def run(test_mode: bool, report_only: bool, days: int):
+def sync_finance(test_mode: bool):
+    """Merge this month's invoices into household-finance/data.json transactions."""
+    from src import finance_bridge
+    ym = datetime.now().strftime("%Y/%m")
+    res = finance_bridge.sync_month(ym, dry_run=test_mode)
+    tag = " [dry-run]" if test_mode else ""
+    log.info(f"家庭財務同步{tag}:新增 {res['added']} 筆、跳過 {res['skipped']} 筆、"
+             f"合計 NT${res['total_amount']:,}")
+
+
+def run(test_mode: bool, report_only: bool, days: int, finance: bool):
     log.info("=" * 45)
     log.info("電子發票 — 消費追蹤啟動" + (" [TEST]" if test_mode else ""))
     log.info("=" * 45)
 
     if not report_only:
         fetch_and_store(days, test_mode)
+
+    if finance:
+        sync_finance(test_mode)
 
     summary, budget = build_month_report()
     ym_label = datetime.now().strftime("%Y 年 %m 月")
@@ -135,5 +150,5 @@ def run(test_mode: bool, report_only: bool, days: int):
 
 
 if __name__ == "__main__":
-    test, report_only, days = parse_args()
-    run(test_mode=test, report_only=report_only, days=days)
+    test, report_only, days, finance = parse_args()
+    run(test_mode=test, report_only=report_only, days=days, finance=finance)
