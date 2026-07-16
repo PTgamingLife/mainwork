@@ -28,6 +28,8 @@ function lights(){const L=[];
  else L.push(["r","負債比過高","每月債務支出佔收入 "+(debtRatio*100).toFixed(0)+"%,避免再增貸。"]);
  return L;}
 const kpi=(l,v,c)=>`<div class="card kpi"><div class="label">${l}</div><div class="val"${c?` style="color:${c}"`:""}>${v}</div></div>`;
+const einv=d.transactions.filter(t=>t.source==="einvoice");
+const einvSum=einv.reduce((s,t)=>s+ +t.amount,0);
 const html=`<!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8">
@@ -98,9 +100,9 @@ ${kpi("淨值(資產−負債)",fmtK(net))}${kpi("緊急預備金",emMonths.toFi
 <div class="note">低利自住房貸屬「好債」,是否提前還款可請 Claude 做取捨分析。</div></div>
 <div class="card"><h2>🎯 目標進度</h2>${d.goals.map(g=>{const p=Math.min(100,g.current/g.target*100);return `<div class="goal"><div class="top"><b>${g.name}</b><span class="pct">${p.toFixed(0)}% · ${fmt(g.current)}/${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%;background:${p>=100?'var(--green)':'var(--accent)'}"></i></div></div>`}).join("")}</div>
 </div>
-<div class="card" style="margin-top:12px"><h2>🧾 最近交易</h2>
-<table><thead><tr><th>日期</th><th>類別</th><th>人</th><th class="num">金額</th></tr></thead><tbody>
-${d.transactions.slice().reverse().slice(0,8).map(t=>`<tr><td>${t.date}</td><td>${t.category}<span class="pill">${t.type==="income"?"收入":"支出"}</span></td><td>${t.owner||"—"}</td><td class="num"${t.type==="income"?' style="color:var(--green)"':''}>${t.type==="income"?"+":"−"}${fmt(t.amount)}</td></tr>`).join("")}
+<div class="card" style="margin-top:12px"><h2>🧾 最近交易${einv.length?` <span class="pill" style="background:var(--greenbg);color:var(--green)">🧾 電子發票 ${einv.length} 筆 · ${fmt(einvSum)}</span>`:""}</h2>
+<table><thead><tr><th>日期</th><th>類別 / 店家</th><th>人</th><th class="num">金額</th></tr></thead><tbody>
+${d.transactions.slice().reverse().slice(0,10).map(t=>`<tr><td>${t.date}</td><td>${t.store?t.store:t.category}<span class="pill">${t.type==="income"?"收入":(t.source==="einvoice"?"發票":"支出")}</span></td><td>${t.owner||"—"}</td><td class="num"${t.type==="income"?' style="color:var(--green)"':''}>${t.type==="income"?"+":"−"}${fmt(t.amount)}</td></tr>`).join("")}
 </tbody></table></div>
 <div class="note" style="margin-top:18px">這是我們家的財務快照,由 data.json 產生。要更新數字就跟 Claude 說一聲。此頁唯讀、不含帳密,可安心分享。</div>
 </div></body></html>`;
