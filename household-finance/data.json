@@ -51,7 +51,7 @@
     { "date": "2026-07-05", "type": "income", "category": "薪資", "amount": 55000, "owner": "太太", "note": "7 月薪水" },
     { "date": "2026-07-06", "type": "expense", "category": "居住", "amount": 32000, "owner": "共同", "note": "7 月房貸" },
     { "date": "2026-07-08", "type": "expense", "category": "飲食", "amount": 3200, "owner": "太太", "note": "全聯採買" },
-    { "date": "2026-07-09", "type": "expense", "category": "飲食", "amount": 268, "owner": "先生", "store": "全家便利商店", "invoiceNumber": "AB12345678", "source": "einvoice", "note": "電子發票匯入範例" },
-    { "date": "2026-07-09", "type": "expense", "category": "交通", "amount": 1000, "owner": "共同", "store": "台灣中油", "invoiceNumber": "AB12345679", "source": "einvoice", "note": "電子發票匯入範例" }
+    { "date": "2026-07-09", "type": "expense", "category": "飲食", "amount": 268, "owner": "先生", "store": "全家便利商店", "inv": "AB12345678", "source": "einvoice", "note": "電子發票匯入範例" },
+    { "date": "2026-07-09", "type": "expense", "category": "交通", "amount": 1000, "owner": "共同", "store": "台灣中油", "inv": "AB12345679", "source": "einvoice", "note": "電子發票匯入範例" }
   ]
 }

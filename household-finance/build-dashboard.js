@@ -28,7 +28,8 @@ function lights(){const L=[];
  else L.push(["r","負債比過高","每月債務支出佔收入 "+(debtRatio*100).toFixed(0)+"%,避免再增貸。"]);
  return L;}
 const kpi=(l,v,c)=>`<div class="card kpi"><div class="label">${l}</div><div class="val"${c?` style="color:${c}"`:""}>${v}</div></div>`;
-const einv=d.transactions.filter(t=>t.source==="einvoice");
+const isEinv=t=>t.source==="einvoice"||!!t.inv;
+const einv=d.transactions.filter(isEinv);
 const einvSum=einv.reduce((s,t)=>s+ +t.amount,0);
 const html=`<!doctype html>
 <html lang="zh-Hant"><head>
@@ -102,7 +103,7 @@ ${kpi("淨值(資產−負債)",fmtK(net))}${kpi("緊急預備金",emMonths.toFi
 </div>
 <div class="card" style="margin-top:12px"><h2>🧾 最近交易${einv.length?` <span class="pill" style="background:var(--greenbg);color:var(--green)">🧾 電子發票 ${einv.length} 筆 · ${fmt(einvSum)}</span>`:""}</h2>
 <table><thead><tr><th>日期</th><th>類別 / 店家</th><th>人</th><th class="num">金額</th></tr></thead><tbody>
-${d.transactions.slice().reverse().slice(0,10).map(t=>`<tr><td>${t.date}</td><td>${t.store?t.store:t.category}<span class="pill">${t.type==="income"?"收入":(t.source==="einvoice"?"發票":"支出")}</span></td><td>${t.owner||"—"}</td><td class="num"${t.type==="income"?' style="color:var(--green)"':''}>${t.type==="income"?"+":"−"}${fmt(t.amount)}</td></tr>`).join("")}
+${d.transactions.slice().reverse().slice(0,10).map(t=>`<tr><td>${t.date}</td><td>${t.store||(isEinv(t)&&t.note)||t.category}<span class="pill">${t.type==="income"?"收入":(isEinv(t)?"發票":"支出")}</span></td><td>${t.owner||"—"}</td><td class="num"${t.type==="income"?' style="color:var(--green)"':''}>${t.type==="income"?"+":"−"}${fmt(t.amount)}</td></tr>`).join("")}
 </tbody></table></div>
 <div class="note" style="margin-top:18px">這是我們家的財務快照,由 data.json 產生。要更新數字就跟 Claude 說一聲。此頁唯讀、不含帳密,可安心分享。</div>
 </div></body></html>`;
