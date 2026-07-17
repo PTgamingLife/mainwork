@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家庭財務儀表板</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1a2233; --muted:#63708a; --line:#e5eaf2;
+    --green:#1f9d6b; --greenbg:#e4f5ec; --yellow:#c98a12; --yellowbg:#fbf1dc; --red:#d1495b; --redbg:#fbe6e9;
+    --accent:#3b6ef5; --shadow:0 1px 3px rgba(20,30,50,.06),0 6px 24px rgba(20,30,50,.05);
+    --c1:#3b6ef5;--c2:#1f9d6b;--c3:#c98a12;--c4:#8a5cf6;--c5:#e07b39;--c6:#39b0c9;--c7:#d1495b;--c8:#7a8699;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0e1420;--card:#161f2e;--ink:#eaf0fa;--muted:#93a1ba;--line:#26324a;
+      --greenbg:#123024;--yellowbg:#332812;--redbg:#3a1c22;--shadow:0 1px 3px rgba(0,0,0,.4),0 6px 24px rgba(0,0,0,.3);}
+  }
+  :root[data-theme="light"]{--bg:#f4f6f9;--card:#fff;--ink:#1a2233;--muted:#63708a;--line:#e5eaf2;--greenbg:#e4f5ec;--yellowbg:#fbf1dc;--redbg:#fbe6e9;--shadow:0 1px 3px rgba(20,30,50,.06),0 6px 24px rgba(20,30,50,.05);}
+  :root[data-theme="dark"]{--bg:#0e1420;--card:#161f2e;--ink:#eaf0fa;--muted:#93a1ba;--line:#26324a;--greenbg:#123024;--yellowbg:#332812;--redbg:#3a1c22;--shadow:0 1px 3px rgba(0,0,0,.4),0 6px 24px rgba(0,0,0,.3);}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 18px 64px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;margin-bottom:6px}
+  h1{font-size:22px;margin:0;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:13px}
+  .toolbar{margin-left:auto;display:flex;gap:8px;align-items:center}
+  button.ghost{background:var(--card);color:var(--muted);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12.5px;cursor:pointer}
+  button.ghost:hover{color:var(--ink)}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(4,1fr);margin:18px 0}
+  @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .label{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .kpi .val{font-size:24px;font-weight:700;letter-spacing:.3px}
+  .kpi .val small{font-size:13px;font-weight:600;color:var(--muted);margin-left:2px}
+  .kpi .delta{font-size:12px;margin-top:4px;color:var(--muted)}
+  .cols{grid-template-columns:1.2fr .8fr}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+  h2{font-size:15px;margin:0 0 14px}
+  .lights{display:flex;flex-direction:column;gap:10px}
+  .light{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:10px}
+  .light .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}
+  .light .t{font-weight:600;font-size:14px}
+  .light .d{font-size:12.5px;color:var(--muted)}
+  .g{background:var(--greenbg)} .g .dot{background:var(--green)} .g .t{color:var(--green)}
+  .y{background:var(--yellowbg)} .y .dot{background:var(--yellow)} .y .t{color:var(--yellow)}
+  .r{background:var(--redbg)} .r .dot{background:var(--red)} .r .t{color:var(--red)}
+  .legend{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .legend .row{display:flex;align-items:center;gap:8px;font-size:13px}
+  .legend .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  .legend .amt{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+  .donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .bar{height:9px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:6px}
+  .bar>i{display:block;height:100%;border-radius:6px}
+  .goal{margin-bottom:14px}
+  .goal .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
+  .goal .top b{font-weight:600}
+  .goal .pct{color:var(--muted);font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--line);color:var(--muted)}
+  .mort .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .mort .row:last-child{border:none}
+  .mort .row b{font-variant-numeric:tabular-nums}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .banner{background:var(--yellowbg);color:var(--yellow);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:12.5px;margin-bottom:16px}
+  details.help{margin-top:22px}
+  details.help summary{cursor:pointer;font-size:13.5px;color:var(--muted);font-weight:600}
+  details.help div{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.7}
+  details.help code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:12px}
+  .err{color:var(--red);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏡 家庭財務儀表板</h1>
+    <span class="sub" id="meta">載入中…</span>
+    <div class="toolbar">
+      <button class="ghost" id="loadBtn">載入 data.json</button>
+      <button class="ghost" id="themeBtn">🌓</button>
+    </div>
+  </header>
+  <input type="file" id="file" accept="application/json,.json" style="display:none">
+
+  <div id="banner"></div>
+  <div id="app"></div>
+
+  <details class="help">
+    <summary>怎麼用?老婆怎麼一起看?(點開)</summary>
+    <div>
+      <b>更新數字</b>:直接跟 Claude 說,例如「把先生月薪改成 68000」「這個月房貸餘額剩 781 萬」「記一筆:太太買菜 3200」。Claude 會改 <code>household-finance/data.json</code>,重新整理這頁就更新。<br>
+      <b>每月建議</b>:對 Claude 說「這個月的財務建議」,它會依你們現況 + 財務模型,給出健檢燈號與具體行動。<br>
+      <b>上傳理財工具</b>:把想用的 App / ETF / 文章 / 試算表丟給 Claude 說「更新財務模型」,模型會學起來,之後的建議更貼你們。<br>
+      <b>老婆一起用</b>:你們共用同一個專案(這個 repo / claude.ai/code 的同一個對話),她進來就能對話、記帳、看這個網站。這頁本身唯讀、不含帳密,可安心分享連結。<br>
+      <b>本機開啟</b>:在 <code>household-finance/</code> 資料夾執行 <code>python3 -m http.server</code>,瀏覽器開 <code>localhost:8000</code> 就會自動讀 data.json。直接雙擊開檔時瀏覽器會擋讀取,請用上面的「載入 data.json」按鈕手動選檔。
+    </div>
+  </details>
+</div>
+
+<script>
+const CUR = "NT$";
+const fmt = n => CUR + Math.round(n).toLocaleString("en-US");
+const fmtK = n => Math.abs(n)>=10000 ? CUR+(n/10000).toFixed(n%10000?1:0)+"萬" : fmt(n);
+const PAL = ["--c1","--c2","--c3","--c4","--c5","--c6","--c7","--c8"].map(v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+
+// 內嵌快照(當無法讀取 data.json 時的後備;真正資料以 data.json 為準)
+const EMBEDDED = {"meta":{"currency":"TWD","household":["先生","太太"],"updated":"2026-07-09","note":"這是內嵌範例快照,請以 data.json 為準"},"accounts":[{"name":"共同活存","liquid":true,"balance":180000},{"name":"先生數位帳戶","liquid":true,"balance":90000},{"name":"太太數位帳戶","liquid":true,"balance":75000},{"name":"現金","liquid":true,"balance":15000}],"income":[{"source":"先生月薪","owner":"先生","amount":62000,"freq":"monthly"},{"source":"太太月薪","owner":"太太","amount":55000,"freq":"monthly"},{"source":"年終獎金(攤月)","owner":"共同","amount":15000,"freq":"monthly"}],"expenses":[{"category":"居住","item":"房貸月供","amount":32000},{"category":"居住","item":"管理費/水電網路","amount":6500},{"category":"飲食","item":"三餐/採買","amount":22000},{"category":"交通","item":"交通","amount":6000},{"category":"保險","item":"保費","amount":8000},{"category":"通訊","item":"手機/訂閱","amount":2500},{"category":"娛樂","item":"外食/旅遊","amount":10000},{"category":"其他","item":"日用/醫療","amount":7000}],"loans":[{"name":"自住房貸","balance":7850000,"rate":0.021,"monthlyPayment":32000}],"assets":[{"name":"自住房產","value":13000000},{"name":"股票/ETF","value":450000},{"name":"勞退自提","value":220000}],"goals":[{"name":"緊急預備金(6 個月)","target":500000,"current":360000},{"name":"換車頭期款","target":300000,"current":80000}],"transactions":[{"date":"2026-07-05","type":"income","category":"薪資","amount":62000,"owner":"先生"},{"date":"2026-07-06","type":"expense","category":"居住","amount":32000,"owner":"共同"},{"date":"2026-07-08","type":"expense","category":"飲食","amount":3200,"owner":"太太"}]};
+
+function compute(d){
+  const inc = (d.income||[]).filter(x=>(x.freq||"monthly")==="monthly").reduce((s,x)=>s+ +x.amount,0);
+  const exp = (d.expenses||[]).filter(x=>(x.freq||"monthly")==="monthly").reduce((s,x)=>s+ +x.amount,0);
+  const bal = inc - exp;
+  const liquid = (d.accounts||[]).filter(a=>a.liquid!==false).reduce((s,a)=>s+ +a.balance,0);
+  const debt = (d.loans||[]).reduce((s,l)=>s+ +l.balance,0);
+  const acctTotal = (d.accounts||[]).reduce((s,a)=>s+ +a.balance,0);
+  const assetTotal = (d.assets||[]).reduce((s,a)=>s+ +a.value,0) + acctTotal;
+  const net = assetTotal - debt;
+  const emMonths = exp>0 ? liquid/exp : 0;
+  const debtPay = (d.loans||[]).reduce((s,l)=>s+ +(l.monthlyPayment||0),0);
+  const debtRatio = inc>0 ? debtPay/inc : 0;
+  const savRate = inc>0 ? bal/inc : 0;
+  return {inc,exp,bal,liquid,debt,assetTotal,net,emMonths,debtPay,debtRatio,savRate};
+}
+function payoffMonths(l){
+  const r=(+l.rate)/12, P=+l.monthlyPayment, B=+l.balance;
+  if(!r||!P||P<=B*r) return null;
+  return Math.ceil(-Math.log(1 - r*B/P)/Math.log(1+r));
+}
+function catBreakdown(d){
+  const m={}; (d.expenses||[]).forEach(x=>{m[x.category]=(m[x.category]||0)+ +x.amount});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function donut(entries,total){
+  const R=52,C=64,sw=22,circ=2*Math.PI*R; let off=0;
+  const segs=entries.map((e,i)=>{
+    const frac=total?e[1]/total:0, len=frac*circ, s=`<circle r="${R}" cx="${C}" cy="${C}" fill="none" stroke="${PAL[i%PAL.length]}" stroke-width="${sw}" stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${C} ${C})"/>`;
+    off+=len; return s;
+  }).join("");
+  return `<svg width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="支出結構">${segs}<text x="${C}" y="${C-2}" text-anchor="middle" font-size="11" fill="var(--muted)">月支出</text><text x="${C}" y="${C+14}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">${fmtK(total)}</text></svg>`;
+}
+function lights(k){
+  const L=[];
+  if(k.savRate>=0.2) L.push(["g","現金流健康","儲蓄率 "+(k.savRate*100).toFixed(0)+"%,每月穩定有結餘 "+fmt(k.bal)+",可加速累積資產。"]);
+  else if(k.bal>=0) L.push(["y","現金流偏緊","儲蓄率 "+(k.savRate*100).toFixed(0)+"%(穩健目標 20%)。結餘 "+fmt(k.bal)+",建議從『想要』類支出找空間。"]);
+  else L.push(["r","現金流赤字","每月透支 "+fmt(-k.bal)+"。這是最優先要修的:先砍變動支出或開源,再談其他。"]);
+
+  if(k.emMonths>=6) L.push(["g","緊急預備金充足",k.emMonths.toFixed(1)+" 個月的支出,足以撐過收入中斷。"]);
+  else if(k.emMonths>=3) L.push(["y","緊急預備金堪用",k.emMonths.toFixed(1)+" 個月(建議 6 個月)。把每月結餘優先補到這裡。"]);
+  else L.push(["r","緊急預備金不足",k.emMonths.toFixed(1)+" 個月(建議至少 3–6 個月)。這是守的第一道牆,先補滿再投資。"]);
+
+  if(k.debtRatio<0.33) L.push(["g","負債比健康","每月債務支出佔收入 "+(k.debtRatio*100).toFixed(0)+"%,在安全區(<33%)。"]);
+  else if(k.debtRatio<=0.4) L.push(["y","負債比偏高","每月債務支出佔收入 "+(k.debtRatio*100).toFixed(0)+"%(安全線 33%)。新增負債要謹慎。"]);
+  else L.push(["r","負債比過高","每月債務支出佔收入 "+(k.debtRatio*100).toFixed(0)+"%(>40%)。避免再增貸,評估轉貸或降低固定開銷。"]);
+  return L;
+}
+
+function render(d){
+  const k=compute(d);
+  document.getElementById("meta").textContent =
+    `${(d.meta.household||[]).join(" & ")} · 更新 ${d.meta.updated} · 幣別 ${d.meta.currency||"TWD"}`;
+  const bn=document.getElementById("banner");
+  bn.innerHTML = (d.meta.note && /範例|快照/.test(d.meta.note)) ? `<div class="banner">⚠️ 目前顯示的是範例數字。跟 Claude 說一聲就能換成你們的真實資料。</div>` : "";
+
+  const cats=catBreakdown(d);
+  const l=lights(k);
+  const loan=(d.loans||[])[0];
+  let mortHtml="";
+  if(loan){
+    const interest=(+loan.balance)*(+loan.rate)/12, principal=(+loan.monthlyPayment)-interest, pm=payoffMonths(loan);
+    mortHtml=`<div class="card mort"><h2>🏦 ${loan.name||"房貸"}</h2>
+      <div class="row"><span>剩餘本金</span><b>${fmt(loan.balance)}</b></div>
+      <div class="row"><span>利率</span><b>${((+loan.rate)*100).toFixed(2)}%</b></div>
+      <div class="row"><span>每月還款</span><b>${fmt(loan.monthlyPayment)}</b></div>
+      <div class="row"><span>本期利息 / 本金</span><b>${fmt(interest)} / ${fmt(principal)}</b></div>
+      <div class="row"><span>預估還清</span><b>${pm?("約 "+Math.floor(pm/12)+" 年 "+(pm%12)+" 個月"):"—"}</b></div>
+      <div class="note">低利自住房貸屬「好債」,是否提前還款可問 Claude 做取捨分析。</div></div>`;
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="grid kpis">
+      ${kpi("月總收入",fmt(k.inc))}
+      ${kpi("月總支出",fmt(k.exp))}
+      ${kpi("月結餘(現金流)",fmt(k.bal),k.bal>=0?"var(--green)":"var(--red)")}
+      ${kpi("儲蓄率",(k.savRate*100).toFixed(0)+"<small>%</small>")}
+    </div>
+    <div class="grid kpis">
+      ${kpi("淨值(資產−負債)",fmtK(k.net))}
+      ${kpi("緊急預備金",k.emMonths.toFixed(1)+"<small>個月</small>")}
+      ${kpi("負債總額",fmtK(k.debt))}
+      ${kpi("流動現金",fmtK(k.liquid))}
+    </div>
+
+    <div class="grid cols">
+      <div class="card"><h2>🚦 財務健檢</h2><div class="lights">
+        ${l.map(x=>`<div class="light ${x[0]}"><span class="dot"></span><div><div class="t">${x[1]}</div><div class="d">${x[2]}</div></div></div>`).join("")}
+      </div></div>
+      <div class="card"><h2>💸 月支出結構</h2><div class="donutwrap">
+        ${donut(cats,k.exp)}
+        <div class="legend" style="flex:1;min-width:150px">${cats.map((c,i)=>`<div class="row"><span class="sw" style="background:${PAL[i%PAL.length]}"></span>${c[0]}<span class="amt">${fmt(c[1])}</span></div>`).join("")}</div>
+      </div></div>
+    </div>
+
+    <div class="grid cols" style="margin-top:14px">
+      ${mortHtml}
+      <div class="card"><h2>🎯 目標進度</h2>
+        ${(d.goals||[]).map(g=>{const p=g.target?Math.min(100,g.current/g.target*100):0;return `<div class="goal"><div class="top"><b>${g.name}</b><span class="pct">${p.toFixed(0)}% · ${fmt(g.current)}/${fmt(g.target)}</span></div><div class="bar"><i style="width:${p}%;background:${p>=100?'var(--green)':'var(--accent)'}"></i></div></div>`;}).join("") || '<div class="note">尚無目標。可請 Claude 幫你設定,例如緊急預備金、換車、退休。</div>'}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px"><h2>🧾 最近交易</h2>
+      <table><thead><tr><th>日期</th><th>類別</th><th>人</th><th class="num">金額</th></tr></thead><tbody>
+        ${(d.transactions||[]).slice().reverse().slice(0,8).map(t=>`<tr><td>${t.date}</td><td>${t.category}<span class="pill" style="margin-left:6px">${t.type==="income"?"收入":"支出"}</span></td><td>${t.owner||"—"}</td><td class="num" style="color:${t.type==="income"?"var(--green)":"var(--ink)"}">${t.type==="income"?"+":"−"}${fmt(t.amount)}</td></tr>`).join("") || '<tr><td colspan="4" class="note">尚無交易紀錄</td></tr>'}
+      </tbody></table>
+    </div>`;
+}
+function kpi(label,val,color){return `<div class="card kpi"><div class="label">${label}</div><div class="val" style="${color?`color:${color}`:''}">${val}</div></div>`;}
+
+// 主題切換
+const themeBtn=document.getElementById("themeBtn");
+themeBtn.onclick=()=>{const r=document.documentElement;const cur=r.getAttribute("data-theme")|| (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");r.setAttribute("data-theme",cur==="dark"?"light":"dark");};
+
+// 載入資料:優先 fetch ./data.json,失敗則用內嵌快照;也可手動選檔
+async function boot(){
+  try{
+    const res=await fetch("./data.json",{cache:"no-store"});
+    if(!res.ok) throw 0;
+    render(await res.json());
+  }catch(e){
+    render(EMBEDDED);
+    document.getElementById("banner").insertAdjacentHTML("afterbegin",
+      `<div class="banner">ℹ️ 無法自動讀取 data.json(直接雙擊開檔會被瀏覽器擋)。目前顯示內嵌範例。請按右上「載入 data.json」手動選檔,或用 <code>python3 -m http.server</code> 開啟。</div>`);
+  }
+}
+document.getElementById("loadBtn").onclick=()=>document.getElementById("file").click();
+document.getElementById("file").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{render(JSON.parse(rd.result));document.getElementById("banner").innerHTML="";}catch(err){document.getElementById("banner").innerHTML='<div class="banner err">JSON 格式有誤,無法解析。</div>';}};
+  rd.readAsText(f);
+};
+boot();
+</script>
+</body>
+</html>
