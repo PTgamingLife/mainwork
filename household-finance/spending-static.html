@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消費統計 / 發票明細</title><style>
+:root{--bg:#0e1420;--card:#161f2e;--ink:#eaf0fa;--muted:#93a1ba;--line:#26324a;--green:#3ddc97;--greenbg:#123024;--yellow:#e0a93b;--yellowbg:#332812;--red:#f2748a;--redbg:#3a1c22;--accent:#5b8bff;--shadow:0 1px 3px rgba(0,0,0,.4),0 6px 24px rgba(0,0,0,.3)}
+@media(prefers-color-scheme:light){:root{--bg:#f4f6f9;--card:#fff;--ink:#1a2233;--muted:#63708a;--line:#e5eaf2;--green:#1f9d6b;--greenbg:#e4f5ec;--yellow:#c98a12;--yellowbg:#fbf1dc;--red:#d1495b;--redbg:#fbe6e9;--accent:#3b6ef5;--shadow:0 1px 3px rgba(20,30,50,.06),0 6px 24px rgba(20,30,50,.05)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 16px 56px}
+h1{font-size:21px;margin:0 0 2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.nav{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+.nav a{font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:6px 11px;background:var(--card)}
+.nav a:hover{background:var(--line)}
+.banner{background:var(--yellowbg);color:var(--yellow);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:12.5px;margin-bottom:16px}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(4,1fr);margin-bottom:12px}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
+.kpi .label{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.kpi .val{font-size:23px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .val small{font-size:13px;font-weight:600;color:var(--muted)}
+.cols{grid-template-columns:1.15fr .85fr;margin-top:12px}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+h2{font-size:15px;margin:0 0 13px}
+.light{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border-radius:10px;margin-bottom:9px}
+.light:last-child{margin-bottom:0}
+.light .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}
+.light .t{font-weight:600;font-size:14px}.light .d{font-size:12.5px;color:var(--muted)}
+.g{background:var(--greenbg)}.g .dot{background:var(--green)}.g .t{color:var(--green)}
+.y{background:var(--yellowbg)}.y .dot{background:var(--yellow)}.y .t{color:var(--yellow)}
+.r{background:var(--redbg)}.r .dot{background:var(--red)}.r .t{color:var(--red)}
+.exp{display:flex;flex-direction:column;gap:11px}
+.exp .row .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.exp .amt{color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:9px;border-radius:6px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:6px}
+.mort .row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.mort .row:last-child{border:none}.mort b{font-variant-numeric:tabular-nums}
+.goal{margin-bottom:13px}.goal .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.goal .pct{color:var(--muted);font-variant-numeric:tabular-nums}
+.pva .row{padding:9px 0;border-bottom:1px solid var(--line)}
+.pva .row:last-child{border:none}
+.pva .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:5px;gap:8px}
+.pva .amt{font-variant-numeric:tabular-nums;color:var(--muted)}
+.tag{font-size:11px;padding:1px 8px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag.over{background:var(--redbg);color:var(--red)}
+.tag.under{background:var(--greenbg);color:var(--green)}
+.rank .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
+.rank .row:last-child{border:none}
+.rank .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .rk{color:var(--muted);display:inline-block;width:22px}
+.rank .amt{font-variant-numeric:tabular-nums;margin-left:auto;padding-left:10px}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.inv{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--line);color:var(--muted);margin-left:6px}
+.pill.e{background:var(--greenbg);color:var(--green)}
+</style></head><body><div class="wrap">
+<h1>📊 消費統計 / 發票明細</h1>
+<div class="sub">2026-07 · 以實際交易紀錄計算 · 先生 & 太太</div>
+<div class="nav"><a href="dashboard-static.html">← 回財務總覽</a></div>
+<div class="grid kpis">
+<div class="card kpi"><div class="label">本月總消費</div><div class="val">NT$36,468</div></div><div class="card kpi"><div class="label">交易筆數</div><div class="val">4<small>筆</small></div></div><div class="card kpi"><div class="label">平均每筆</div><div class="val">NT$9,117</div></div><div class="card kpi"><div class="label">電子發票</div><div class="val">2<small>筆</small></div></div>
+</div>
+<div class="grid cols">
+<div class="card pva"><h2>📐 規劃預算 vs 實際花費</h2><div class="row"><div class="top"><span>居住</span><span class="tag under">剩 NT$6,500</span></div><div class="top"><span class="amt">實際 NT$32,000 / 規劃 NT$38,500</span><span class="amt">83%</span></div><div class="bar"><i style="width:83.11688311688312%;background:#3b6ef5"></i></div></div><div class="row"><div class="top"><span>飲食</span><span class="tag under">剩 NT$18,532</span></div><div class="top"><span class="amt">實際 NT$3,468 / 規劃 NT$22,000</span><span class="amt">16%</span></div><div class="bar"><i style="width:15.763636363636364%;background:#1f9d6b"></i></div></div><div class="row"><div class="top"><span>交通</span><span class="tag under">剩 NT$5,000</span></div><div class="top"><span class="amt">實際 NT$1,000 / 規劃 NT$6,000</span><span class="amt">17%</span></div><div class="bar"><i style="width:16.666666666666664%;background:#c98a12"></i></div></div><div class="row"><div class="top"><span>保險</span><span class="tag under">剩 NT$8,000</span></div><div class="top"><span class="amt">實際 NT$0 / 規劃 NT$8,000</span><span class="amt">0%</span></div><div class="bar"><i style="width:0%;background:#8a5cf6"></i></div></div><div class="row"><div class="top"><span>通訊</span><span class="tag under">剩 NT$2,500</span></div><div class="top"><span class="amt">實際 NT$0 / 規劃 NT$2,500</span><span class="amt">0%</span></div><div class="bar"><i style="width:0%;background:#e07b39"></i></div></div><div class="row"><div class="top"><span>娛樂</span><span class="tag under">剩 NT$10,000</span></div><div class="top"><span class="amt">實際 NT$0 / 規劃 NT$10,000</span><span class="amt">0%</span></div><div class="bar"><i style="width:0%;background:#39b0c9"></i></div></div><div class="row"><div class="top"><span>其他</span><span class="tag under">剩 NT$7,000</span></div><div class="top"><span class="amt">實際 NT$0 / 規劃 NT$7,000</span><span class="amt">0%</span></div><div class="bar"><i style="width:0%;background:#d1495b"></i></div></div>
+<div class="note">綠=還在預算內、紅=已超支。實際取自交易紀錄(含電子發票),規劃取自每月預算。</div></div>
+<div class="card rank"><h2>🏪 店家 / 類別排行</h2><div class="row"><span class="rk">1.</span><span class="nm">7 月房貸</span><span class="amt">NT$32,000 · 1筆</span></div><div class="row"><span class="rk">2.</span><span class="nm">全聯採買</span><span class="amt">NT$3,200 · 1筆</span></div><div class="row"><span class="rk">3.</span><span class="nm">台灣中油</span><span class="amt">NT$1,000 · 1筆</span></div><div class="row"><span class="rk">4.</span><span class="nm">全家便利商店</span><span class="amt">NT$268 · 1筆</span></div>
+<div class="note">單筆最大:居住 NT$32,000(2026-07-06)</div></div>
+</div>
+<div class="card" style="margin-top:12px"><h2>🧾 電子發票明細 · 2026-07</h2>
+<div class="tablewrap"><table><thead><tr><th>日期</th><th>店家 / 品項</th><th>類別</th><th>人</th><th class="num">金額</th><th>發票號碼</th></tr></thead><tbody>
+<tr><td>2026-07-09</td><td>全家便利商店<span class="pill e">發票</span></td><td>飲食</td><td>先生</td><td class="num">NT$268</td><td class="inv">AB12345678</td></tr><tr><td>2026-07-09</td><td>台灣中油<span class="pill e">發票</span></td><td>交通</td><td>共同</td><td class="num">NT$1,000</td><td class="inv">AB12345679</td></tr>
+</tbody></table></div>
+<div class="note">把電子發票 CSV / 截圖丟給 Claude,就會自動記進來、在這裡看到明細與統計。統一發票對獎也可請 Claude 用當期中獎號碼比對。</div></div>
+</div></body></html>
