@@ -26,7 +26,7 @@
         "C:\\Users\\nancy\\OneDrive\\桌面\\AI_use\\claudeskill\\code\\scripts\\plantoflife-mcp.mjs"
       ],
       "env": {
-        "POL_SECRET": "Q12crown"
+        "POL_SECRET": "${POL_SECRET}"
       }
     }
   }
