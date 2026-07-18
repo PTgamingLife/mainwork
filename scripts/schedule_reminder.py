@@ -26,7 +26,7 @@ load_dotenv(ROOT / "config" / ".env")
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-from openai import OpenAI
+import anthropic
 from src.database import get_line_target
 from src.line_sender import _push, _broadcast
 
@@ -128,7 +128,7 @@ def _generate_reminder(events: list[dict]) -> str:
         for e in events
     ])
 
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     prompt = f"""明天（{tomorrow}）的行程：
 {events_text}
 
@@ -142,13 +142,12 @@ def _generate_reminder(events: list[dict]) -> str:
 
 規則：每條注意事項不超過 25 字，總字數不超過 350 字，實用不廢話。"""
 
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}],
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
         max_tokens=500,
-        temperature=0.6,
+        messages=[{"role": "user", "content": prompt}],
     )
-    return resp.choices[0].message.content.strip()
+    return resp.content[0].text.strip()
 
 
 def run():
