@@ -2,6 +2,8 @@ name: Deploy ip-quiz to 28challenge
 
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/personal-ip-qa-site-xjzv92]  # 暫時:讓本分支能觸發首次部署
 
 jobs:
   deploy:
