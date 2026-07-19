@@ -1,0 +1,28 @@
+name: Deploy ip-quiz to 28challenge
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mainwork
+        uses: actions/checkout@v4
+
+      - name: Clone 28challenge and copy files
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/PTgamingLife/28challenge.git /tmp/28challenge
+          mkdir -p /tmp/28challenge/ip-quiz
+          cp src/ip-quiz/index.html src/ip-quiz/style.css src/ip-quiz/data.js src/ip-quiz/app.js /tmp/28challenge/ip-quiz/
+
+      - name: Commit and push
+        working-directory: /tmp/28challenge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ip-quiz
+          git diff --cached --quiet && echo "No changes" || git commit -m "deploy: IP 定位羅盤測驗網站 (ip-quiz)"
+          git push origin main
