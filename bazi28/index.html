@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4efe5">
+  <meta name="description" content="用命理、自我探索與每日行動，持續校準你想走的人生。">
+  <title>命運校準｜自我命運修正系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <span class="glow glow-a"></span><span class="glow glow-b"></span>
+    <span class="orbit orbit-a"></span><span class="orbit orbit-b"></span>
+  </div>
+
+  <section id="landing" class="landing">
+    <header class="landing-header">
+      <a class="brand" href="#" aria-label="命運校準首頁">
+        <span class="brand-mark">命</span>
+        <span><strong>命運校準</strong><small>Destiny Calibration</small></span>
+      </a>
+      <span class="soft-badge">30 天自我探索</span>
+    </header>
+    <main class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">你的命盤，不是判決書</p>
+        <h1>每天向理想的自己，<em>靠近一點。</em></h1>
+        <p class="lead">結合傳統命理、自我探索與真實生活回饋，讓專屬守護天使陪你設定目標、採取行動，持續校準人生方向。</p>
+        <button id="google-login" class="google-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.5-.2-2.2H12v4h5.4a4.7 4.7 0 0 1-2 3v2.6h3.3c1.9-1.8 2.9-4.4 2.9-7.4Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.4L15.4 17c-.9.6-2.1 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3v2.7A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.9A6 6 0 0 1 6.1 12c0-.7.1-1.3.3-1.9V7.4H3A10 10 0 0 0 2 12c0 1.7.4 3.2 1 4.6l3.4-2.7Z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 12 2a10 10 0 0 0-9 5.4l3.4 2.7A6 6 0 0 1 12 6Z"/></svg>
+          使用 Google 開始旅程
+        </button>
+        <p class="privacy-note">你的出生資料、回答與對話預設為私人資料。</p>
+      </div>
+      <div class="hero-visual" aria-label="守護天使逐漸成形示意">
+        <div class="moon-card">
+          <div class="moon-ring"></div>
+          <div class="guardian-silhouette"><span>✦</span></div>
+          <div class="message-bubble">我不替你決定人生，<br>但會陪你看清下一步。</div>
+        </div>
+        <div class="float-card card-one"><small>今日理解度</small><strong>逐漸認識你</strong><span class="mini-progress"><i></i></span></div>
+        <div class="float-card card-two"><small>旅程核心</small><strong>看見 → 行動 → 校準</strong></div>
+      </div>
+    </main>
+    <div class="feature-strip">
+      <span>✦ 專屬雙版本守護天使</span><span>◌ 每日一項目標行動</span><span>↗ 每週模型校準</span>
+    </div>
+  </section>
+
+  <section id="app" class="app hidden">
+    <header class="app-header">
+      <a class="brand compact" href="#today" data-route="today"><span class="brand-mark">命</span><span><strong>命運校準</strong><small id="model-label">模型 V0</small></span></a>
+      <button id="profile-chip" class="profile-chip" type="button" data-route="profile"><span id="user-initial">我</span><b id="user-name">旅人</b></button>
+    </header>
+    <main id="view" class="app-view" aria-live="polite"></main>
+    <aside id="guardian-dock" class="guardian-dock hidden" aria-label="你的守護天使">
+      <div class="guardian-avatar" id="guardian-avatar"><span>✦</span></div>
+      <div><small id="guardian-state">正在認識你</small><strong id="guardian-name">你的守護天使</strong></div>
+    </aside>
+    <nav class="bottom-nav" aria-label="主要功能">
+      <button class="active" data-route="today"><span>⌂</span>今日</button>
+      <button data-route="journey"><span>◐</span>探索</button>
+      <button data-route="goal"><span>◎</span>目標</button>
+      <button data-route="reading"><span>✦</span>解盤</button>
+      <button data-route="profile"><span>☷</span>我的</button>
+    </nav>
+  </section>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="loading" class="loading-overlay hidden" aria-live="assertive">
+    <div class="loading-orb"><i></i></div><p id="loading-text">正在校準…</p>
+  </div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
