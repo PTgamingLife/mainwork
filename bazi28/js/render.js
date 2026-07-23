@@ -83,6 +83,65 @@ function weeklyReview(state) {
   return `<article class="card wide-card"><p class="kicker">WEEK ${week} REVIEW</p><h3>花一分鐘回看這一週</h3><form id="weekly-review-form" data-week="${week}">${WEEKLY_REVIEW_ITEMS.map((item) => `<div class="field"><label>${escapeHtml(item.text)}</label><select name="${item.id}" required><option value="">請選擇</option>${item.options.map((option) => `<option>${escapeHtml(option)}</option>`).join("")}</select></div>`).join("")}<button class="primary-button" type="submit">完成本週回顧</button></form></article>`;
 }
 
+function mondayText(dateText) {
+  const date = new Date(`${dateText}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString().slice(0, 10);
+}
+
+function metaphysicsProposalList(proposal) {
+  if (!proposal) return "";
+  const groups = [
+    ["可能新增的模式", proposal.patterns],
+    ["可能補充的優勢", proposal.strengths],
+    ["需要留意的風險", proposal.risks],
+    ["建議的行動偏好", proposal.action_preferences],
+  ];
+  return groups.filter(([, items]) => Array.isArray(items) && items.length).map(([label, items]) =>
+    `<div class="metaphysics-proposal-group"><small>${escapeHtml(label)}</small><div>${items.slice(0, 4).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div></div>`
+  ).join("");
+}
+
+function metaphysicsPanel(state, todayText) {
+  const currentWeek = mondayText(todayText);
+  const submission = state.metaphysicsLatest;
+  const usedThisWeek = submission?.week_start === currentWeek;
+  if (!usedThisWeek) {
+    return `<article class="card wide-card metaphysics-card">
+      <div class="metaphysics-head"><div><p class="kicker">WEEKLY EVIDENCE</p><h3>補充你的個人命理資訊</h3><p>每週一次。可以貼上文字或上傳命盤、解讀截圖；AI 只會判斷是否值得成為模型假設，不會直接改寫你。</p></div><span class="weekly-badge">本週尚未使用</span></div>
+      <form id="metaphysics-form">
+        <div class="field"><label>命理資訊文字（選填）</label><textarea name="text_content" maxlength="6000" placeholder="例如：其他老師提供的八字解讀、紫微資料、你認為可能與自己有關的命理描述…"></textarea></div>
+        <div class="metaphysics-upload"><label for="metaphysics-image"><span>＋ 上傳圖片</span><small>命盤或解讀截圖，JPEG／PNG／WebP，最多 4MB</small></label><input id="metaphysics-image" name="image" type="file" accept="image/jpeg,image/png,image/webp"><output id="metaphysics-file-name">尚未選擇圖片</output></div>
+        <div class="quote">AI 會檢查：是否與你本人相關、內容能否辨識、是否和現有模型一致，以及是否只能先當作待驗證假設。</div>
+        <button class="primary-button" type="submit">交給守護天使判讀</button>
+      </form>
+    </article>`;
+  }
+
+  const assessment = submission.ai_assessment || {};
+  const statusLabels = {
+    proposed: "等待你確認",
+    not_suitable: "不建議更新",
+    accepted: "已納入模型",
+    rejected: "已略過",
+    failed: "判讀未完成",
+    analyzing: "正在判讀",
+  };
+  const reasons = Array.isArray(assessment.reasons) ? assessment.reasons : [];
+  const reliability = { low: "低", medium: "中", high: "高" }[assessment.reliability] || "—";
+  return `<article class="card wide-card metaphysics-card ${escapeHtml(submission.status)}">
+    <div class="metaphysics-head"><div><p class="kicker">WEEKLY EVIDENCE</p><h3>本週命理資料判讀</h3><p>${escapeHtml(assessment.source_summary || "本週資料已送出判讀。")}</p></div><span class="weekly-badge status-${escapeHtml(submission.status)}">${escapeHtml(statusLabels[submission.status] || submission.status)}</span></div>
+    <div class="metaphysics-assessment"><div><small>適合更新模型</small><strong>${assessment.suitable ? "可以提出假設" : "目前不適合"}</strong></div><div><small>資料可靠度</small><strong>${reliability}</strong></div><div><small>AI 判斷信心</small><strong>${Math.round(Number(assessment.confidence || 0) * 100)}%</strong></div></div>
+    ${reasons.length ? `<ul class="metaphysics-reasons">${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : ""}
+    ${assessment.caution ? `<div class="quote">${escapeHtml(assessment.caution)}</div>` : ""}
+    ${submission.status === "proposed" ? `<div class="metaphysics-proposal"><h4>守護天使建議的模型草案</h4>${metaphysicsProposalList(submission.proposal)}<p>${escapeHtml(submission.proposal?.change_note || "")}</p><div class="action-row">${button("確認並升級模型", `accept-metaphysics:${submission.id}`)}${button("這次先不要", `reject-metaphysics:${submission.id}`, "secondary-button")}</div></div>` : ""}
+    ${submission.status === "not_suitable" ? '<p class="metaphysics-result-note">這份資料會保留為本週判讀紀錄，但不會進入自我模型。</p>' : ""}
+    ${submission.status === "accepted" ? `<p class="metaphysics-result-note">你已確認這份假設，模型已升級至 V${submission.model_version_after || state.model?.version || "—"}。</p>` : ""}
+    ${submission.status === "rejected" ? '<p class="metaphysics-result-note">你選擇不採用，本次內容不會改變模型。</p>' : ""}
+    <p class="privacy-note">每週限一次；圖片存放於私人空間。原始內容不會直接成為固定人格結論。</p>
+  </article>`;
+}
+
 export function journey(state, todayText) {
   const count = state.answers.length;
   const question = JOURNEY_QUESTIONS[count];
@@ -97,7 +156,7 @@ export function journey(state, todayText) {
     main = `<article class="card wide-card"><p class="kicker">DAY ${count + 1} · ${escapeHtml(question.theme)}</p><h3>${escapeHtml(question.text)}</h3><form id="journey-form" data-day="${count + 1}" data-question="${question.id}"><div class="option-grid">${question.options.map((option) => `<button class="option" type="button" data-option="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}</div><input type="hidden" name="answer" required><button class="primary-button" type="submit" disabled>保存今天的回答</button></form></article>`;
   }
   return `${head("30-DAY JOURNEY", "每天認識自己一點", "一天一題，不補考、不歸零。", `<div class="progress-ring" style="--progress:${count / 30 * 100}%"><b>${count}/30</b></div>`)}
-    <div class="journey-map">${weeks.map((week, index) => `<div class="journey-week ${Math.floor(count / 7) === index ? "active" : ""}"><small>第${index + 1}週</small><b>${week}</b></div>`).join("")}</div><div class="grid">${main}${weeklyReview(state)}</div>`;
+    <div class="journey-map">${weeks.map((week, index) => `<div class="journey-week ${Math.floor(count / 7) === index ? "active" : ""}"><small>第${index + 1}週</small><b>${week}</b></div>`).join("")}</div><div class="grid">${main}${weeklyReview(state)}${metaphysicsPanel(state, todayText)}</div>`;
 }
 
 export function goal(state) {
