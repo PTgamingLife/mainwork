@@ -19,7 +19,7 @@ export async function getSession() {
 }
 
 export async function loadUserState(userId, today) {
-  const [profile, answers, reviews, goal, model, guardian, daily, chat, admin] = await Promise.all([
+  const [profile, answers, reviews, goal, model, guardian, daily, chat, admin, metaphysics] = await Promise.all([
     supabase.from("destiny_profiles").select("*").eq("user_id", userId).maybeSingle(),
     supabase.from("destiny_journey_answers").select("*").eq("user_id", userId).order("day_index"),
     supabase.from("destiny_weekly_reviews").select("*").eq("user_id", userId).order("week_index"),
@@ -29,8 +29,10 @@ export async function loadUserState(userId, today) {
     supabase.from("destiny_daily_actions").select("*").eq("user_id", userId).eq("action_date", today).maybeSingle(),
     supabase.from("destiny_ai_chats").select("*").eq("user_id", userId).eq("chat_date", today).maybeSingle(),
     supabase.from("destiny_admins").select("user_id").eq("user_id", userId).maybeSingle(),
+    supabase.from("destiny_metaphysics_submissions").select("*").eq("user_id", userId)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const firstError = [profile, answers, reviews, goal, model, guardian, daily, chat, admin].find((item) => item.error)?.error;
+  const firstError = [profile, answers, reviews, goal, model, guardian, daily, chat, admin, metaphysics].find((item) => item.error)?.error;
   if (firstError) failure(firstError, "無法讀取個人資料");
   return {
     profile: profile.data,
@@ -42,6 +44,7 @@ export async function loadUserState(userId, today) {
     daily: daily.data,
     chat: chat.data,
     isAdmin: Boolean(admin.data),
+    metaphysicsLatest: metaphysics.data,
   };
 }
 
