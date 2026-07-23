@@ -213,7 +213,7 @@ function talentEnergyCard(state) {
     `<div class="talent-score-row"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></div><b>${item.score}</b><i style="--talent-score:${item.score}%"></i></div>`
   ).join("");
   return `<article class="card wide-card talent-energy-card">
-    <div class="talent-energy-head"><div><p class="kicker">TALENT ENERGY</p><h3>自我天賦能量分布</h3><p>以${escapeHtml(state.profile.day_stem || "")}${escapeHtml(model.element)}的先天傾向為起點，再由真實回答持續校準。</p></div><span class="model-confidence">資料可信度 <b>${model.confidence}%</b></span></div>
+    <div class="talent-energy-head"><div><p class="kicker">TALENT ENERGY</p><h3>自我天賦能量分布</h3><p>以${escapeHtml(state.profile.day_stem || "")}${escapeHtml(model.element)}的先天傾向為起點，再由真實回答持續校準。</p></div><span class="model-confidence">命運資料完整度 <b>${model.confidence}%</b></span></div>
     <div class="talent-energy-layout">
       <div class="talent-radar-wrap"><svg class="talent-radar" viewBox="0 0 260 260" role="img" aria-label="六項自我天賦能量雷達圖">${gridPolygons}${axes}<polygon points="${radarPolygon(model.values)}" class="talent-shape"></polygon>${model.values.map((value, index) => { const [x, y] = radarPoint(value, index); return `<circle cx="${x}" cy="${y}" r="4" class="talent-dot"></circle>`; }).join("")}</svg></div>
       <div class="talent-energy-copy"><div class="talent-highlight"><small>目前主要天賦</small><strong>${escapeHtml(top.map((item) => item.label).join(" × "))}</strong><p>${escapeHtml(top[0].description)}；搭配${escapeHtml(top[1].description)}，是目前最自然的能量組合。</p></div><div class="talent-score-list">${scoreRows}</div></div>
