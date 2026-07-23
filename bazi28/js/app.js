@@ -10,7 +10,7 @@ import {
   signOut,
   updateJourneyProgress,
 } from "./api.js";
-import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260723-admin";
+import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260723-fortune";
 
 const landing = document.querySelector("#landing");
 const app = document.querySelector("#app");
@@ -100,6 +100,8 @@ async function refreshState() {
   if (!session?.user) return;
   const date = todayText(state?.profile?.timezone);
   state = await loadUserState(session.user.id, date);
+  try { state.fortune = await invoke("destiny-orchestrator", { action: "daily_fortune" }); }
+  catch (error) { console.warn("daily fortune", error); }
   if (state.guardian || state.profile?.guardian_status === "ready") {
     try { state.guardianAssets = await invoke("destiny-guardian", { action: "get" }); }
     catch (error) { console.warn("guardian assets", error); }
