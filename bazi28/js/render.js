@@ -99,11 +99,21 @@ export function goal(state) {
     <form id="goal-form" class="card form-card"><div class="field"><label>90天後想完成什麼？</label><input name="title" maxlength="160" placeholder="例如：建立每月可產生10,000元的顧問服務" required></div><div class="field-grid"><div class="field"><label>截止日期</label><input type="date" name="target_date" value="${target.toISOString().slice(0,10)}" required></div><div class="field"><label>每週可投入分鐘</label><input type="number" name="weekly_minutes" min="15" max="10080" value="180" required></div></div><div class="field-grid"><div class="field"><label>衡量方式</label><input name="metric_name" placeholder="例如：有效提案數" required></div><div class="field"><label>目標數字</label><input type="number" step="any" name="target_value" placeholder="20"></div></div><div class="field"><label>為什麼這對你重要？</label><textarea name="why_text" maxlength="1000" required></textarea></div><div class="field"><label>目前的現實限制</label><textarea name="constraints" maxlength="1000" placeholder="時間、家庭、健康、資金…"></textarea></div><button class="primary-button" type="submit">設定主目標</button></form>`;
 }
 
+function guardianCompanion(state, message) {
+  const guardian = state.guardianAssets?.guardian;
+  const url = state.guardianAssets?.chibi_url;
+  const name = escapeHtml(guardian?.character_spec?.name || "你的守護天使");
+  const visual = url
+    ? `<img src="${escapeHtml(url)}" alt="${name}，你的Q版守護天使">`
+    : "<span>✦</span>";
+  return `<div class="reading-guardian"><div class="reading-guardian-avatar">${visual}</div><div><small>${name}</small><strong>${escapeHtml(message)}</strong></div></div>`;
+}
+
 export function reading(state) {
   if (state.chat) return `${head("DAILY READING", "今天的解盤已完成", "每個曆日一次；服務失敗不扣次數。")}
-    <article class="card form-card"><p class="kicker">${escapeHtml(state.chat.category)}</p><h3>${escapeHtml(state.chat.question)}</h3><p>${escapeHtml(state.chat.answer)}</p><div class="quote">守護天使提供的是反思與行動方向，不替你做醫療、法律、財務或重大關係決定。</div></article>`;
+    <article class="card form-card">${guardianCompanion(state, "我把這次理解整理好了。")}<p class="kicker">${escapeHtml(state.chat.category)}</p><h3>${escapeHtml(state.chat.question)}</h3><p>${escapeHtml(state.chat.answer)}</p><div class="quote">守護天使提供的是反思與行動方向，不替你做醫療、法律、財務或重大關係決定。</div></article>`;
   return `${head("DAILY READING", "問守護天使一件事", "先選情境，讓回答更具體。每天一次。")}
-    <form id="reading-form" class="card form-card"><div class="field"><label>問題類型</label><select name="category"><option>工作決定</option><option>感情互動</option><option>財務選擇</option><option>家庭問題</option><option>今日情緒</option><option>自由提問</option></select></div><div class="field"><label>你想釐清什麼？</label><textarea name="question" minlength="2" maxlength="2000" placeholder="描述現在的情況、你在意的目標，以及有哪些限制…" required></textarea></div><button class="primary-button" type="submit">使用今日解盤</button><p class="privacy-note">高風險醫療、法律、投資與安全問題會改為專業求助提醒。</p></form>`;
+    <form id="reading-form" class="card form-card">${guardianCompanion(state, "告訴我你現在最想釐清的事。")}<div class="field"><label>問題類型</label><select name="category"><option>工作決定</option><option>感情互動</option><option>財務選擇</option><option>家庭問題</option><option>今日情緒</option><option>自由提問</option></select></div><div class="field"><label>你想釐清什麼？</label><textarea name="question" minlength="2" maxlength="2000" placeholder="描述現在的情況、你在意的目標，以及有哪些限制…" required></textarea></div><button class="primary-button" type="submit">使用今日解盤</button><p class="privacy-note">高風險醫療、法律、投資與安全問題會改為專業求助提醒。</p></form>`;
 }
 
 export function profile(state) {
