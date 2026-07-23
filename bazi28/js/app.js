@@ -10,7 +10,7 @@ import {
   signOut,
   updateJourneyProgress,
 } from "./api.js";
-import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260724-completeness";
+import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260724-metaphysics";
 
 const landing = document.querySelector("#landing");
 const app = document.querySelector("#app");
@@ -274,6 +274,57 @@ async function handleWeekly(form) {
   } finally { hideLoading(); }
 }
 
+async function handleMetaphysics(form) {
+  const textContent = form.elements.text_content.value.trim();
+  const file = form.elements.image.files[0];
+  if (!textContent && !file) throw new Error("請輸入文字或選擇一張圖片");
+  const allowed = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+  if (file && !allowed[file.type]) throw new Error("圖片只支援 JPEG、PNG 或 WebP");
+  if (file && file.size > 4 * 1024 * 1024) throw new Error("圖片不可超過 4MB");
+
+  const id = requestId();
+  const imagePath = file ? `${session.user.id}/${id}.${allowed[file.type]}` : null;
+  let submitted = false;
+  showLoading("守護天使正在判讀這份命理資料…");
+  try {
+    if (file) {
+      const { error: uploadError } = await supabase.storage.from("destiny-metaphysics").upload(imagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+    }
+    const result = await invoke("destiny-orchestrator", {
+      action: "metaphysics_submit",
+      request_id: id,
+      text_content: textContent || null,
+      image_path: imagePath,
+      mime_type: file?.type || null,
+      original_name: file?.name || null,
+    });
+    submitted = true;
+    await refreshState();
+    render();
+    toast(result.submission?.status === "proposed" ? "判讀完成，請確認是否升級模型" : "判讀完成，這份資料目前不建議更新模型");
+  } catch (error) {
+    if (imagePath && !submitted) await supabase.storage.from("destiny-metaphysics").remove([imagePath]);
+    throw error;
+  } finally { hideLoading(); }
+}
+
+async function decideMetaphysics(submissionId, accept) {
+  showLoading(accept ? "正在建立新的模型版本…" : "正在保留你的決定…");
+  try {
+    await invoke("destiny-orchestrator", {
+      action: accept ? "metaphysics_accept" : "metaphysics_reject",
+      submission_id: submissionId,
+    });
+    await refreshState();
+    render();
+    toast(accept ? "新的自我模型版本已啟用" : "這份資料未納入模型");
+  } finally { hideLoading(); }
+}
+
 async function recordAction(status) {
   const reason = status === "not_completed" ? window.prompt("主要原因是什麼？例如：時間不足、任務太大、方向不清楚") : "";
   showLoading("記錄今天的真實結果…");
@@ -306,6 +357,8 @@ async function handleAction(action) {
   if (action === "action-missed") return recordAction("not_completed");
   if (action === "open-admin") return runAdmin();
   if (action === "logout") { await signOut(); return; }
+  if (action.startsWith("accept-metaphysics:")) return decideMetaphysics(action.split(":")[1], true);
+  if (action.startsWith("reject-metaphysics:")) return decideMetaphysics(action.split(":")[1], false);
   if (action.startsWith("proposal-review:")) {
     showLoading("產生模型更新草案…");
     try { await invoke("destiny-orchestrator", { action: "weekly_proposal", review_id: action.split(":")[1] }); await refreshState(); render(); }
@@ -335,6 +388,13 @@ document.addEventListener("click", (event) => {
   if (actionButton) handleAction(actionButton.dataset.action).catch(errorMessage);
 });
 
+document.addEventListener("change", (event) => {
+  if (event.target.id === "metaphysics-image") {
+    const output = document.querySelector("#metaphysics-file-name");
+    if (output) output.textContent = event.target.files[0]?.name || "尚未選擇圖片";
+  }
+});
+
 document.addEventListener("submit", (event) => {
   event.preventDefault();
   const handlers = {
@@ -344,6 +404,7 @@ document.addEventListener("submit", (event) => {
     "daily-action-form": handleDaily,
     "reading-form": handleReading,
     "weekly-review-form": handleWeekly,
+    "metaphysics-form": handleMetaphysics,
   };
   const handler = handlers[event.target.id];
   if (handler) handler(event.target).catch(errorMessage);
