@@ -1,0 +1,432 @@
+<title>AI 變現課程說明會 — 用會進化的 AI 打出無敵優勢 · 8/7</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    /* 承諾:承載整頁的深色電影感世界 —— 黑曜石 + 蒸餾出的琥珀金光 */
+    --ink:#0B0D10;          /* 黑曜石底 */
+    --ink-2:#0F1216;        /* 面板 */
+    --ink-3:#151A20;        /* 卡片 */
+    --line:#242A31;         /* 冷灰分隔線 */
+    --line-2:#323A43;
+    --bone:#ECE7DB;         /* 主文:骨白,非純白 */
+    --bone-dim:#B9B4A8;
+    --mute:#7C838D;         /* 冷灰次要 */
+    --mute-2:#565D66;
+    --gold:#D8A23A;         /* 蒸餾之光:精煉琥珀金(全頁唯一的膽) */
+    --gold-soft:#E9C77E;
+    --gold-deep:#8C6417;
+    --silver:#9FB4BE;       /* 冷銀:細節反光 */
+    --good:#5FB98C;
+
+    --maxw:1140px;
+    --serif:"Noto Serif TC","Source Han Serif TC","Songti TC","Shanti",Georgia,"Times New Roman",serif;
+    --sans:"Noto Sans TC","PingFang TC","Heiti TC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"SFMono-Regular",Menlo,"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--ink);color:var(--bone);
+    font-family:var(--sans);font-size:17px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* 全頁固定深色世界:忽略明暗切換,維持電影感 */
+  :root[data-theme="light"]{color-scheme:dark}
+
+  h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0;letter-spacing:.01em}
+  p{margin:0}
+  a{color:inherit}
+  .wrap{width:min(100% - 44px,var(--maxw));margin-inline:auto}
+
+  /* ── 背景:蒸餾粒子 canvas ── */
+  #distill{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 0%,transparent 40%,rgba(0,0,0,.55) 100%)}
+  main{position:relative;z-index:2}
+
+  /* ── 進度軌 ── */
+  .rail{position:fixed;top:0;left:0;height:2px;width:0;z-index:40;
+    background:linear-gradient(90deg,var(--gold-deep),var(--gold));box-shadow:0 0 14px rgba(216,162,58,.5)}
+
+  /* ── 導覽 ── */
+  nav{position:fixed;top:0;left:0;right:0;z-index:30;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 22px;backdrop-filter:blur(8px);
+    background:linear-gradient(180deg,rgba(11,13,16,.82),rgba(11,13,16,0));
+    transition:background .3s}
+  nav.solid{background:rgba(11,13,16,.9);border-bottom:1px solid var(--line)}
+  .brand{font-family:var(--mono);font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone)}
+  .brand b{color:var(--gold);font-weight:400}
+  .nav-cta{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    text-decoration:none;padding:9px 16px;border:1px solid var(--gold-deep);border-radius:2px;
+    color:var(--gold-soft);transition:.25s}
+  .nav-cta:hover{background:var(--gold);color:#1a1206;border-color:var(--gold)}
+
+  /* ── HERO ── */
+  header{min-height:100svh;display:flex;align-items:center;position:relative;padding:120px 0 80px}
+  .eyebrow-v{position:absolute;right:26px;top:50%;transform:translateY(-50%);
+    writing-mode:vertical-rl;font-family:var(--mono);font-size:12px;letter-spacing:.5em;
+    color:var(--mute);text-transform:uppercase}
+  .kicker{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:30px}
+  .kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  h1.hero{font-size:clamp(2.6rem,7.5vw,5.6rem);line-height:1.08;letter-spacing:.01em}
+  h1.hero .em{color:var(--gold);font-style:normal;
+    text-shadow:0 0 34px rgba(216,162,58,.35)}
+  .lede{margin-top:28px;max-width:30ch;color:var(--bone-dim);font-size:clamp(1rem,2.4vw,1.22rem);line-height:1.7}
+  .meta{margin-top:38px;display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--bone-dim);
+    border:1px solid var(--line-2);border-radius:2px;padding:8px 13px;background:rgba(21,26,32,.5);
+    font-variant-numeric:tabular-nums}
+  .chip b{color:var(--gold-soft);font-weight:400}
+  .cta-row{margin-top:40px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:.04em;
+    text-decoration:none;padding:15px 30px;border-radius:3px;display:inline-flex;align-items:center;gap:10px;
+    transition:transform .2s,box-shadow .3s,background .25s}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#1a1206;
+    box-shadow:0 10px 34px -12px rgba(216,162,58,.7)}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px -12px rgba(216,162,58,.85)}
+  .btn-ghost{border:1px solid var(--line-2);color:var(--bone)}
+  .btn-ghost:hover{border-color:var(--gold-deep);color:var(--gold-soft)}
+  .scroll-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--mute);text-transform:uppercase;
+    display:flex;flex-direction:column;align-items:center;gap:8px}
+  .scroll-hint i{width:1px;height:38px;background:linear-gradient(var(--gold),transparent);animation:drip 2.4s infinite}
+  @keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}
+    51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ── 區段通用 ── */
+  section{padding:clamp(80px,12vh,140px) 0;position:relative}
+  .sec-head{max-width:60ch;margin-bottom:56px}
+  .index{font-family:var(--mono);font-size:12px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;
+    display:block;margin-bottom:18px}
+  h2.sec{font-size:clamp(1.9rem,4.6vw,3.1rem);line-height:1.18}
+  .sec-sub{margin-top:18px;color:var(--mute);font-size:1.05rem;max-width:52ch}
+
+  /* 3D 卷軸揭示 */
+  .reveal{opacity:0;transform:translateY(38px) rotateX(9deg);transform-origin:50% 100%;
+    transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .stagger>*{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}
+  .stagger.in>*{opacity:1;transform:none}
+  .stagger.in>*:nth-child(2){transition-delay:.09s}
+  .stagger.in>*:nth-child(3){transition-delay:.18s}
+  .stagger.in>*:nth-child(4){transition-delay:.27s}
+  @media (prefers-reduced-motion:reduce){
+    .reveal,.stagger>*{opacity:1;transform:none;transition:none}
+    .scroll-hint i{animation:none}
+  }
+
+  /* 交付三支柱 */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;perspective:1400px}
+  .pillar{background:linear-gradient(180deg,var(--ink-3),var(--ink-2));border:1px solid var(--line);
+    border-radius:6px;padding:32px 28px 34px;position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
+  .pillar:hover{border-color:var(--gold-deep);transform:translateY(-4px)}
+  .pillar .no{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--mute-2)}
+  .pillar h3{font-size:1.42rem;margin:14px 0 12px;line-height:1.3}
+  .pillar p{color:var(--bone-dim);font-size:.98rem;line-height:1.7}
+  .pillar .seal{position:absolute;top:22px;right:22px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.12em;color:var(--gold-soft);border:1px solid var(--gold-deep);border-radius:2px;padding:4px 8px}
+  .flag{margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--mute-2);
+    border-top:1px dashed var(--line-2);padding-top:12px;line-height:1.6}
+
+  /* 數據 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .stat{border-left:2px solid var(--gold-deep);padding:6px 0 6px 22px}
+  .stat .num{font-family:var(--serif);font-size:clamp(2.6rem,6vw,4rem);line-height:1;color:var(--bone);
+    font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .stat .num .u{color:var(--gold);font-size:.5em;margin-left:2px}
+  .stat .lbl{margin-top:12px;color:var(--mute);font-size:.9rem;line-height:1.5}
+  .stat-note{margin-top:30px;font-family:var(--mono);font-size:12px;color:var(--mute-2);letter-spacing:.02em}
+
+  /* 系統畫廊 */
+  .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;overflow:hidden;
+    transition:transform .3s,border-color .3s}
+  .card:hover{transform:translateY(-4px);border-color:var(--line-2)}
+  .card .vis{aspect-ratio:16/10;position:relative;overflow:hidden;
+    background:radial-gradient(120% 120% at 20% 0%,#1b2129,#0d1014)}
+  .card .vis canvas{width:100%;height:100%;display:block}
+  .card .body{padding:20px 22px 24px}
+  .card .tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft)}
+  .card h3{font-size:1.16rem;margin:10px 0 8px}
+  .card p{color:var(--mute);font-size:.92rem;line-height:1.6}
+  .ph{outline:1px dashed var(--line-2);outline-offset:-8px}
+  .ph .tag{color:var(--mute-2)}
+
+  /* 適合誰 */
+  .fit{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .fit-col{border:1px solid var(--line);border-radius:6px;padding:30px 28px;background:var(--ink-2)}
+  .fit-col.yes{border-top:2px solid var(--gold)}
+  .fit-col.no{border-top:2px solid var(--line-2)}
+  .fit-col h3{font-size:1.15rem;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+  .fit-col ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:13px}
+  .fit-col li{color:var(--bone-dim);font-size:.98rem;line-height:1.6;padding-left:26px;position:relative}
+  .fit-col.yes li::before{content:"→";position:absolute;left:0;color:var(--gold)}
+  .fit-col.no li{color:var(--mute)}
+  .fit-col.no li::before{content:"×";position:absolute;left:2px;color:var(--mute-2)}
+
+  /* 報名 */
+  .enroll{border:1px solid var(--gold-deep);border-radius:10px;
+    background:linear-gradient(180deg,rgba(30,24,10,.5),var(--ink-2));padding:clamp(34px,6vw,64px);text-align:center;position:relative;overflow:hidden}
+  .enroll::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(90% 120% at 50% -10%,rgba(216,162,58,.16),transparent 60%);pointer-events:none}
+  .enroll h2{font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;position:relative}
+  .enroll .detail{margin:26px auto 0;display:flex;flex-wrap:wrap;gap:12px 26px;justify-content:center;position:relative}
+  .enroll .detail span{font-family:var(--mono);font-size:14px;color:var(--bone-dim);
+    display:inline-flex;gap:9px;align-items:center;font-variant-numeric:tabular-nums}
+  .enroll .detail b{color:var(--gold-soft);font-weight:400}
+  .enroll .btn{margin-top:34px}
+  .enroll .fineprint{margin-top:20px;font-family:var(--mono);font-size:12px;color:var(--mute);position:relative}
+
+  footer{border-top:1px solid var(--line);padding:40px 0;margin-top:40px}
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--mute)}
+  .foot b{color:var(--gold);font-weight:400}
+
+  @media (max-width:860px){
+    .pillars{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .gal{grid-template-columns:1fr}
+    .fit{grid-template-columns:1fr}
+    .eyebrow-v{display:none}
+  }
+</style>
+
+<canvas id="distill"></canvas>
+<div class="vignette"></div>
+<div class="rail" id="rail"></div>
+
+<nav id="nav">
+  <div class="brand">ailifeu <b>/</b> 蒸餾迴圈</div>
+  <a class="nav-cta" href="#enroll">免費報名 8/7</a>
+</nav>
+
+<main>
+  <header class="wrap">
+    <div class="eyebrow-v">DISTILLATION LOOP · 2026</div>
+    <div>
+      <span class="kicker"><span class="dot"></span>2026.08.07 (四) · AI 變現課程說明會</span>
+      <h1 class="hero">打出一個，<br><span class="em">沒有人贏得過</span>的優勢。</h1>
+      <p class="lede">教你用一套會自己進化的 AI，在競爭最激烈的市場裡，建立別人複製不了的優勢。這場說明會，我把「怎麼做」現場交付給你 —— 不是聽概念，是帶走方法。</p>
+      <div class="meta">
+        <span class="chip"><b>08 / 07</b> 週四 19:00–21:00</span>
+        <span class="chip">線上直播 · 可回放</span>
+        <span class="chip"><b>免費</b> 報名制</span>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-gold" href="#enroll">立即免費報名 →</a>
+        <a class="btn btn-ghost" href="#deliver">看現場交付什麼</a>
+      </div>
+    </div>
+    <div class="scroll-hint">SCROLL<i></i></div>
+  </header>
+
+  <!-- 交付:三大銷售方向 -->
+  <section id="deliver" class="wrap">
+    <div class="sec-head reveal">
+      <span class="index">01 — 現場交付</span>
+      <h2 class="sec">這場說明會，你不是來聽，是來<span style="color:var(--gold)">帶走</span>的。</h2>
+      <p class="sec-sub">90 分鐘裡，你會拿到能當天開始用的東西。三件都不是空話 —— 每一件都有實體、有數據、有做出來的東西可以看。</p>
+    </div>
+    <div class="pillars stagger">
+      <div class="pillar">
+        <span class="seal">ANTHROPIC ACADEMY 認證</span>
+        <div class="no">01</div>
+        <h3>完整交付 Claude 實戰教學</h3>
+        <p>現場帶你跑一遍「把技能餵進 Claude、讓它替你複製產出」的完整流程。主理人已完成 <b style="color:var(--gold-soft);font-weight:400">Anthropic Academy 課程、取得完整認證</b>，教的是官方級的正確方法，不是網路東拼西湊的偏方。</p>
+      </div>
+      <div class="pillar">
+        <div class="no">02</div>
+        <h3>實證：一套會成長的 AI 系統</h3>
+        <p>不是「聽起來很厲害」，是有數據。我用同一套系統經營自己的帳號 —— 兩週流量成長 90 倍、單篇破 3.4 萬瀏覽。現場拆給你看數字怎麼來的。</p>
+        <div class="flag">數據為主理人自身帳號實測,持續更新;可補上最新截圖</div>
+      </div>
+      <div class="pillar">
+        <div class="no">03</div>
+        <h3>已經做出來的系統</h3>
+        <p>我是工程師 —— 不是只會講，是真的把系統做出來、交到客戶手上。現場展示已上線的實例：從內容引擎到自動化工具，看得到、摸得到。</p>
+        <div class="flag">下方畫廊卡片請替換為真實客戶案例/系統截圖</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 數據 -->
+  <section class="wrap">
+    <div class="sec-head reveal">
+      <span class="index">02 — 實證數據</span>
+      <h2 class="sec">先看數字，再決定要不要相信我。</h2>
+      <p class="sec-sub">這些是同一套「蒸餾迴圈」系統跑出來的真實結果 —— 不是課程宣傳詞，是後台數字。</p>
+    </div>
+    <div class="stats stagger">
+      <div class="stat"><div class="num" data-to="90" data-suffix="×">0<span class="u">×</span></div><div class="lbl">兩週內單一平台<br>流量成長倍數</div></div>
+      <div class="stat"><div class="num" data-to="34000">0</div><div class="lbl">單篇貼文<br>最高瀏覽數</div></div>
+      <div class="stat"><div class="num" data-to="1800">0</div><div class="lbl">目前單週<br>穩定觸及</div></div>
+      <div class="stat"><div class="num" data-to="13">0</div><div class="lbl">首批專業課<br>實體學員</div></div>
+    </div>
+    <p class="stat-note">※ 數據為主理人 @ailifeu 自身帳號實測值,隨迴圈每週更新。說明會現場提供可查證的後台畫面。</p>
+  </section>
+
+  <!-- 系統畫廊 -->
+  <section class="wrap">
+    <div class="sec-head reveal">
+      <span class="index">03 — 已完成的系統</span>
+      <h2 class="sec">看得到、摸得到，不是投影片上的概念。</h2>
+      <p class="sec-sub">競品教你「聽懂」，我讓你「看見已經在運轉的東西」。以下為系統類型示意 —— 說明會現場為完整實機展示。</p>
+    </div>
+    <div class="gal stagger">
+      <div class="card"><div class="vis"><canvas class="mini" data-seed="1"></canvas></div>
+        <div class="body"><div class="tag">內容引擎</div><h3>自我升級內容系統</h3><p>Threads / Reels 依真實流量數據每週自我校正的產出模型。</p></div></div>
+      <div class="card"><div class="vis"><canvas class="mini" data-seed="2"></canvas></div>
+        <div class="body"><div class="tag">自動化 · Bot</div><h3>LINE 智慧客服／翻譯 Bot</h3><p>接上訊息就能自動回覆、翻譯、接單的實機系統。</p></div></div>
+      <div class="card ph"><div class="vis"><canvas class="mini" data-seed="3"></canvas></div>
+        <div class="body"><div class="tag">客戶案例 · 待填</div><h3>［替換為真實客戶系統］</h3><p>放上你替客戶完成的系統截圖與一句成果數字。</p></div></div>
+    </div>
+  </section>
+
+  <!-- 適合誰 -->
+  <section class="wrap">
+    <div class="sec-head reveal">
+      <span class="index">04 — 這場適合誰</span>
+      <h2 class="sec">我不想浪費你的兩小時。</h2>
+    </div>
+    <div class="fit reveal">
+      <div class="fit-col yes">
+        <h3>這場適合你,如果 —</h3>
+        <ul>
+          <li>你有專業/技能,但一直卡在「怎麼放大成個人品牌」</li>
+          <li>你想用 AI,卻怕買到割韭菜的空殼課</li>
+          <li>你要的是能帶走的做法,不是聽完很爽的雞湯</li>
+          <li>你願意動手,做出一個真的會運轉的系統</li>
+        </ul>
+      </div>
+      <div class="fit-col no">
+        <h3>這場不適合你,如果 —</h3>
+        <ul>
+          <li>你只想找「一鍵躺賺」的按鈕</li>
+          <li>你只想聽理論、不打算實作</li>
+          <li>你覺得看幾支免費影片就夠了</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 報名 -->
+  <section id="enroll" class="wrap">
+    <div class="enroll reveal">
+      <h2>8/7 晚上,<br>把系統帶回家。</h2>
+      <div class="detail">
+        <span>📅 <b>2026.08.07</b> 週四</span>
+        <span>🕖 <b>19:00–21:00</b></span>
+        <span>💻 線上直播 · 可回放</span>
+        <span>🎟 <b>免費</b> · 報名制</span>
+      </div>
+      <a class="btn btn-gold" href="mailto:poting75321@gmail.com?subject=%E5%A0%B1%E5%90%8D%208%2F7%20AI%E8%AE%8A%E7%8F%BE%E8%AA%B2%E7%A8%8B%E8%AA%AA%E6%98%8E%E6%9C%83&amp;body=%E6%88%91%E6%83%B3%E5%A0%B1%E5%90%8D%208%2F7%20%E8%AA%AA%E6%98%8E%E6%9C%83%EF%BC%8C%E6%88%91%E7%9A%84%E7%A8%B1%E5%91%BC%EF%BC%9A" id="enrollBtn">免費鎖定我的名額 →</a>
+      <p class="fineprint">名額有限,報名後將收到專屬直播連結 ·〔目前為 Email 報名,可隨時換成你的報名表單／Portaly URL〕</p>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div class="foot">
+      <div>© 2026 <b>ailifeu</b> · 蒸餾迴圈 Distillation Loop</div>
+      <div>個人品牌 × AI 放大 · 說明會 08 / 07</div>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* 進度軌 + nav 實心 */
+  var rail=document.getElementById('rail'), nav=document.getElementById('nav');
+  function onScroll(){
+    var h=document.documentElement, sc=h.scrollTop, max=h.scrollHeight-h.clientHeight;
+    rail.style.width=(max>0?(sc/max*100):0)+'%';
+    nav.classList.toggle('solid', sc>40);
+  }
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+
+  /* 卷軸揭示 */
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in');
+      if(e.target.dataset.count){countUp(e.target);} io.unobserve(e.target);} });
+  },{threshold:.2});
+  document.querySelectorAll('.reveal,.stagger').forEach(function(el){io.observe(el);});
+
+  /* 數字滾動 */
+  var statWrap=document.querySelector('.stats');
+  if(statWrap){var so=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){document.querySelectorAll('.num').forEach(countUp);so.disconnect();}});},{threshold:.4});
+    so.observe(statWrap);}
+  function countUp(el){
+    var to=+el.dataset.to, suf=el.dataset.suffix||'', dur=1400, t0=null;
+    if(reduce){el.textContent=fmt(to)+ (suf?'':''); if(suf) el.innerHTML=fmt(to)+'<span class="u">'+suf+'</span>'; return;}
+    function step(ts){ if(!t0)t0=ts; var p=Math.min((ts-t0)/dur,1); var e=1-Math.pow(1-p,3);
+      var v=Math.round(to*e);
+      el.innerHTML=fmt(v)+(suf?'<span class="u">'+suf+'</span>':'');
+      if(p<1)requestAnimationFrame(step);}
+    requestAnimationFrame(step);
+  }
+  function fmt(n){return n.toLocaleString('en-US');}
+
+  /* ── 蒸餾粒子背景 ── */
+  var cv=document.getElementById('distill'), ctx=cv.getContext('2d'), W,H,DPR,parts=[];
+  function resize(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';}
+  resize(); addEventListener('resize',resize);
+  function seedParts(){parts=[];var n=Math.min(90,Math.floor(innerWidth/14));
+    for(var i=0;i<n;i++){parts.push(mk());}}
+  function mk(){return{x:Math.random()*W,y:H+Math.random()*H*.4,
+    r:(Math.random()*1.6+.4)*DPR,sp:(Math.random()*.5+.15)*DPR,
+    a:Math.random()*.5+.15,drift:(Math.random()-.5)*.25*DPR,ph:Math.random()*6.28};}
+  seedParts();
+  var run=!reduce, t=0;
+  function frame(){
+    t+=.006; ctx.clearRect(0,0,W,H);
+    var cx=W*.5;
+    for(var i=0;i<parts.length;i++){var p=parts[i];
+      p.y-=p.sp; p.ph+=.02;
+      /* 往中央「蒸餾柱」微微聚攏 */
+      var pull=(cx-p.x)*0.0009;
+      p.x+=p.drift+pull+Math.sin(p.ph)*.3*DPR;
+      if(p.y<-20){p.x=Math.random()*W;p.y=H+20;}
+      var glow=p.a*(0.6+0.4*Math.sin(t*2+p.ph));
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);
+      ctx.fillStyle='rgba(216,162,58,'+glow+')';ctx.fill();
+    }
+    /* 中央光柱 */
+    var g=ctx.createLinearGradient(cx,0,cx,H);
+    g.addColorStop(0,'rgba(216,162,58,0.05)');g.addColorStop(.5,'rgba(216,162,58,0.02)');g.addColorStop(1,'rgba(216,162,58,0)');
+    ctx.fillStyle=g;ctx.fillRect(cx-60*DPR,0,120*DPR,H);
+    if(run)requestAnimationFrame(frame);
+  }
+  if(run)requestAnimationFrame(frame); else {ctx.clearRect(0,0,W,H);}
+
+  /* ── 卡片小視覺:節點網絡 ── */
+  document.querySelectorAll('canvas.mini').forEach(function(c){
+    var x=c.getContext('2d'),w,h,seed=+c.dataset.seed||1,nodes=[];
+    function rs(){var d=Math.min(devicePixelRatio||1,2);w=c.width=c.offsetWidth*d;h=c.height=c.offsetHeight*d;
+      nodes=[];var rnd=mulberry(seed*9301);for(var i=0;i<7;i++){nodes.push({x:rnd()*w,y:rnd()*h});}}
+    setTimeout(rs,60); addEventListener('resize',rs);
+    var tt=0;
+    function draw(){ if(!w){requestAnimationFrame(draw);return;}
+      tt+=.01; x.clearRect(0,0,w,h);
+      for(var i=0;i<nodes.length;i++){for(var j=i+1;j<nodes.length;j++){
+        var a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<w*.5){x.strokeStyle='rgba(159,180,190,'+(.16*(1-d/(w*.5)))+')';x.lineWidth=1;
+          x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();}}}
+      for(var k=0;k<nodes.length;k++){var nd=nodes[k];
+        var pr=2+Math.sin(tt*2+k)*.8;
+        x.beginPath();x.arc(nd.x,nd.y,Math.max(1.2,pr)*(Math.min(devicePixelRatio||1,2)),0,6.283);
+        x.fillStyle=k===0?'rgba(216,162,58,.9)':'rgba(159,180,190,.7)';x.fill();}
+      if(!reduce)requestAnimationFrame(draw);
+    }
+    draw();
+  });
+  function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+})();
+</script>
