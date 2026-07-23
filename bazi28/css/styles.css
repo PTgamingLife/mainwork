@@ -171,6 +171,31 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
 .reading-guardian small, .reading-guardian strong { display: block; }
 .reading-guardian small { margin-bottom: 4px; color: var(--sage-deep); font-size: 11px; font-weight: 700; }
 .reading-guardian strong { font: 600 14px/1.55 "Noto Serif TC"; }
+.admin-metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 22px; }
+.admin-metric { min-width: 0; padding: 16px; }
+.admin-metric h3 { margin: 5px 0 0; font-size: 25px; }
+.admin-section { margin-top: 8px; }
+.admin-section-head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.admin-section-head h3 { margin: 3px 0 0; font: 700 21px "Noto Serif TC"; }
+.admin-section-head > span { color: var(--muted); font-size: 12px; }
+.admin-account-list { display: grid; gap: 12px; }
+.admin-account { padding: 18px; }
+.admin-account-head { display: flex; align-items: center; gap: 12px; }
+.admin-account-avatar { flex: 0 0 auto; width: 43px; height: 43px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--sage-deep); font-weight: 700; }
+.admin-account-head > div:nth-child(2) { min-width: 0; flex: 1; }
+.admin-account-head h3 { margin: 0 0 3px; font-size: 16px; }
+.admin-account-head p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.admin-state { flex: 0 0 auto; padding: 5px 9px; border-radius: 99px; color: #8a6a32; background: #f7edd9; font-size: 10px; font-weight: 700; }
+.admin-state.ready { color: var(--sage-deep); background: var(--sage-soft); }
+.admin-account-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 15px; }
+.admin-account-grid > div { min-width: 0; padding: 10px; border-radius: 12px; background: rgba(221,231,221,.36); }
+.admin-account-grid small, .admin-account-grid strong { display: block; }
+.admin-account-grid small { color: var(--muted); font-size: 9px; }
+.admin-account-grid strong { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.admin-usage { display: flex; gap: 8px; margin-top: 10px; }
+.admin-usage span { padding: 5px 8px; border-radius: 99px; color: var(--sage-deep); background: rgba(221,231,221,.55); font-size: 10px; }
+.admin-usage span.warning { color: #8a3d35; background: #f9e9e4; }
+.admin-account-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-top: 12px; color: var(--muted); font-size: 10px; }
 .empty { padding: 28px 18px; text-align: center; color: var(--muted); }
 .error-box { padding: 13px; color: #8a3d35; background: #f9e9e4; border-radius: 13px; font-size: 12px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -197,6 +222,8 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
   .guardian-dock > div:last-child { display: none; }
   .guardian-dock { padding: 5px; }
   .page-head h2 { font-size: 25px; }
+  .admin-metrics { grid-template-columns: repeat(3, 1fr); }
+  .admin-account-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 430px) {
@@ -206,6 +233,10 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
   .app-view { width: min(100% - 24px, 960px); margin-top: 16px; }
   .card { padding: 18px; border-radius: 22px; }
   .bottom-nav { bottom: 8px; width: calc(100% - 16px); }
+  .admin-metrics { grid-template-columns: repeat(2, 1fr); }
+  .admin-account-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-account-foot { display: grid; }
+  .page-head .secondary-button { min-height: 36px; padding: 0 11px; font-size: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
