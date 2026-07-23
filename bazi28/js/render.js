@@ -47,6 +47,18 @@ function actionCard(state) {
     ${finished ? `<div class="quote">今天已回報：${escapeHtml(task.status)}</div>` : `<div class="action-row">${button("完成了", "action-completed")}${button("完成一部分", "action-partial", "secondary-button")}${button("沒完成", "action-missed", "secondary-button")}</div>`}</article>`;
 }
 
+function fortuneCard(fortune) {
+  if (!fortune) return `<article class="card wide-card fortune-card fortune-loading"><p class="kicker">DAILY FORTUNE</p><h3>今日運勢正在校準</h3><p>完成出生資料後，系統會結合你的日柱與當日干支建立行動參考。</p></article>`;
+  const scoreItems = fortune.scores.map((item) => `<div class="fortune-score ${item.key === fortune.highlight.key ? "is-highlight" : ""}"><div><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.level)}</small></div><b>${item.score}</b><i style="--score:${item.score}%"></i></div>`).join("");
+  return `<article class="card wide-card fortune-card">
+    <div class="fortune-heading"><div><p class="kicker">DAILY FORTUNE · ${escapeHtml(fortune.date)}</p><h3>今日運勢重點</h3></div><span class="pillar-badge">今日 ${escapeHtml(fortune.day_pillar)} · ${escapeHtml(fortune.day_element)}</span></div>
+    <div class="fortune-highlight"><small>今日最亮點</small><strong>${escapeHtml(fortune.highlight.label)} ${fortune.highlight.score} 分</strong><p>${escapeHtml(fortune.highlight.message)}</p></div>
+    <div class="fortune-scores">${scoreItems}</div>
+    <div class="fortune-reasons"><span>你的日柱 ${escapeHtml(fortune.natal_day_pillar)}</span><span>${escapeHtml(fortune.relation_text)}</span><span>${escapeHtml(fortune.branch_interaction)}</span></div>
+    <p class="fortune-disclaimer">${escapeHtml(fortune.disclaimer)}</p>
+  </article>`;
+}
+
 export function today(state) {
   const count = state.answers.length;
   const progress = Math.round(count / 30 * 100);
@@ -54,6 +66,7 @@ export function today(state) {
   return `${head("TODAY", `你好，${escapeHtml(state.profile.display_name || "旅人")}`, "今天不需要改變人生，只要完成下一步。", `<div class="progress-ring" style="--progress:${progress}%"><b>${count}/30</b></div>`)}
     <div class="grid">${actionCard(state)}
       <article class="card side-card"><p class="kicker">MODEL</p><h3>理解正在形成</h3><div class="stat"><span>探索進度</span><b>${progress}%</b></div><div class="stat"><span>模型信心</span><b>${confidence}%</b></div><div class="stat"><span>日主天干</span><b>${escapeHtml(state.profile.day_stem || "—")}${escapeHtml(state.profile.day_element || "")}</b></div></article>
+      ${fortuneCard(state.fortune)}
       <article class="card half-card"><p class="kicker">GOAL</p><h3>${state.goal ? escapeHtml(state.goal.title) : "尚未設定主目標"}</h3><p>${state.goal ? `期限 ${escapeHtml(state.goal.target_date)} · 每週投入 ${state.goal.weekly_minutes} 分鐘` : "目標會把每日建議從漂亮話，變成可驗證的進展。"}</p>${!state.goal ? button("建立目標", "route-goal", "secondary-button") : ""}</article>
       <article class="card half-card"><p class="kicker">GUARDIAN</p><h3>${escapeHtml(state.guardianAssets?.guardian?.character_spec?.name || "守護天使正在靠近")}</h3><p>${state.guardianAssets?.guardian?.status === "ready" ? escapeHtml(state.guardianAssets.guardian.character_spec.essence) : "完成第一道探索後，AI會依天干與回答生成擬真、Q版兩個版本。"}</p>${state.answers.length && !state.guardianAssets?.guardian ? button("喚醒守護天使", "create-guardian", "secondary-button") : ""}</article>
     </div>`;
