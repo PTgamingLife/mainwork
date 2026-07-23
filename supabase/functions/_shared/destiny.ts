@@ -105,10 +105,15 @@ export async function openAIJson(
   schema: Record<string, unknown>,
   system: string,
   input: unknown,
+  imageDataUrls: string[] = [],
 ) {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) throw new Error("OPENAI_API_KEY_MISSING");
   const model = Deno.env.get("OPENAI_TEXT_MODEL") || "gpt-5-mini";
+  const userContent: Array<Record<string, unknown>> = [
+    { type: "input_text", text: JSON.stringify(input) },
+    ...imageDataUrls.map((imageUrl) => ({ type: "input_image", image_url: imageUrl, detail: "high" })),
+  ];
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -120,7 +125,7 @@ export async function openAIJson(
       store: false,
       input: [
         { role: "system", content: [{ type: "input_text", text: system }] },
-        { role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] },
+        { role: "user", content: userContent },
       ],
       text: {
         format: { type: "json_schema", name, strict: true, schema },
