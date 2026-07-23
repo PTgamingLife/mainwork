@@ -311,21 +311,115 @@ async function adminDashboard(req: Request) {
   const { data: admin } = await serviceClient.from("destiny_admins").select("user_id")
     .eq("user_id", userId).maybeSingle();
   if (!admin) return json(req, { error: "FORBIDDEN" }, 403);
-  const queries = await Promise.all([
-    serviceClient.from("destiny_profiles").select("*", { count: "exact", head: true }),
-    serviceClient.from("destiny_journey_answers").select("*", { count: "exact", head: true }),
-    serviceClient.from("destiny_goals").select("*", { count: "exact", head: true }).eq("status", "active"),
-    serviceClient.from("destiny_guardians").select("*", { count: "exact", head: true }).eq("status", "failed"),
-    serviceClient.from("destiny_ai_usage").select("*", { count: "exact", head: true }).eq("status", "refunded"),
+
+  const periodDays = 30;
+  const since = new Date(Date.now() - (periodDays - 1) * DAY_MS).toISOString().slice(0, 10);
+  const activeSince = Date.now() - 7 * DAY_MS;
+  const { data: authPage, error: authError } = await serviceClient.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+  if (authError) throw authError;
+  const authUsers = authPage.users ?? [];
+  const userIds = authUsers.map((user) => user.id);
+
+  const empty = { data: [], error: null };
+  const byUsers = <T>(query: T) => userIds.length ? query : Promise.resolve(empty);
+  const [profilesResult, modelsResult, goalsResult, guardiansResult, usageResult, chatsResult, actionsResult] = await Promise.all([
+    byUsers(serviceClient.from("destiny_profiles")
+      .select("user_id,display_name,journey_completed_count,model_confidence,guardian_status,created_at,updated_at")
+      .in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_self_models")
+      .select("user_id,version,confidence,created_at").eq("status", "active").in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_goals")
+      .select("user_id,status,updated_at").eq("status", "active").in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_guardians")
+      .select("user_id,status,updated_at").eq("is_active", true).in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_ai_usage")
+      .select("user_id,status,action_type,usage_date,updated_at").gte("usage_date", since).in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_ai_chats")
+      .select("user_id,created_at").gte("chat_date", since).in("user_id", userIds)),
+    byUsers(serviceClient.from("destiny_daily_actions")
+      .select("user_id,status,action_date,updated_at").gte("action_date", since).in("user_id", userIds)),
   ]);
+
+  const firstError = [profilesResult, modelsResult, goalsResult, guardiansResult, usageResult, chatsResult, actionsResult]
+    .find((result) => result.error)?.error;
+  if (firstError) throw firstError;
+
+  const profiles = new Map((profilesResult.data ?? []).map((item) => [item.user_id, item]));
+  const models = new Map((modelsResult.data ?? []).map((item) => [item.user_id, item]));
+  const goals = new Set((goalsResult.data ?? []).map((item) => item.user_id));
+  const guardians = new Map((guardiansResult.data ?? []).map((item) => [item.user_id, item]));
+
+  const usageByUser = new Map<string, { total: number; succeeded: number; refunded: number; last: string | null }>();
+  for (const item of usageResult.data ?? []) {
+    const aggregate = usageByUser.get(item.user_id) ?? { total: 0, succeeded: 0, refunded: 0, last: null };
+    aggregate.total += 1;
+    if (item.status === "succeeded") aggregate.succeeded += 1;
+    if (item.status === "refunded") aggregate.refunded += 1;
+    if (!aggregate.last || item.updated_at > aggregate.last) aggregate.last = item.updated_at;
+    usageByUser.set(item.user_id, aggregate);
+  }
+
+  const activityByUser = new Map<string, string>();
+  const noteActivity = (id: string, value?: string | null) => {
+    if (!value) return;
+    const current = activityByUser.get(id);
+    if (!current || value > current) activityByUser.set(id, value);
+  };
+  for (const item of chatsResult.data ?? []) noteActivity(item.user_id, item.created_at);
+  for (const item of actionsResult.data ?? []) noteActivity(item.user_id, item.updated_at);
+  for (const item of usageResult.data ?? []) noteActivity(item.user_id, item.updated_at);
+  for (const item of profilesResult.data ?? []) noteActivity(item.user_id, item.updated_at);
+
+  const accounts = authUsers.map((user) => {
+    const profile = profiles.get(user.id);
+    const model = models.get(user.id);
+    const guardian = guardians.get(user.id);
+    const usage = usageByUser.get(user.id) ?? { total: 0, succeeded: 0, refunded: 0, last: null };
+    const lastActivity = activityByUser.get(user.id) ?? user.last_sign_in_at ?? user.created_at;
+    return {
+      user_id: user.id,
+      email: user.email ?? "",
+      display_name: profile?.display_name ?? user.user_metadata?.full_name ?? "",
+      registered_at: user.created_at,
+      last_sign_in_at: user.last_sign_in_at,
+      last_activity_at: lastActivity,
+      onboarded: Boolean(profile),
+      journey_progress: profile?.journey_completed_count ?? 0,
+      model_version: model?.version ?? null,
+      model_confidence: model?.confidence ?? profile?.model_confidence ?? null,
+      guardian_status: guardian?.status ?? profile?.guardian_status ?? "not_started",
+      has_active_goal: goals.has(user.id),
+      ai_calls_30d: usage.total,
+      ai_succeeded_30d: usage.succeeded,
+      ai_refunded_30d: usage.refunded,
+    };
+  }).sort((a, b) => String(b.last_activity_at).localeCompare(String(a.last_activity_at)));
+
+  const activeUsers7d = accounts.filter((account) =>
+    account.last_activity_at && new Date(account.last_activity_at).getTime() >= activeSince
+  ).length;
+
+  await serviceClient.from("destiny_audit_logs").insert({
+    actor_id: userId,
+    action: "admin_dashboard_viewed",
+    target_type: "account_usage_summary",
+    metadata: { period_days: periodDays, account_count: accounts.length },
+  });
+
   return json(req, {
+    period_days: periodDays,
     metrics: {
-      users: queries[0].count ?? 0,
-      journey_answers: queries[1].count ?? 0,
-      active_goals: queries[2].count ?? 0,
-      guardian_failures: queries[3].count ?? 0,
-      refunded_ai_calls: queries[4].count ?? 0,
+      auth_users: authUsers.length,
+      onboarded_users: profiles.size,
+      active_users_7d: activeUsers7d,
+      active_goals: goals.size,
+      ai_calls_30d: (usageResult.data ?? []).length,
+      refunded_ai_calls_30d: (usageResult.data ?? []).filter((item) => item.status === "refunded").length,
     },
+    accounts,
   });
 }
 
