@@ -10,7 +10,7 @@ import {
   signOut,
   updateJourneyProgress,
 } from "./api.js";
-import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js";
+import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260723-guardian-profile";
 
 const landing = document.querySelector("#landing");
 const app = document.querySelector("#app");
