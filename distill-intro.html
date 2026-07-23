@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DISTILL · 知識蒸餾</title>
+<meta name="description" content="把一整片雜訊,餾成一滴精華——知識蒸餾概念展示,捲軸驅動的 3D 粒子場景。">
+</head>
+<body>
+<style>
+  :root{
+    --ground:#efece2; --ground-2:#e4e1d4;
+    --ink:#1a2420; --ink-soft:#5a655e;
+    --raw:#7c8a63; --vapor:#1f8f88; --essence:#a9761f;
+    --line:rgba(26,36,32,.14);
+    --scrim:rgba(239,236,226,.55);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    --mono:"SFMono-Regular","SF Mono","Cascadia Code","JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#070f11; --ground-2:#0b181a;
+      --ink:#ecf2ef; --ink-soft:#8fa39c;
+      --raw:#6f7d5a; --vapor:#7fd4d0; --essence:#e8b84b;
+      --line:rgba(236,242,239,.13);
+      --scrim:rgba(7,15,17,.5);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#efece2; --ground-2:#e4e1d4;
+    --ink:#1a2420; --ink-soft:#5a655e;
+    --raw:#7c8a63; --vapor:#1f8f88; --essence:#a9761f;
+    --line:rgba(26,36,32,.14); --scrim:rgba(239,236,226,.55);
+  }
+  :root[data-theme="dark"]{
+    --ground:#070f11; --ground-2:#0b181a;
+    --ink:#ecf2ef; --ink-soft:#8fa39c;
+    --raw:#6f7d5a; --vapor:#7fd4d0; --essence:#e8b84b;
+    --line:rgba(236,242,239,.13); --scrim:rgba(7,15,17,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+
+  /* fixed 3D stage behind everything */
+  #stage{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  #veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 42%,transparent 38%,var(--ground) 118%)}
+
+  main{position:relative;z-index:2}
+  section{min-height:100vh;display:flex;align-items:center;padding:12vh 7vw}
+  .wrap{max-width:660px}
+  .wide{max-width:1040px;width:100%;margin:0 auto}
+
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--vapor);margin:0 0 1.4rem;display:flex;align-items:center;gap:.7rem}
+  .eyebrow::before{content:"";width:2rem;height:1px;background:currentColor;opacity:.6}
+
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.9rem,7.5vw,6rem);line-height:1.02;
+    letter-spacing:-.015em;margin:0;text-wrap:balance}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4.6vw,3.5rem);line-height:1.08;
+    letter-spacing:-.01em;margin:0 0 1.4rem;text-wrap:balance}
+  .lede{font-size:clamp(1.1rem,1.7vw,1.4rem);color:var(--ink-soft);margin:2rem 0 0;max-width:34ch}
+  p.body{font-size:1.08rem;color:var(--ink-soft);margin:0 0 1.1rem;max-width:46ch}
+  .accent{color:var(--essence);font-style:italic;font-family:var(--serif)}
+
+  .scrim{background:var(--scrim);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+    padding:2.6rem 2.6rem;border:1px solid var(--line);border-radius:2px}
+
+  .drip{margin-top:3.5rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--ink-soft);display:flex;align-items:center;gap:.8rem}
+  .drip span{display:inline-block;width:1px;height:44px;background:linear-gradient(var(--vapor),transparent);
+    animation:fall 2.4s ease-in-out infinite}
+  @keyframes fall{0%{transform:scaleY(0);transform-origin:top;opacity:0}
+    40%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);transform-origin:bottom;opacity:0}}
+
+  /* distillation steps — a real 4-step sequence */
+  .steps{list-style:none;padding:0;margin:2.5rem 0 0;display:grid;gap:0}
+  .steps li{display:grid;grid-template-columns:auto 1fr;gap:1.6rem;padding:1.5rem 0;
+    border-top:1px solid var(--line);align-items:baseline}
+  .steps li:last-child{border-bottom:1px solid var(--line)}
+  .num{font-family:var(--mono);font-size:.8rem;color:var(--essence);letter-spacing:.1em;
+    font-variant-numeric:tabular-nums}
+  .steps h3{font-family:var(--serif);font-weight:600;font-size:1.5rem;margin:0 0 .3rem}
+  .steps p{margin:0;color:var(--ink-soft);font-size:1rem;max-width:40ch}
+
+  /* essence — three qualities */
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);margin-top:3rem}
+  .cell{background:var(--ground);padding:2.2rem 1.9rem}
+  .cell .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--vapor);margin:0 0 1.1rem}
+  .cell h3{font-family:var(--serif);font-weight:600;font-size:1.55rem;margin:0 0 .7rem}
+  .cell p{margin:0;color:var(--ink-soft);font-size:.98rem}
+
+  .cta{text-align:center;max-width:620px;margin:0 auto}
+  .cta h2{font-size:clamp(2.2rem,5.5vw,4rem)}
+  .droplet{font-family:var(--mono);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--essence);margin-top:2.6rem}
+  footer{position:relative;z-index:2;text-align:center;padding:3rem 7vw 4rem;
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-soft);border-top:1px solid var(--line)}
+
+  @media (max-width:640px){
+    section{padding:10vh 8vw}
+    .scrim{padding:1.8rem 1.6rem}
+    .steps li{grid-template-columns:1fr;gap:.4rem}
+  }
+  @media (prefers-reduced-motion:reduce){ .drip span{animation:none} }
+</style>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+<div id="veil" aria-hidden="true"></div>
+
+<main>
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Knowledge Distillation · 知識蒸餾</p>
+      <h1>把一整片雜訊,<br>餾成<span class="accent"> 一滴</span> 精華。</h1>
+      <p class="lede">資訊從不缺乏,缺的是被提煉過的那一點點。這是一套把龐雜知識蒸餾成純粹重點的方法。</p>
+      <p class="drip"><span></span>向下捲動,開始蒸餾</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap scrim">
+      <p class="eyebrow">01 · 原液</p>
+      <h2>原始資訊,<br>是一鍋渾濁的原液。</h2>
+      <p class="body">每天湧入的不是不夠,而是太多。文件、對話、報表、貼文——龐雜、重複、彼此矛盾。</p>
+      <p class="body">未經處理的知識像未蒸餾的原液:有價值的成分都在裡面,但也全都混在一起,難以入口。</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap scrim">
+      <p class="eyebrow">02 · 蒸餾</p>
+      <h2>加熱、汽化、<br>冷凝、收集。</h2>
+      <p class="body">我們做的是一場蒸餾:把原液送進管柱,加熱讓真正的重點<span class="accent">升上來</span>,把冗餘留在底部。</p>
+      <ol class="steps">
+        <li><span class="num">01</span><div><h3>汲取</h3><p>匯入來源——文件、對話、網頁、資料表,不預設格式。</p></div></li>
+        <li><span class="num">02</span><div><h3>汽化</h3><p>拆解成語意單元,讓概念脫離原本的雜訊載體。</p></div></li>
+        <li><span class="num">03</span><div><h3>冷凝</h3><p>相近的重點彼此凝聚,矛盾的自動對消,只留下站得住的。</p></div></li>
+        <li><span class="num">04</span><div><h3>收集</h3><p>沉澱成一份可引用、可回溯的精華——一滴,不是一桶。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">03 · 酒心</p>
+      <h2>剩下的,<br>是一滴不能再簡的精華。</h2>
+      <p class="lede">體積更小,濃度更高。你拿到的不是摘要的摘要,而是被反覆提煉、依然保有來源的核心。</p>
+      <div class="grid3">
+        <div class="cell"><p class="k">Purity</p><h3>去蕪存菁</h3><p>刪去重複與雜訊,只保留真正承載意義的部分。</p></div>
+        <div class="cell"><p class="k">Context</p><h3>保留脈絡</h3><p>濃縮不等於失真——關鍵的前因後果一起被收進來。</p></div>
+        <div class="cell"><p class="k">Traceable</p><h3>可回溯</h3><p>每一滴精華都標記著它從哪一批原液蒸餾而來。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cta">
+      <p class="eyebrow" style="justify-content:center">04 · 收瓶</p>
+      <h2>讓知識,<br>只留下該留的。</h2>
+      <p class="lede" style="margin-left:auto;margin-right:auto">從一整片資訊的海,到你手裡的那一滴。</p>
+      <p class="droplet">◇ &nbsp;DISTILL&nbsp; ◇</p>
+    </div>
+  </section>
+</main>
+
+<footer>DISTILL — 知識蒸餾概念展示 · 捲軸驅動 3D 粒子場景</footer>
+
+<script>
+(function(){
+  var cv=document.getElementById("stage"), ctx=cv.getContext("2d");
+  var W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
+  var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  function theme(){
+    var attr=document.documentElement.getAttribute("data-theme");
+    if(attr) return attr==="dark";
+    return window.matchMedia("(prefers-color-scheme:dark)").matches;
+  }
+  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+  function hex(h){h=h.replace("#","");if(h.length===3)h=h.replace(/./g,"$&$&");
+    return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+  var C_RAW,C_VAP,C_ESS,dark;
+  function readPalette(){dark=theme();C_RAW=hex(css("--raw"));C_VAP=hex(css("--vapor"));C_ESS=hex(css("--essence"));}
+  readPalette();
+
+  // particles: chaos position (raw liquid) + ordered position (distilled droplet)
+  var N = window.innerWidth<720?720:1200;
+  var P=[];
+  function rand(a,b){return a+Math.random()*(b-a);}
+  for(var i=0;i<N;i++){
+    // chaos: fuzzy sphere cloud
+    var u=Math.random(),v=Math.random(),th=u*Math.PI*2,ph=Math.acos(2*v-1);
+    var rc=2.0+Math.pow(Math.random(),.5)*1.4;
+    var cx=rc*Math.sin(ph)*Math.cos(th), cy=rc*Math.cos(ph)*.9, cz=rc*Math.sin(ph)*Math.sin(th);
+    // order: teardrop/droplet surface, tight
+    var t2=Math.random()*Math.PI*2, p2=Math.acos(2*Math.random()-1), ro=0.55+Math.random()*0.12;
+    var oy=ro*Math.cos(p2);
+    var pinch=(1-oy*0.55); // narrow the top -> teardrop
+    var ox=ro*Math.sin(p2)*Math.cos(t2)*pinch, oz=ro*Math.sin(p2)*Math.sin(t2)*pinch;
+    oy=oy*1.15-0.15;
+    P.push({cx:cx,cy:cy,cz:cz,ox:ox,oy:oy,oz:oz,
+      helix:rand(0,Math.PI*2), speed:rand(.4,1), tw:rand(0,Math.PI*2)});
+  }
+
+  function resize(){
+    W=cv.clientWidth=window.innerWidth; H=cv.clientHeight=window.innerHeight;
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener("resize",resize); resize();
+
+  function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function mixCol(a,b,t){return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];}
+
+  var rot=0, scrollT=0;
+  function getScroll(){
+    var max=document.body.scrollHeight-window.innerHeight;
+    scrollT= max>0? window.scrollY/max : 0;
+  }
+  window.addEventListener("scroll",getScroll,{passive:true}); getScroll();
+
+  function frame(){
+    if(!reduce) rot+=0.0016;
+    // conv: 0 chaos -> 1 fully distilled, active across the middle of the scroll
+    var conv=smooth((scrollT-0.12)/0.72);
+    var spiral=Math.sin(conv*Math.PI)*3.2;   // vortex peaks mid-distillation
+    var fall=(1-conv);                        // liquid sinks then rises into core
+
+    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+
+    var cxs=W/2, cys=H*0.44, scale=Math.min(W,H)*0.19, cosR=Math.cos(rot), sinR=Math.sin(rot);
+    var tiltC=Math.cos(0.32), tiltS=Math.sin(0.32);
+
+    for(var i=0;i<N;i++){
+      var p=P[i];
+      // morph chaos->order
+      var x=lerp(p.cx,p.ox,conv), y=lerp(p.cy,p.oy,conv), z=lerp(p.cz,p.oz,conv);
+      // vortex swirl toward the column as it distills
+      var ang=Math.atan2(z,x)+spiral*(1-conv)*p.speed*0.5 + p.helix*0.0;
+      var rad=Math.sqrt(x*x+z*z)*(1-conv*0.15);
+      x=Math.cos(ang)*rad; z=Math.sin(ang)*rad;
+      y+=fall*Math.sin(p.tw+rot*2)*0.15;
+      // rotate Y
+      var rx=x*cosR - z*sinR, rz=x*sinR + z*cosR;
+      // tilt X
+      var ry=y*tiltC - rz*tiltS, rrz=y*tiltS + rz*tiltC;
+      // project
+      var persp=3.6/(3.6+rrz);
+      var sx=cxs+rx*scale*persp, sy=cys - ry*scale*persp;
+      var depth=(rrz+3)/6; // 0 far .. 1 near
+      // color: raw -> vapor (mid) -> essence (end)
+      var col;
+      if(conv<0.5){col=mixCol(C_RAW,C_VAP,smooth(conv/0.5));}
+      else{col=mixCol(C_VAP,C_ESS,smooth((conv-0.5)/0.5));}
+      var a=(dark? .5:.62)*(0.35+persp*0.65)*(0.55+conv*0.45);
+      var sz=(dark?1.5:1.4)*persp*(1.1-depth*0.3)*(1+conv*0.5);
+      ctx.beginPath();
+      ctx.fillStyle="rgba("+(col[0]|0)+","+(col[1]|0)+","+(col[2]|0)+","+a.toFixed(3)+")";
+      ctx.arc(sx,sy,Math.max(0.4,sz),0,6.283);
+      ctx.fill();
+    }
+
+    // faint essence bloom at the core once distilled
+    if(conv>0.55){
+      var g=ctx.createRadialGradient(cxs,cys,0,cxs,cys,scale*2.2);
+      var ba=(conv-0.55)/0.45*(dark?0.5:0.28);
+      g.addColorStop(0,"rgba("+C_ESS[0]+","+C_ESS[1]+","+C_ESS[2]+","+(ba).toFixed(3)+")");
+      g.addColorStop(1,"rgba("+C_ESS[0]+","+C_ESS[1]+","+C_ESS[2]+",0)");
+      ctx.globalCompositeOperation="lighter"; ctx.fillStyle=g;
+      ctx.fillRect(cxs-scale*2.2,cys-scale*2.2,scale*4.4,scale*4.4);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // react to theme toggle
+  var mq=window.matchMedia("(prefers-color-scheme:dark)");
+  mq.addEventListener&&mq.addEventListener("change",readPalette);
+  new MutationObserver(readPalette).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+})();
+</script>
+
+</body>
+</html>
