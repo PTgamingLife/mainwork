@@ -129,6 +129,99 @@ export function reading(state) {
     <form id="reading-form" class="card form-card">${guardianCompanion(state, "告訴我你現在最想釐清的事。")}<div class="field"><label>問題類型</label><select name="category"><option>工作決定</option><option>感情互動</option><option>財務選擇</option><option>家庭問題</option><option>今日情緒</option><option>自由提問</option></select></div><div class="field"><label>你想釐清什麼？</label><textarea name="question" minlength="2" maxlength="2000" placeholder="描述現在的情況、你在意的目標，以及有哪些限制…" required></textarea></div><button class="primary-button" type="submit">使用今日解盤</button><p class="privacy-note">高風險醫療、法律、投資與安全問題會改為專業求助提醒。</p></form>`;
 }
 
+const TALENT_DIMENSIONS = [
+  { key: "initiative", label: "開創", description: "主動開始、探索新路與帶方向" },
+  { key: "expression", label: "表達", description: "創作、分享與影響他人" },
+  { key: "insight", label: "洞察", description: "分析、理解與策略判斷" },
+  { key: "execution", label: "執行", description: "落地、管理與完成成果" },
+  { key: "connection", label: "連結", description: "協調、支持與建立關係" },
+  { key: "stability", label: "穩定", description: "持續、承載與維持節奏" },
+];
+
+const TALENT_PRIORS = {
+  木: [82, 65, 59, 62, 72, 55],
+  火: [70, 84, 57, 64, 76, 50],
+  土: [55, 54, 61, 79, 68, 85],
+  金: [60, 57, 84, 82, 54, 70],
+  水: [68, 60, 86, 56, 72, 64],
+};
+
+const TALENT_KEYWORDS = {
+  initiative: ["挑戰", "自由", "探索", "新事物", "帶方向", "創意", "創作", "勇氣", "行動", "成長舞台", "自主", "冒險", "新的觀點", "換一種", "主目標"],
+  expression: ["互動分享", "創作", "肯定", "影響", "新的觀點", "說清楚", "被看見", "公開承諾", "教別人", "創意與表達", "自己的風格"],
+  insight: ["資料與邏輯", "直覺", "複雜問題", "方向與清晰", "專業有深度", "證據", "分析與策略", "完整架構", "重新確認原因", "記錄與回顧", "釐清"],
+  execution: ["明確數字", "先試一小步", "整理系統", "細節", "持續的收入", "清楚步驟", "期限", "進度", "深度投入", "執行與管理", "每天推進", "先完成"],
+  connection: ["重要的人", "熟悉的人", "幫助別人", "整合協調", "支持", "家人", "關係", "照顧", "被理解", "共同成長", "合作", "承諾", "夥伴", "影響他人"],
+  stability: ["獨處與安靜", "穩定支持", "安全", "穩定保障", "可持續", "可靠穩定", "控制細節", "固定提醒", "每天10分鐘", "睡眠", "減少無效", "誠實面對"],
+};
+
+function talentEnergyModel(state) {
+  const element = state.profile?.day_element || "木";
+  const prior = TALENT_PRIORS[element] || TALENT_PRIORS.木;
+  const counts = Object.fromEntries(TALENT_DIMENSIONS.map((item) => [item.key, 1]));
+  const selections = state.answers.map((item) => String(item.answer?.selected ?? item.selected ?? ""));
+  for (const selection of selections) {
+    let matched = false;
+    for (const dimension of TALENT_DIMENSIONS) {
+      const hits = TALENT_KEYWORDS[dimension.key].filter((keyword) => selection.includes(keyword)).length;
+      if (hits) {
+        counts[dimension.key] += Math.min(2, hits);
+        matched = true;
+      }
+    }
+    if (!matched && selection) counts.insight += .25;
+  }
+  const maxEvidence = Math.max(...Object.values(counts));
+  const answerWeight = Math.min(.6, selections.length / 30 * .6);
+  const values = TALENT_DIMENSIONS.map((dimension, index) => {
+    const evidenceScore = 48 + counts[dimension.key] / maxEvidence * 42;
+    return Math.round(prior[index] * (1 - answerWeight) + evidenceScore * answerWeight);
+  });
+  const ranked = TALENT_DIMENSIONS.map((dimension, index) => ({ ...dimension, score: values[index] }))
+    .sort((a, b) => b.score - a.score);
+  return {
+    values,
+    ranked,
+    confidence: Math.round(10 + selections.length / 30 * 80),
+    answerCount: selections.length,
+    element,
+  };
+}
+
+function radarPoint(value, index, radius = 92) {
+  const angle = -Math.PI / 2 + index * Math.PI / 3;
+  const distance = radius * value / 100;
+  return [130 + Math.cos(angle) * distance, 130 + Math.sin(angle) * distance];
+}
+
+function radarPolygon(values, radius = 92) {
+  return values.map((value, index) => radarPoint(value, index, radius).map((part) => part.toFixed(1)).join(",")).join(" ");
+}
+
+function talentEnergyCard(state) {
+  const model = talentEnergyModel(state);
+  const top = model.ranked.slice(0, 2);
+  const gridPolygons = [25, 50, 75, 100].map((value) =>
+    `<polygon points="${radarPolygon(Array(6).fill(value))}" class="talent-grid-line"></polygon>`
+  ).join("");
+  const axes = TALENT_DIMENSIONS.map((dimension, index) => {
+    const [x, y] = radarPoint(100, index);
+    const [labelX, labelY] = radarPoint(100, index, 112);
+    return `<line x1="130" y1="130" x2="${x}" y2="${y}" class="talent-axis"></line><text x="${labelX}" y="${labelY}" class="talent-axis-label">${escapeHtml(dimension.label)}</text>`;
+  }).join("");
+  const scoreRows = model.ranked.map((item) =>
+    `<div class="talent-score-row"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></div><b>${item.score}</b><i style="--talent-score:${item.score}%"></i></div>`
+  ).join("");
+  return `<article class="card wide-card talent-energy-card">
+    <div class="talent-energy-head"><div><p class="kicker">TALENT ENERGY</p><h3>自我天賦能量分布</h3><p>以${escapeHtml(state.profile.day_stem || "")}${escapeHtml(model.element)}的先天傾向為起點，再由真實回答持續校準。</p></div><span class="model-confidence">資料可信度 <b>${model.confidence}%</b></span></div>
+    <div class="talent-energy-layout">
+      <div class="talent-radar-wrap"><svg class="talent-radar" viewBox="0 0 260 260" role="img" aria-label="六項自我天賦能量雷達圖">${gridPolygons}${axes}<polygon points="${radarPolygon(model.values)}" class="talent-shape"></polygon>${model.values.map((value, index) => { const [x, y] = radarPoint(value, index); return `<circle cx="${x}" cy="${y}" r="4" class="talent-dot"></circle>`; }).join("")}</svg></div>
+      <div class="talent-energy-copy"><div class="talent-highlight"><small>目前主要天賦</small><strong>${escapeHtml(top.map((item) => item.label).join(" × "))}</strong><p>${escapeHtml(top[0].description)}；搭配${escapeHtml(top[1].description)}，是目前最自然的能量組合。</p></div><div class="talent-score-list">${scoreRows}</div></div>
+    </div>
+    <div class="talent-evidence"><span>已納入 ${model.answerCount}/30 題真實回答</span><span>回答越完整，行為證據權重越高</span><span>每週確認模型後持續升級</span></div>
+  </article>`;
+}
+
 export function profile(state) {
   const guardian = state.guardianAssets?.guardian;
   const url = state.guardianAssets?.chibi_url;
@@ -141,7 +234,7 @@ export function profile(state) {
     : "<span>會隨探索逐漸清晰</span>";
   const symbolTags = symbols.map((symbol) => `<span>${escapeHtml(symbol)}</span>`).join("");
   return `${head("MY MODEL", "你的自我模型", "固定命盤、真實回答與行為證據分開保存。")}
-    <div class="grid"><article class="card half-card guardian-panel"><div class="guardian-large">${url ? `<img src="${escapeHtml(url)}" alt="你的Q版守護天使">` : "<span>✦</span>"}</div>
+    <div class="grid">${talentEnergyCard(state)}<article class="card half-card guardian-panel"><div class="guardian-large">${url ? `<img src="${escapeHtml(url)}" alt="你的Q版守護天使">` : "<span>✦</span>"}</div>
       <div class="guardian-identity"><small>守護天使的名字</small><h3>${escapeHtml(spec.name || "尚未成形")}</h3><p>${escapeHtml(spec.essence || "完成第一道探索後即可生成。")}</p></div>
       ${guardian ? `<div class="guardian-profile-details"><div class="guardian-detail"><small>核心特性</small><div class="guardian-traits">${traitTags}</div></div>${spec.voice ? `<div class="guardian-detail"><small>陪伴方式</small><p>${escapeHtml(spec.voice)}</p></div>` : ""}${symbolTags ? `<div class="guardian-detail"><small>守護象徵</small><div class="guardian-symbols">${symbolTags}</div></div>` : ""}</div>` : ""}
       ${!guardian && state.answers.length ? button("生成雙版本守護天使", "create-guardian") : ""}</article>
