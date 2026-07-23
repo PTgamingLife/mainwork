@@ -2,6 +2,11 @@ name: Deploy bazi28 to 28challenge
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "bazi28/**"
+      - ".github/workflows/deploy-bazi28.yml"
 
 jobs:
   deploy:
@@ -15,16 +20,13 @@ jobs:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
           git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/PTgamingLife/28challenge.git /tmp/28challenge
-          cp bazi28/js/app.js     /tmp/28challenge/js/app.js
-          cp bazi28/js/data.js    /tmp/28challenge/js/data.js
-          cp bazi28/css/styles.css /tmp/28challenge/css/styles.css
-          cp bazi28/admin.html    /tmp/28challenge/admin.html
+          cp -R bazi28/. /tmp/28challenge/
 
       - name: Commit and push
         working-directory: /tmp/28challenge
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add js/app.js js/data.js css/styles.css admin.html
-          git diff --cached --quiet && echo "No changes" || git commit -m "feat: 小老師AI對話、Day28品牌故事生成、後臺管理"
+          git add --all
+          git diff --cached --quiet && echo "No changes" || git commit -m "feat: deploy destiny calibration app"
           git push origin main
