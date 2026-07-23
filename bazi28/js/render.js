@@ -119,9 +119,19 @@ export function reading(state) {
 export function profile(state) {
   const guardian = state.guardianAssets?.guardian;
   const url = state.guardianAssets?.chibi_url;
+  const spec = guardian?.character_spec || {};
+  const traits = Array.isArray(spec.immutable_traits) ? spec.immutable_traits.slice(0, 6) : [];
+  const symbols = Array.isArray(spec.symbols) ? spec.symbols.slice(0, 3) : [];
   const content = state.model?.content || {};
+  const traitTags = traits.length
+    ? traits.map((trait) => `<span>${escapeHtml(trait)}</span>`).join("")
+    : "<span>會隨探索逐漸清晰</span>";
+  const symbolTags = symbols.map((symbol) => `<span>${escapeHtml(symbol)}</span>`).join("");
   return `${head("MY MODEL", "你的自我模型", "固定命盤、真實回答與行為證據分開保存。")}
-    <div class="grid"><article class="card half-card guardian-panel"><div class="guardian-large">${url ? `<img src="${url}" alt="你的Q版守護天使">` : "<span>✦</span>"}</div><h3>${escapeHtml(guardian?.character_spec?.name || "尚未成形")}</h3><p>${escapeHtml(guardian?.character_spec?.essence || "完成第一道探索後即可生成。")}</p>${!guardian && state.answers.length ? button("生成雙版本守護天使", "create-guardian") : ""}</article>
+    <div class="grid"><article class="card half-card guardian-panel"><div class="guardian-large">${url ? `<img src="${escapeHtml(url)}" alt="你的Q版守護天使">` : "<span>✦</span>"}</div>
+      <div class="guardian-identity"><small>守護天使的名字</small><h3>${escapeHtml(spec.name || "尚未成形")}</h3><p>${escapeHtml(spec.essence || "完成第一道探索後即可生成。")}</p></div>
+      ${guardian ? `<div class="guardian-profile-details"><div class="guardian-detail"><small>核心特性</small><div class="guardian-traits">${traitTags}</div></div>${spec.voice ? `<div class="guardian-detail"><small>陪伴方式</small><p>${escapeHtml(spec.voice)}</p></div>` : ""}${symbolTags ? `<div class="guardian-detail"><small>守護象徵</small><div class="guardian-symbols">${symbolTags}</div></div>` : ""}</div>` : ""}
+      ${!guardian && state.answers.length ? button("生成雙版本守護天使", "create-guardian") : ""}</article>
       <article class="card half-card"><p class="kicker">MODEL V${state.model?.version || 0}</p><h3>理解信心 ${Math.round((state.model?.confidence ?? .1)*100)}%</h3><div class="stat"><span>天干固定層</span><b>${escapeHtml(state.profile.day_stem || "—")}${escapeHtml(state.profile.day_element || "")}</b></div><div class="stat"><span>已回答</span><b>${state.answers.length}/30</b></div><div class="stat"><span>已確認模式</span><b>${content.confirmed_patterns?.length || 0}</b></div><div class="quote">模型只在你確認每週更新草案後升級。</div></article>
       ${state.isAdmin ? `<article class="card wide-card"><p class="kicker">ADMIN</p><h3>帳號主控後台</h3><p>查看使用狀況、AI失敗與退還次數；不預設展示私人對話。</p>${button("開啟後台", "open-admin", "secondary-button")}</article>` : ""}
       <article class="card wide-card"><p class="kicker">ACCOUNT</p><h3>${escapeHtml(state.profile.display_name || "旅人")}</h3><p>${escapeHtml(state.profile.birth_date || "")} · ${escapeHtml(state.profile.birth_city || "")} · ${escapeHtml(state.profile.timezone || "Asia/Taipei")}</p>${button("登出", "logout", "secondary-button")}</article></div>`;

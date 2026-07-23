@@ -132,6 +132,16 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
 .quote { padding: 16px 18px; border-left: 3px solid var(--gold); background: rgba(255,255,255,.4); border-radius: 0 14px 14px 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .guardian-panel { text-align: center; }
 .guardian-large { width: 210px; height: 210px; margin: 0 auto 16px; display: grid; place-items: center; overflow: hidden; border-radius: 50% 50% 30% 30%; background: radial-gradient(circle, #fff7df, #cbdcca); border: 7px solid rgba(255,255,255,.7); box-shadow: 0 18px 48px rgba(53,87,70,.17); }
+.guardian-identity { max-width: 540px; margin: 0 auto; }
+.guardian-identity > small { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: .16em; }
+.guardian-identity h3 { margin: 6px 0 8px; font-size: 24px; }
+.guardian-identity p { margin: 0; }
+.guardian-profile-details { margin-top: 20px; padding: 16px; text-align: left; border: 1px solid rgba(108,136,118,.16); border-radius: 18px; background: linear-gradient(135deg, rgba(221,231,221,.5), rgba(255,250,240,.7)); }
+.guardian-detail + .guardian-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(108,136,118,.14); }
+.guardian-detail > small { display: block; margin-bottom: 8px; color: var(--sage-deep); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.guardian-detail p { margin: 0; font-size: 13px; }
+.guardian-traits, .guardian-symbols { display: flex; flex-wrap: wrap; gap: 7px; }
+.guardian-traits span, .guardian-symbols span { padding: 6px 9px; border: 1px solid rgba(108,136,118,.2); border-radius: 999px; color: var(--sage-deep); background: rgba(255,255,255,.58); font-size: 11px; line-height: 1.3; }
 .guardian-large img { width: 100%; height: 100%; object-fit: cover; }
 .guardian-large span { color: var(--gold); font-size: 50px; animation: pulse 2s infinite; }
 .guardian-dock { position: fixed; right: max(18px, calc((100vw - 1080px)/2)); bottom: 92px; z-index: 18; display: flex; align-items: center; gap: 9px; padding: 8px 13px 8px 8px; border: 1px solid rgba(255,255,255,.9); border-radius: 99px; background: rgba(255,253,248,.9); box-shadow: 0 10px 35px rgba(53,71,59,.15); backdrop-filter: blur(12px); }
