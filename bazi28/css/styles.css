@@ -311,3 +311,40 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
   .model-confidence { display: inline-block; margin-top: 8px; }
   .talent-score-list { grid-template-columns: 1fr; }
 }
+
+
+/* Weekly metaphysics evidence */
+.metaphysics-card { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(255,252,245,.97), rgba(231,238,230,.94)); }
+.metaphysics-card::after { content: "證"; position: absolute; right: 20px; top: -38px; color: rgba(49,84,68,.035); font: 700 170px "Noto Serif TC"; pointer-events: none; }
+.metaphysics-card > * { position: relative; z-index: 1; }
+.metaphysics-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.metaphysics-head p { max-width: 720px; margin: 4px 0 0; }
+.weekly-badge { flex: 0 0 auto; padding: 8px 11px; border-radius: 999px; color: var(--sage-deep); background: rgba(255,255,255,.66); border: 1px solid rgba(49,84,68,.12); font-size: 10px; font-weight: 700; }
+.weekly-badge.status-proposed { color: #8a5e20; border-color: rgba(195,143,68,.32); background: rgba(255,245,224,.86); }
+.weekly-badge.status-not_suitable, .weekly-badge.status-rejected { color: var(--muted); }
+.weekly-badge.status-accepted { color: #fff; background: var(--sage-deep); }
+.metaphysics-upload { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin: 16px 0; padding: 15px; border: 1px dashed rgba(49,84,68,.26); border-radius: 16px; background: rgba(255,255,255,.42); }
+.metaphysics-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.metaphysics-upload label { cursor: pointer; }
+.metaphysics-upload label span { display: block; color: var(--sage-deep); font-weight: 700; }
+.metaphysics-upload label small, .metaphysics-upload output { color: var(--muted); font-size: 10px; }
+.metaphysics-upload output { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.metaphysics-assessment { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+.metaphysics-assessment > div { padding: 13px 14px; border-radius: 14px; background: rgba(255,255,255,.58); border: 1px solid rgba(49,84,68,.09); }
+.metaphysics-assessment small { display: block; margin-bottom: 4px; color: var(--muted); font-size: 9px; }
+.metaphysics-assessment strong { font: 700 16px "Noto Serif TC"; }
+.metaphysics-reasons { margin: 12px 0; padding-left: 20px; color: var(--muted); line-height: 1.8; }
+.metaphysics-proposal { margin-top: 17px; padding: 18px; border: 1px solid rgba(195,143,68,.24); border-radius: 18px; background: rgba(255,255,255,.6); }
+.metaphysics-proposal h4 { margin: 0 0 12px; font: 700 17px "Noto Serif TC"; }
+.metaphysics-proposal-group { margin: 10px 0; }
+.metaphysics-proposal-group small { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; letter-spacing: .1em; }
+.metaphysics-proposal-group > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.metaphysics-proposal-group span { padding: 6px 9px; border-radius: 999px; color: var(--sage-deep); background: rgba(49,84,68,.08); font-size: 10px; }
+.metaphysics-result-note { margin: 16px 0 0; padding: 13px 15px; border-left: 3px solid var(--gold); background: rgba(255,255,255,.55); }
+
+@media (max-width: 640px) {
+  .metaphysics-head { display: block; }
+  .weekly-badge { display: inline-block; margin-top: 8px; }
+  .metaphysics-assessment { grid-template-columns: 1fr; }
+  .metaphysics-upload { grid-template-columns: 1fr; }
+}
