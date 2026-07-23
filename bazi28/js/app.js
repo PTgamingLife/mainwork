@@ -10,7 +10,7 @@ import {
   signOut,
   updateJourneyProgress,
 } from "./api.js";
-import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260723-guardian-profile";
+import { admin, goal, journey, onboarding, profile, reading, today } from "./render.js?v=20260723-admin";
 
 const landing = document.querySelector("#landing");
 const app = document.querySelector("#app");
@@ -292,7 +292,7 @@ async function runAdmin() {
   showLoading("讀取系統健康度…");
   try {
     const result = await invoke("destiny-orchestrator", { action: "admin_dashboard" });
-    view.innerHTML = admin(result.metrics);
+    view.innerHTML = admin(result.metrics, result.accounts, result.period_days);
   } finally { hideLoading(); }
 }
 
