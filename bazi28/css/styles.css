@@ -242,3 +242,33 @@ h1 em { display: block; color: var(--sage-deep); font-style: normal; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+
+/* Daily fortune */
+.fortune-card { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(255,250,240,.96), rgba(226,235,226,.92)); }
+.fortune-card::after { content: "運"; position: absolute; right: 24px; top: -28px; color: rgba(49,84,68,.045); font: 700 150px "Noto Serif TC"; pointer-events: none; }
+.fortune-heading { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.pillar-badge { flex: 0 0 auto; padding: 8px 12px; border: 1px solid rgba(49,84,68,.14); border-radius: 999px; color: var(--sage-deep); background: rgba(255,255,255,.58); font-size: 12px; font-weight: 700; }
+.fortune-highlight { position: relative; z-index: 1; margin: 16px 0 18px; padding: 18px 20px; border-left: 4px solid var(--gold); border-radius: 0 18px 18px 0; background: rgba(255,255,255,.58); }
+.fortune-highlight small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; letter-spacing: .14em; }
+.fortune-highlight strong { display: block; font: 700 24px "Noto Serif TC"; color: var(--sage-deep); }
+.fortune-highlight p { margin: 7px 0 0; }
+.fortune-scores { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fortune-score { position: relative; min-width: 0; padding: 13px 14px 18px; border: 1px solid rgba(49,84,68,.1); border-radius: 15px; background: rgba(255,255,255,.48); }
+.fortune-score > div { display: flex; align-items: center; gap: 7px; }
+.fortune-score span { font-weight: 700; }
+.fortune-score small { padding: 2px 6px; border-radius: 999px; color: var(--muted); background: rgba(49,84,68,.07); font-size: 9px; }
+.fortune-score b { position: absolute; right: 13px; top: 11px; font: 700 22px "Noto Serif TC"; }
+.fortune-score i { position: absolute; left: 14px; right: 14px; bottom: 9px; height: 4px; border-radius: 99px; background: linear-gradient(90deg, var(--gold) var(--score), rgba(49,84,68,.09) var(--score)); }
+.fortune-score.is-highlight { border-color: rgba(195,143,68,.42); box-shadow: inset 0 0 0 1px rgba(195,143,68,.12); }
+.fortune-reasons { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.fortune-reasons span { padding: 6px 9px; border-radius: 99px; color: var(--muted); background: rgba(49,84,68,.07); font-size: 10px; }
+.fortune-disclaimer { position: relative; z-index: 1; margin: 12px 0 0; font-size: 10px; }
+.fortune-loading { min-height: 130px; }
+
+@media (max-width: 720px) {
+  .fortune-heading { display: block; }
+  .pillar-badge { display: inline-block; margin-top: 6px; }
+  .fortune-scores { grid-template-columns: repeat(2, 1fr); }
+  .fortune-highlight strong { font-size: 21px; }
+}
