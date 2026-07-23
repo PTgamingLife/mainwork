@@ -14,6 +14,8 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2.57.4";
 const PROMPT_VERSION = "destiny-harness-1.0.0";
 const STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 const ELEMENTS = ["木", "木", "火", "火", "土", "土", "金", "金", "水", "水"];
+const BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+const BRANCH_ELEMENTS = ["水", "土", "木", "木", "土", "火", "火", "土", "金", "金", "土", "水"];
 const DAY_MS = 86_400_000;
 const ANCHOR_DAY = Date.UTC(1986, 2, 21);
 
@@ -66,13 +68,145 @@ const proposalSchema = {
   required: ["patch", "confidence", "change_note", "evidence"],
 };
 
-function dayStemFor(dateText: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) throw new Error("INVALID_BIRTH_DATE");
+function pillarFor(dateText: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) throw new Error("INVALID_DATE");
   const date = new Date(`${dateText}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) throw new Error("INVALID_BIRTH_DATE");
+  if (Number.isNaN(date.getTime())) throw new Error("INVALID_DATE");
   const days = Math.round((date.getTime() - ANCHOR_DAY) / DAY_MS);
-  const index = ((days % 10) + 10) % 10;
-  return { stem: STEMS[index], element: ELEMENTS[index] };
+  const cycle = ((days % 60) + 60) % 60;
+  const stemIndex = cycle % 10;
+  const branchIndex = cycle % 12;
+  return {
+    cycle,
+    stem: STEMS[stemIndex],
+    stem_element: ELEMENTS[stemIndex],
+    branch: BRANCHES[branchIndex],
+    branch_element: BRANCH_ELEMENTS[branchIndex],
+  };
+}
+
+function dayStemFor(dateText: string) {
+  try {
+    const pillar = pillarFor(dateText);
+    return { stem: pillar.stem, element: pillar.stem_element };
+  } catch {
+    throw new Error("INVALID_BIRTH_DATE");
+  }
+}
+
+const GENERATES: Record<string, string> = { 木: "火", 火: "土", 土: "金", 金: "水", 水: "木" };
+const CONTROLS: Record<string, string> = { 木: "土", 土: "水", 水: "火", 火: "金", 金: "木" };
+const BRANCH_HARMONY = new Set(["子丑", "寅亥", "卯戌", "辰酉", "巳申", "午未"]);
+const BRANCH_CLASH = new Set(["子午", "丑未", "寅申", "卯酉", "辰戌", "巳亥"]);
+const BRANCH_HARM = new Set(["子未", "丑午", "寅巳", "卯辰", "申亥", "酉戌"]);
+
+function pairKey(a: string, b: string) {
+  return [a, b].sort((left, right) => BRANCHES.indexOf(left) - BRANCHES.indexOf(right)).join("");
+}
+
+function elementRelation(natal: string, current: string) {
+  if (natal === current) return "peer";
+  if (GENERATES[natal] === current) return "output";
+  if (CONTROLS[natal] === current) return "wealth";
+  if (CONTROLS[current] === natal) return "authority";
+  return "resource";
+}
+
+function branchInteraction(natal: string, current: string) {
+  if (natal === current) return { type: "same", delta: 2, text: "同支共振，熟悉感較強" };
+  const key = pairKey(natal, current);
+  if (BRANCH_HARMONY.has(key)) return { type: "harmony", delta: 8, text: "日支六合，合作與協調加分" };
+  if (BRANCH_CLASH.has(key)) return { type: "clash", delta: -9, text: "日支相衝，變動與摩擦升高" };
+  if (BRANCH_HARM.has(key)) return { type: "harm", delta: -5, text: "日支相害，溝通要多確認" };
+  return { type: "neutral", delta: 0, text: "日支互動平穩" };
+}
+
+function clampScore(value: number) {
+  return Math.max(35, Math.min(95, Math.round(value)));
+}
+
+function scoreLevel(score: number) {
+  if (score >= 82) return "亮點";
+  if (score >= 70) return "順勢";
+  if (score >= 58) return "平穩";
+  return "留意";
+}
+
+function calculateDailyFortune(birthDate: string, date: string) {
+  const natal = pillarFor(birthDate);
+  const current = pillarFor(date);
+  const stemRelation = elementRelation(natal.stem_element, current.stem_element);
+  const branch = branchInteraction(natal.branch, current.branch);
+  const relationText: Record<string, string> = {
+    peer: "比劫同氣：自主與同儕能量增加",
+    output: "食傷流動：表達、創作與產出增加",
+    wealth: "財星啟動：資源交換與成果意識增加",
+    authority: "官殺啟動：責任、規則與壓力增加",
+    resource: "印星生扶：學習、支持與整理能力增加",
+  };
+  const weights: Record<string, Record<string, number>> = {
+    wealth: { peer: -2, output: 8, wealth: 16, authority: 2, resource: 4 },
+    love: { peer: 7, output: 9, wealth: 7, authority: 5, resource: 7 },
+    network: { peer: 14, output: 10, wealth: 5, authority: 2, resource: 12 },
+    career: { peer: 4, output: 14, wealth: 8, authority: 13, resource: 7 },
+    workplace: { peer: 7, output: 6, wealth: 5, authority: 14, resource: 12 },
+    family: { peer: 11, output: 3, wealth: 5, authority: 1, resource: 15 },
+  };
+  const definitions = [
+    { key: "wealth", label: "財運", advice: "適合盤點資源、報價或完成一項可衡量成果。" },
+    { key: "love", label: "戀愛運", advice: "把感受說具體，比等待對方猜中更有用。" },
+    { key: "network", label: "人脈運", advice: "主動聯絡一位能互相支持的人，先提供明確價值。" },
+    { key: "career", label: "事業運", advice: "把最重要的想法轉成一個可交付成果。" },
+    { key: "workplace", label: "職場運", advice: "先確認責任邊界與完成標準，再推進工作。" },
+    { key: "family", label: "家運", advice: "留一段不被工作切割的時間，完成一次真實陪伴。" },
+  ];
+  const peachBonus = ["子", "午", "卯", "酉"].includes(current.branch) ? 6 : 0;
+  const movementBonus = ["寅", "申", "巳", "亥"].includes(current.branch) ? 5 : 0;
+  const storageBonus = ["辰", "戌", "丑", "未"].includes(current.branch) ? 4 : 0;
+  const scores = definitions.map((item, index) => {
+    let value = 60 + weights[item.key][stemRelation] + ((current.cycle * 7 + natal.cycle * 3 + index * 11) % 9 - 4);
+    if (["love", "network", "family"].includes(item.key)) value += branch.delta;
+    if (item.key === "love") value += peachBonus;
+    if (["career", "workplace", "network"].includes(item.key)) value += movementBonus;
+    if (["wealth", "family"].includes(item.key)) value += storageBonus;
+    const score = clampScore(value);
+    return {
+      key: item.key,
+      label: item.label,
+      score,
+      level: scoreLevel(score),
+      advice: item.advice,
+    };
+  }).sort((a, b) => b.score - a.score);
+  const highlight = scores[0];
+  return {
+    date,
+    day_pillar: `${current.stem}${current.branch}`,
+    day_element: `${current.stem_element}／${current.branch_element}`,
+    natal_day_pillar: `${natal.stem}${natal.branch}`,
+    relation: stemRelation,
+    relation_text: relationText[stemRelation],
+    branch_interaction: branch.text,
+    highlight: {
+      key: highlight.key,
+      label: highlight.label,
+      score: highlight.score,
+      message: `今天最亮的是${highlight.label}。 ${highlight.advice}`,
+    },
+    scores,
+    disclaimer: "分數是依日主五行、當日干支與日支互動建立的行動參考，不是事件保證。",
+    calculator_version: "daily-pillar-balance-1.0",
+  };
+}
+
+async function dailyFortune(req: Request) {
+  const { userId, serviceClient } = await authenticate(req);
+  const { data: profile, error } = await serviceClient.from("destiny_profiles")
+    .select("birth_date,timezone").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  if (!profile?.birth_date) return json(req, { error: "請先完成出生資料" }, 409);
+  const date = todayInTimezone(profile.timezone);
+  return json(req, calculateDailyFortune(profile.birth_date, date));
 }
 
 async function loadContext(service: SupabaseClient, userId: string) {
@@ -430,6 +564,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json() as Record<string, unknown>;
     switch (body.action) {
       case "save_birth": return await saveBirth(req, body);
+      case "daily_fortune": return await dailyFortune(req);
       case "daily_action": return await dailyAction(req, body);
       case "reading": return await reading(req, body);
       case "weekly_proposal": return await weeklyProposal(req, body);
