@@ -19,7 +19,7 @@ export function corsHeaders(req: Request) {
   const allowed = ALLOWED_ORIGINS.has(origin) ? origin : "https://ptgaminglife.github.io";
   return {
     "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-request-id",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-request-id",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
