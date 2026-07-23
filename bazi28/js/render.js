@@ -137,7 +137,63 @@ export function profile(state) {
       <article class="card wide-card"><p class="kicker">ACCOUNT</p><h3>${escapeHtml(state.profile.display_name || "旅人")}</h3><p>${escapeHtml(state.profile.birth_date || "")} · ${escapeHtml(state.profile.birth_city || "")} · ${escapeHtml(state.profile.timezone || "Asia/Taipei")}</p>${button("登出", "logout", "secondary-button")}</article></div>`;
 }
 
-export function admin(metrics) {
-  return `${head("ADMIN", "帳號主控後台", "只顯示系統健康度與彙總資訊。")}
-    <div class="grid">${Object.entries(metrics).map(([key,value]) => `<article class="card half-card"><p class="kicker">${escapeHtml(key.replaceAll("_"," "))}</p><h3>${value}</h3></article>`).join("")}<article class="card wide-card"><div class="quote">舊有 bazi28 資料表目前存在公開 RLS 規則；本系統使用全新的 destiny_* 私有資料表，沒有直接混用舊資料。</div></article></div>`;
+function adminDate(value) {
+  if (!value) return "尚無紀錄";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "尚無紀錄";
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function adminStatus(status) {
+  const labels = {
+    not_started: "尚未生成",
+    queued: "排隊中",
+    processing: "生成中",
+    ready: "已完成",
+    failed: "失敗",
+  };
+  return labels[status] || status || "—";
+}
+
+export function admin(metrics, accounts = [], periodDays = 30) {
+  const metricLabels = {
+    auth_users: "登入帳號",
+    onboarded_users: "完成建檔",
+    active_users_7d: "近7日活躍",
+    active_goals: "進行中目標",
+    ai_calls_30d: `近${periodDays}日 AI 使用`,
+    refunded_ai_calls_30d: "AI 退還",
+  };
+  const metricCards = Object.entries(metricLabels).map(([key, label]) =>
+    `<article class="card admin-metric"><p class="kicker">${escapeHtml(label)}</p><h3>${Number(metrics?.[key] ?? 0)}</h3></article>`
+  ).join("");
+  const accountCards = accounts.map((account) => {
+    const progress = Math.max(0, Math.min(30, Number(account.journey_progress || 0)));
+    const confidence = account.model_confidence == null ? "—" : `${Math.round(Number(account.model_confidence) * 100)}%`;
+    return `<article class="card admin-account">
+      <div class="admin-account-head"><div class="admin-account-avatar">${escapeHtml((account.display_name || account.email || "?").slice(0, 1).toUpperCase())}</div><div><h3>${escapeHtml(account.display_name || "尚未命名")}</h3><p>${escapeHtml(account.email || "無 Email")}</p></div><span class="admin-state ${account.onboarded ? "ready" : ""}">${account.onboarded ? "已建檔" : "未建檔"}</span></div>
+      <div class="admin-account-grid">
+        <div><small>探索進度</small><strong>${progress}/30</strong></div>
+        <div><small>模型版本</small><strong>${account.model_version ? `V${account.model_version}` : "—"}</strong></div>
+        <div><small>模型信心</small><strong>${confidence}</strong></div>
+        <div><small>守護天使</small><strong>${escapeHtml(adminStatus(account.guardian_status))}</strong></div>
+        <div><small>主目標</small><strong>${account.has_active_goal ? "進行中" : "未設定"}</strong></div>
+        <div><small>近${periodDays}日 AI</small><strong>${Number(account.ai_calls_30d || 0)} 次</strong></div>
+      </div>
+      <div class="admin-usage"><span>成功 ${Number(account.ai_succeeded_30d || 0)}</span><span class="${account.ai_refunded_30d ? "warning" : ""}">退還 ${Number(account.ai_refunded_30d || 0)}</span></div>
+      <div class="admin-account-foot"><span>最近登入：${escapeHtml(adminDate(account.last_sign_in_at))}</span><span>最近活動：${escapeHtml(adminDate(account.last_activity_at))}</span></div>
+    </article>`;
+  }).join("");
+  return `${head("ADMIN", "帳號主控後台", "只顯示使用狀況，不顯示出生資料、問題、對話或模型內文。", '<button class="secondary-button" type="button" data-route="profile">返回我的帳號</button>')}
+    <div class="admin-metrics">${metricCards}</div>
+    <section class="admin-section"><div class="admin-section-head"><div><p class="kicker">ACCOUNT USAGE</p><h3>所有帳號使用狀況</h3></div><span>${accounts.length} 個帳號</span></div>
+      <div class="admin-account-list">${accountCards || '<div class="card empty">目前沒有帳號資料。</div>'}</div>
+    </section>`;
 }
