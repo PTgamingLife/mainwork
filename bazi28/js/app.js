@@ -18,6 +18,7 @@ const view = document.querySelector("#view");
 const toastEl = document.querySelector("#toast");
 const loading = document.querySelector("#loading");
 const loadingText = document.querySelector("#loading-text");
+const loadingGuardianAvatar = document.querySelector("#loading-guardian-avatar");
 const dock = document.querySelector("#guardian-dock");
 
 let session = null;
@@ -37,8 +38,29 @@ function requestId() {
   return crypto.randomUUID();
 }
 
+function renderGuardianAvatar(container, imageUrl, alt = "你的Q版守護天使") {
+  container.replaceChildren();
+  if (!imageUrl) {
+    const fallback = document.createElement("span");
+    fallback.textContent = "✦";
+    container.append(fallback);
+    return;
+  }
+  const image = document.createElement("img");
+  image.src = imageUrl;
+  image.alt = alt;
+  image.decoding = "async";
+  image.addEventListener("error", () => {
+    const fallback = document.createElement("span");
+    fallback.textContent = "✦";
+    container.replaceChildren(fallback);
+  }, { once: true });
+  container.append(image);
+}
+
 function showLoading(message = "正在校準…") {
   loadingText.textContent = message;
+  renderGuardianAvatar(loadingGuardianAvatar, state?.guardianAssets?.chibi_url);
   loading.classList.remove("hidden");
 }
 
@@ -68,9 +90,7 @@ function updateShell() {
     document.querySelector("#guardian-state").textContent = guardian?.status === "ready" ? "陪你完成下一步" : "正在形成中";
     document.querySelector("#guardian-name").textContent = guardian?.character_spec?.name || "你的守護天使";
     const avatar = document.querySelector("#guardian-avatar");
-    avatar.innerHTML = state?.guardianAssets?.chibi_url
-      ? `<img src="${state.guardianAssets.chibi_url}" alt="Q版守護天使">`
-      : "<span>✦</span>";
+    renderGuardianAvatar(avatar, state?.guardianAssets?.chibi_url);
   } else {
     dock.classList.add("hidden");
   }
