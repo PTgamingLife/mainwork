@@ -34,9 +34,16 @@ description: IG Reels 短影音設計器 + 自我學習迴圈。兩種用法:(1)
 ## 學習模式
 
 1. **收集這支 reels 的資料**,按順序嘗試:
-   - 使用者貼網址 → 先用 WebFetch 抓公開資訊(caption、帳號);IG 常擋爬蟲,抓不到就直接問使用者要:影片文稿(或口述內容)、數據(觀看/讚/留言/轉發/收藏)、截圖。
-   - 使用者給截圖 → 用 Read 讀圖,提取:畫面構成、字卡、數據、留言內容與語氣。
-   - 不要卡在抓不到資料;有多少分析多少,缺的欄位在 Case 裡標「未知」。
+   - 使用者貼網址 → 先用 WebFetch 抓公開資訊(caption、帳號、讚/留言數)。
+   - **要看影片畫面與節奏時,用這套流程**(已驗證可行,Case #6):
+     1. `preview_start` 開 `https://www.instagram.com/reel/<ID>/embed/`(**一定要加 `/embed/`** —— 不加會被登入牆導回首頁,embed 版才有 video 元素)
+     2. `javascript_tool` 取 `document.querySelector('video').currentSrc` 拿到 CDN 直連 URL
+     3. URL 很長且含 `&`:先用 Write 存到 scratchpad 的 .txt,再 `VURL=$(tr -d '\r\n' < vurl.txt)` 帶入 curl(加 `-A` UA 與 `-e https://www.instagram.com/`)下載到 scratchpad
+     4. `ffprobe` 取片長/解析度;`ffmpeg -vf "select='gt(scene,0.2)',metadata=print:file=-"` 數場景變化次數 → 算出「平均幾秒一次視覺變化」
+     5. `ffmpeg -vf "fps=1/2.5,scale=260:-1,tile=7x3"` 做全片影格網格、`-ss 0 -t 4.5 -vf "fps=2,...,tile=3x3"` 做 hook 細部網格,再用 Read 讀圖 —— 這樣就能真的看到字卡、字幕、鏡位、螢幕錄影內容
+     - 注意:`computer{action:"screenshot"}` 在瀏覽器面板沒顯示時會 timeout,不要靠它;走 ffmpeg 影格路線。
+   - 使用者給截圖(尤其**後台洞察報告**:略過率/平均觀看時間/分享率/新增粉絲)→ 用 Read 讀圖。後台數據是歸因金礦,主動向使用者要。
+   - 不要卡在抓不到資料;有多少分析多少,缺的欄位在 Case 裡標「未知」,日後補上時要回頭修正歸因。
 2. 讀取 `MODEL.md` 與 `CASES.md`。
 3. 做**流量歸因分析**:
    - Hook 是哪型?對應模型哪條公式?前 3 秒的口白/畫面/字卡三層各做了什麼?
