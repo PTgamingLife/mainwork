@@ -1,0 +1,33 @@
+{
+  "headers": [
+    {"invNum": "AB11223344", "invDate": "2026/07/13", "sellerName": "統一超商 7-ELEVEN 城中門市", "amount": 158},
+    {"invNum": "AB11223345", "invDate": "2026/07/13", "sellerName": "路易莎咖啡 台北忠孝店", "amount": 240},
+    {"invNum": "AB11223346", "invDate": "2026/07/14", "sellerName": "全聯福利中心 中正店", "amount": 863},
+    {"invNum": "AB11223347", "invDate": "2026/07/14", "sellerName": "台灣中油 站前加油站", "amount": 1200},
+    {"invNum": "AB11223348", "invDate": "2026/07/14", "sellerName": "屈臣氏 站前店", "amount": 452}
+  ],
+  "details": {
+    "AB11223344": [
+      {"description": "御飯糰-鮪魚", "quantity": 2, "unitPrice": 30, "amount": 60},
+      {"description": "茶葉蛋", "quantity": 1, "unitPrice": 13, "amount": 13},
+      {"description": "美式咖啡(大)", "quantity": 1, "unitPrice": 45, "amount": 45},
+      {"description": "礦泉水", "quantity": 2, "unitPrice": 20, "amount": 40}
+    ],
+    "AB11223345": [
+      {"description": "冰拿鐵(大)", "quantity": 1, "unitPrice": 140, "amount": 140},
+      {"description": "起司蛋糕", "quantity": 1, "unitPrice": 100, "amount": 100}
+    ],
+    "AB11223346": [
+      {"description": "雞蛋 10入", "quantity": 1, "unitPrice": 85, "amount": 85},
+      {"description": "鮮乳 936ml", "quantity": 2, "unitPrice": 89, "amount": 178},
+      {"description": "衛生紙 12入", "quantity": 1, "unitPrice": 260, "amount": 260},
+      {"description": "青菜一把", "quantity": 4, "unitPrice": 35, "amount": 140},
+      {"description": "雞胸肉", "quantity": 1, "unitPrice": 200, "amount": 200}
+    ],
+    "AB11223347": [],
+    "AB11223348": [
+      {"description": "洗髮精", "quantity": 1, "unitPrice": 289, "amount": 289},
+      {"description": "牙膏 2入", "quantity": 1, "unitPrice": 163, "amount": 163}
+    ]
+  }
+}

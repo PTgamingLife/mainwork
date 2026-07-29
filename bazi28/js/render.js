@@ -1,0 +1,364 @@
+import { JOURNEY_QUESTIONS, WEEKLY_REVIEW_ITEMS } from "./data.js";
+
+export function escapeHtml(value = "") {
+  return String(value).replace(/[&<>'"]/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
+  }[char]));
+}
+
+function head(kicker, title, description, side = "") {
+  return `<div class="page-head"><div><p class="kicker">${kicker}</p><h2>${title}</h2><p>${description}</p></div>${side}</div>`;
+}
+
+function button(label, action, className = "primary-button", extra = "") {
+  return `<button class="${className}" type="button" data-action="${action}" ${extra}>${label}</button>`;
+}
+
+export function onboarding(user) {
+  const name = escapeHtml(user?.user_metadata?.full_name || user?.email?.split("@")[0] || "");
+  return `${head("START", "先建立你的初始座標", "出生資料只用於建立固定命理層；你可以稍後更正。")}
+    <form id="birth-form" class="card form-card">
+      <div class="field"><label for="display-name">怎麼稱呼你？</label><input id="display-name" name="display_name" value="${name}" maxlength="80" required></div>
+      <div class="field-grid">
+        <div class="field"><label for="birth-date">出生日期</label><input id="birth-date" name="birth_date" type="date" required></div>
+        <div class="field"><label for="birth-time">出生時間</label><input id="birth-time" name="birth_time" type="time"></div>
+      </div>
+      <div class="field-grid">
+        <div class="field"><label for="birth-city">出生城市</label><input id="birth-city" name="birth_city" placeholder="例如：新北市" maxlength="80" required></div>
+        <div class="field"><label for="birth-country">國家／地區</label><input id="birth-country" name="birth_country" value="台灣" maxlength="80" required></div>
+      </div>
+      <div class="field"><label for="birth-confidence">出生時間可信度</label><select id="birth-confidence" name="birth_time_confidence" required><option value="exact">戶口資料／非常確定</option><option value="approximate">大約時間</option><option value="unknown">不知道時辰</option></select></div>
+      <div class="quote">命盤是初始假設，不是人生判決。系統會把它與你接下來30天的真實回答分開保存。</div>
+      <div class="action-row"><button class="primary-button" type="submit">建立初始模型</button></div>
+    </form>`;
+}
+
+function actionCard(state) {
+  if (!state.goal) {
+    return `<article class="card hero-card"><p class="kicker">TODAY'S STEP</p><h3 class="task-title">先設定一個90天主目標，守護天使才能替你安排真正有方向的每日行動。</h3>${button("設定我的目標", "route-goal")}</article>`;
+  }
+  if (!state.daily) {
+    return `<article class="card hero-card"><p class="kicker">TODAY'S STEP</p><h3 class="task-title">今天，你有多少力量可以留給重要的目標？</h3>
+      <form id="daily-action-form"><div class="field-grid"><div class="field"><label>目前能量</label><select name="energy"><option value="5">精力充足</option><option value="4">狀態不錯</option><option value="3" selected>普通</option><option value="2">有點疲累</option><option value="1">只想維持不中斷</option></select></div><div class="field"><label>可用時間</label><select name="available_minutes"><option value="5">5分鐘</option><option value="15">15分鐘</option><option value="25" selected>25分鐘</option><option value="45">45分鐘</option><option value="60">60分鐘</option></select></div></div><button class="primary-button" type="submit">產生今日行動</button></form></article>`;
+  }
+  const task = state.daily;
+  const finished = task.status !== "pending";
+  return `<article class="card hero-card"><p class="kicker">TODAY'S STEP · ${task.minutes} MIN</p><h3 class="task-title">${escapeHtml(task.action_text)}</h3><div class="task-meta"><span>完成：${escapeHtml(task.done_definition)}</span><span>輕量版：${escapeHtml(task.lite_version)}</span></div><p>${escapeHtml(task.rationale)}</p>
+    ${finished ? `<div class="quote">今天已回報：${escapeHtml(task.status)}</div>` : `<div class="action-row">${button("完成了", "action-completed")}${button("完成一部分", "action-partial", "secondary-button")}${button("沒完成", "action-missed", "secondary-button")}</div>`}</article>`;
+}
+
+function fortuneCard(fortune) {
+  if (!fortune) return `<article class="card wide-card fortune-card fortune-loading"><p class="kicker">DAILY FORTUNE</p><h3>今日運勢正在校準</h3><p>完成出生資料後，系統會結合你的日柱與當日干支建立行動參考。</p></article>`;
+  const scoreItems = fortune.scores.map((item) => `<div class="fortune-score ${item.key === fortune.highlight.key ? "is-highlight" : ""}"><div><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.level)}</small></div><b>${item.score}</b><i style="--score:${item.score}%"></i></div>`).join("");
+  return `<article class="card wide-card fortune-card">
+    <div class="fortune-heading"><div><p class="kicker">DAILY FORTUNE · ${escapeHtml(fortune.date)}</p><h3>今日運勢重點</h3></div><span class="pillar-badge">今日 ${escapeHtml(fortune.day_pillar)} · ${escapeHtml(fortune.day_element)}</span></div>
+    <div class="fortune-highlight"><small>今日最亮點</small><strong>${escapeHtml(fortune.highlight.label)} ${fortune.highlight.score} 分</strong><p>${escapeHtml(fortune.highlight.message)}</p></div>
+    <div class="fortune-scores">${scoreItems}</div>
+    <div class="fortune-reasons"><span>你的日柱 ${escapeHtml(fortune.natal_day_pillar)}</span><span>${escapeHtml(fortune.relation_text)}</span><span>${escapeHtml(fortune.branch_interaction)}</span></div>
+    <p class="fortune-disclaimer">${escapeHtml(fortune.disclaimer)}</p>
+  </article>`;
+}
+
+export function today(state) {
+  const count = state.answers.length;
+  const progress = Math.round(count / 30 * 100);
+  const confidence = Math.round((state.model?.confidence ?? .1) * 100);
+  return `${head("TODAY", `你好，${escapeHtml(state.profile.display_name || "旅人")}`, "今天不需要改變人生，只要完成下一步。", `<div class="progress-ring" style="--progress:${progress}%"><b>${count}/30</b></div>`)}
+    <div class="grid">${actionCard(state)}
+      <article class="card side-card"><p class="kicker">MODEL</p><h3>理解正在形成</h3><div class="stat"><span>探索進度</span><b>${progress}%</b></div><div class="stat"><span>模型信心</span><b>${confidence}%</b></div><div class="stat"><span>日主天干</span><b>${escapeHtml(state.profile.day_stem || "—")}${escapeHtml(state.profile.day_element || "")}</b></div></article>
+      ${fortuneCard(state.fortune)}
+      <article class="card half-card"><p class="kicker">GOAL</p><h3>${state.goal ? escapeHtml(state.goal.title) : "尚未設定主目標"}</h3><p>${state.goal ? `期限 ${escapeHtml(state.goal.target_date)} · 每週投入 ${state.goal.weekly_minutes} 分鐘` : "目標會把每日建議從漂亮話，變成可驗證的進展。"}</p>${!state.goal ? button("建立目標", "route-goal", "secondary-button") : ""}</article>
+      <article class="card half-card"><p class="kicker">GUARDIAN</p><h3>${escapeHtml(state.guardianAssets?.guardian?.character_spec?.name || "守護天使正在靠近")}</h3><p>${state.guardianAssets?.guardian?.status === "ready" ? escapeHtml(state.guardianAssets.guardian.character_spec.essence) : "完成第一道探索後，AI會依天干與回答生成擬真、Q版兩個版本。"}</p>${state.answers.length && !state.guardianAssets?.guardian ? button("喚醒守護天使", "create-guardian", "secondary-button") : ""}</article>
+    </div>`;
+}
+
+function weeklyReview(state) {
+  const week = Math.floor(state.answers.length / 7);
+  const existing = state.reviews.find((item) => item.week_index === week);
+  if (![1, 2, 3, 4].includes(week) || state.answers.length % 7 !== 0) return "";
+  if (existing) {
+    const proposal = existing.proposal;
+    return `<article class="card wide-card"><p class="kicker">WEEK ${week} REVIEW</p><h3>本週模型校準</h3>${proposal ? `<p>${escapeHtml(proposal.change_note)}</p><div class="quote">信心程度 ${Math.round(proposal.confidence * 100)}% · 你確認後才會更新模型。</div>${existing.proposal_status === "pending" ? button("同意這次更新", `accept-review:${existing.id}`) : `<p>狀態：${escapeHtml(existing.proposal_status)}</p>`}` : `<p>回顧已保存，模型更新草案正在等待產生。</p>${button("產生模型草案", `proposal-review:${existing.id}`)}`}</article>`;
+  }
+  return `<article class="card wide-card"><p class="kicker">WEEK ${week} REVIEW</p><h3>花一分鐘回看這一週</h3><form id="weekly-review-form" data-week="${week}">${WEEKLY_REVIEW_ITEMS.map((item) => `<div class="field"><label>${escapeHtml(item.text)}</label><select name="${item.id}" required><option value="">請選擇</option>${item.options.map((option) => `<option>${escapeHtml(option)}</option>`).join("")}</select></div>`).join("")}<button class="primary-button" type="submit">完成本週回顧</button></form></article>`;
+}
+
+function mondayText(dateText) {
+  const date = new Date(`${dateText}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString().slice(0, 10);
+}
+
+function metaphysicsProposalList(proposal) {
+  if (!proposal) return "";
+  const groups = [
+    ["可能新增的模式", proposal.patterns],
+    ["可能補充的優勢", proposal.strengths],
+    ["需要留意的風險", proposal.risks],
+    ["建議的行動偏好", proposal.action_preferences],
+  ];
+  return groups.filter(([, items]) => Array.isArray(items) && items.length).map(([label, items]) =>
+    `<div class="metaphysics-proposal-group"><small>${escapeHtml(label)}</small><div>${items.slice(0, 4).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div></div>`
+  ).join("");
+}
+
+function metaphysicsPanel(state, todayText) {
+  const currentWeek = mondayText(todayText);
+  const submission = state.metaphysicsLatest;
+  const usedThisWeek = submission?.week_start === currentWeek;
+  if (!usedThisWeek) {
+    return `<article class="card wide-card metaphysics-card">
+      <div class="metaphysics-head"><div><p class="kicker">WEEKLY EVIDENCE</p><h3>補充你的個人命理資訊</h3><p>每週一次。可以貼上文字或上傳命盤、解讀截圖；AI 只會判斷是否值得成為模型假設，不會直接改寫你。</p></div><span class="weekly-badge">本週尚未使用</span></div>
+      <form id="metaphysics-form">
+        <div class="field"><label>命理資訊文字（選填）</label><textarea name="text_content" maxlength="6000" placeholder="例如：其他老師提供的八字解讀、紫微資料、你認為可能與自己有關的命理描述…"></textarea></div>
+        <div class="metaphysics-upload"><label for="metaphysics-image"><span>＋ 上傳圖片</span><small>命盤或解讀截圖，JPEG／PNG／WebP，最多 4MB</small></label><input id="metaphysics-image" name="image" type="file" accept="image/jpeg,image/png,image/webp"><output id="metaphysics-file-name">尚未選擇圖片</output></div>
+        <div class="quote">AI 會檢查：是否與你本人相關、內容能否辨識、是否和現有模型一致，以及是否只能先當作待驗證假設。</div>
+        <button class="primary-button" type="submit">交給守護天使判讀</button>
+      </form>
+    </article>`;
+  }
+
+  const assessment = submission.ai_assessment || {};
+  const statusLabels = {
+    proposed: "等待你確認",
+    not_suitable: "不建議更新",
+    accepted: "已納入模型",
+    rejected: "已略過",
+    failed: "判讀未完成",
+    analyzing: "正在判讀",
+  };
+  const reasons = Array.isArray(assessment.reasons) ? assessment.reasons : [];
+  const reliability = { low: "低", medium: "中", high: "高" }[assessment.reliability] || "—";
+  return `<article class="card wide-card metaphysics-card ${escapeHtml(submission.status)}">
+    <div class="metaphysics-head"><div><p class="kicker">WEEKLY EVIDENCE</p><h3>本週命理資料判讀</h3><p>${escapeHtml(assessment.source_summary || "本週資料已送出判讀。")}</p></div><span class="weekly-badge status-${escapeHtml(submission.status)}">${escapeHtml(statusLabels[submission.status] || submission.status)}</span></div>
+    <div class="metaphysics-assessment"><div><small>適合更新模型</small><strong>${assessment.suitable ? "可以提出假設" : "目前不適合"}</strong></div><div><small>資料可靠度</small><strong>${reliability}</strong></div><div><small>AI 判斷信心</small><strong>${Math.round(Number(assessment.confidence || 0) * 100)}%</strong></div></div>
+    ${reasons.length ? `<ul class="metaphysics-reasons">${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : ""}
+    ${assessment.caution ? `<div class="quote">${escapeHtml(assessment.caution)}</div>` : ""}
+    ${submission.status === "proposed" ? `<div class="metaphysics-proposal"><h4>守護天使建議的模型草案</h4>${metaphysicsProposalList(submission.proposal)}<p>${escapeHtml(submission.proposal?.change_note || "")}</p><div class="action-row">${button("確認並升級模型", `accept-metaphysics:${submission.id}`)}${button("這次先不要", `reject-metaphysics:${submission.id}`, "secondary-button")}</div></div>` : ""}
+    ${submission.status === "not_suitable" ? '<p class="metaphysics-result-note">這份資料會保留為本週判讀紀錄，但不會進入自我模型。</p>' : ""}
+    ${submission.status === "accepted" ? `<p class="metaphysics-result-note">你已確認這份假設，模型已升級至 V${submission.model_version_after || state.model?.version || "—"}。</p>` : ""}
+    ${submission.status === "rejected" ? '<p class="metaphysics-result-note">你選擇不採用，本次內容不會改變模型。</p>' : ""}
+    <p class="privacy-note">每週限一次；圖片存放於私人空間。原始內容不會直接成為固定人格結論。</p>
+  </article>`;
+}
+
+export function journey(state, todayText) {
+  const count = state.answers.length;
+  const question = JOURNEY_QUESTIONS[count];
+  const answeredToday = state.answers.some((item) => item.answered_on === todayText);
+  const weeks = ["我是誰", "我想去哪裡", "什麼阻止我", "我要如何前進"];
+  let main = "";
+  if (count >= 30) {
+    main = `<article class="card wide-card guardian-panel"><p class="kicker">JOURNEY COMPLETE</p><h3>30天探索已完成</h3><p>你已累積足夠資料建立個人模型 V1。接下來，系統會繼續用每週回顧校準，而不是把你定型。</p></article>`;
+  } else if (answeredToday) {
+    main = `<article class="card wide-card empty"><h3>今天的探索已完成</h3><p>不用一次回答完人生。明天，守護天使會帶來下一題。</p></article>`;
+  } else {
+    main = `<article class="card wide-card"><p class="kicker">DAY ${count + 1} · ${escapeHtml(question.theme)}</p><h3>${escapeHtml(question.text)}</h3><form id="journey-form" data-day="${count + 1}" data-question="${question.id}"><div class="option-grid">${question.options.map((option) => `<button class="option" type="button" data-option="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}</div><input type="hidden" name="answer" required><button class="primary-button" type="submit" disabled>保存今天的回答</button></form></article>`;
+  }
+  return `${head("30-DAY JOURNEY", "每天認識自己一點", "一天一題，不補考、不歸零。", `<div class="progress-ring" style="--progress:${count / 30 * 100}%"><b>${count}/30</b></div>`)}
+    <div class="journey-map">${weeks.map((week, index) => `<div class="journey-week ${Math.floor(count / 7) === index ? "active" : ""}"><small>第${index + 1}週</small><b>${week}</b></div>`).join("")}</div><div class="grid">${main}${weeklyReview(state)}${metaphysicsPanel(state, todayText)}</div>`;
+}
+
+export function goal(state) {
+  if (state.goal) {
+    const value = state.goal.current_value ?? 0;
+    const target = state.goal.target_value ?? 0;
+    return `${head("90-DAY GOAL", "你的主目標", "每天的建議都必須能解釋：為什麼更接近它？")}
+      <article class="card form-card"><p class="kicker">ACTIVE</p><h3>${escapeHtml(state.goal.title)}</h3><p>${escapeHtml(state.goal.why_text)}</p><div class="stat"><span>衡量方式</span><b>${escapeHtml(state.goal.metric_name)}</b></div><div class="stat"><span>目前／目標</span><b>${value} / ${target || "—"}</b></div><div class="stat"><span>期限</span><b>${escapeHtml(state.goal.target_date)}</b></div><div class="stat"><span>每週投入</span><b>${state.goal.weekly_minutes} 分</b></div></article>`;
+  }
+  const target = new Date(); target.setDate(target.getDate() + 90);
+  return `${head("90-DAY GOAL", "把願望變成可前進的目標", "第一版同時只保留一個主目標，避免努力被切碎。")}
+    <form id="goal-form" class="card form-card"><div class="field"><label>90天後想完成什麼？</label><input name="title" maxlength="160" placeholder="例如：建立每月可產生10,000元的顧問服務" required></div><div class="field-grid"><div class="field"><label>截止日期</label><input type="date" name="target_date" value="${target.toISOString().slice(0,10)}" required></div><div class="field"><label>每週可投入分鐘</label><input type="number" name="weekly_minutes" min="15" max="10080" value="180" required></div></div><div class="field-grid"><div class="field"><label>衡量方式</label><input name="metric_name" placeholder="例如：有效提案數" required></div><div class="field"><label>目標數字</label><input type="number" step="any" name="target_value" placeholder="20"></div></div><div class="field"><label>為什麼這對你重要？</label><textarea name="why_text" maxlength="1000" required></textarea></div><div class="field"><label>目前的現實限制</label><textarea name="constraints" maxlength="1000" placeholder="時間、家庭、健康、資金…"></textarea></div><button class="primary-button" type="submit">設定主目標</button></form>`;
+}
+
+function guardianCompanion(state, message) {
+  const guardian = state.guardianAssets?.guardian;
+  const url = state.guardianAssets?.chibi_url;
+  const name = escapeHtml(guardian?.character_spec?.name || "你的守護天使");
+  const visual = url
+    ? `<img src="${escapeHtml(url)}" alt="${name}，你的Q版守護天使">`
+    : "<span>✦</span>";
+  return `<div class="reading-guardian"><div class="reading-guardian-avatar">${visual}</div><div><small>${name}</small><strong>${escapeHtml(message)}</strong></div></div>`;
+}
+
+export function reading(state) {
+  if (state.chat) return `${head("DAILY READING", "今天的解盤已完成", "每個曆日一次；服務失敗不扣次數。")}
+    <article class="card form-card">${guardianCompanion(state, "我把這次理解整理好了。")}<p class="kicker">${escapeHtml(state.chat.category)}</p><h3>${escapeHtml(state.chat.question)}</h3><p>${escapeHtml(state.chat.answer)}</p><div class="quote">守護天使提供的是反思與行動方向，不替你做醫療、法律、財務或重大關係決定。</div></article>`;
+  return `${head("DAILY READING", "問守護天使一件事", "先選情境，讓回答更具體。每天一次。")}
+    <form id="reading-form" class="card form-card">${guardianCompanion(state, "告訴我你現在最想釐清的事。")}<div class="field"><label>問題類型</label><select name="category"><option>工作決定</option><option>感情互動</option><option>財務選擇</option><option>家庭問題</option><option>今日情緒</option><option>自由提問</option></select></div><div class="field"><label>你想釐清什麼？</label><textarea name="question" minlength="2" maxlength="2000" placeholder="描述現在的情況、你在意的目標，以及有哪些限制…" required></textarea></div><button class="primary-button" type="submit">使用今日解盤</button><p class="privacy-note">高風險醫療、法律、投資與安全問題會改為專業求助提醒。</p></form>`;
+}
+
+const TALENT_DIMENSIONS = [
+  { key: "initiative", label: "開創", description: "主動開始、探索新路與帶方向" },
+  { key: "expression", label: "表達", description: "創作、分享與影響他人" },
+  { key: "insight", label: "洞察", description: "分析、理解與策略判斷" },
+  { key: "execution", label: "執行", description: "落地、管理與完成成果" },
+  { key: "connection", label: "連結", description: "協調、支持與建立關係" },
+  { key: "stability", label: "穩定", description: "持續、承載與維持節奏" },
+];
+
+const TALENT_PRIORS = {
+  木: [82, 65, 59, 62, 72, 55],
+  火: [70, 84, 57, 64, 76, 50],
+  土: [55, 54, 61, 79, 68, 85],
+  金: [60, 57, 84, 82, 54, 70],
+  水: [68, 60, 86, 56, 72, 64],
+};
+
+const TALENT_KEYWORDS = {
+  initiative: ["挑戰", "自由", "探索", "新事物", "帶方向", "創意", "創作", "勇氣", "行動", "成長舞台", "自主", "冒險", "新的觀點", "換一種", "主目標"],
+  expression: ["互動分享", "創作", "肯定", "影響", "新的觀點", "說清楚", "被看見", "公開承諾", "教別人", "創意與表達", "自己的風格"],
+  insight: ["資料與邏輯", "直覺", "複雜問題", "方向與清晰", "專業有深度", "證據", "分析與策略", "完整架構", "重新確認原因", "記錄與回顧", "釐清"],
+  execution: ["明確數字", "先試一小步", "整理系統", "細節", "持續的收入", "清楚步驟", "期限", "進度", "深度投入", "執行與管理", "每天推進", "先完成"],
+  connection: ["重要的人", "熟悉的人", "幫助別人", "整合協調", "支持", "家人", "關係", "照顧", "被理解", "共同成長", "合作", "承諾", "夥伴", "影響他人"],
+  stability: ["獨處與安靜", "穩定支持", "安全", "穩定保障", "可持續", "可靠穩定", "控制細節", "固定提醒", "每天10分鐘", "睡眠", "減少無效", "誠實面對"],
+};
+
+function talentEnergyModel(state) {
+  const element = state.profile?.day_element || "木";
+  const prior = TALENT_PRIORS[element] || TALENT_PRIORS.木;
+  const counts = Object.fromEntries(TALENT_DIMENSIONS.map((item) => [item.key, 1]));
+  const selections = state.answers.map((item) => String(item.answer?.selected ?? item.selected ?? ""));
+  for (const selection of selections) {
+    let matched = false;
+    for (const dimension of TALENT_DIMENSIONS) {
+      const hits = TALENT_KEYWORDS[dimension.key].filter((keyword) => selection.includes(keyword)).length;
+      if (hits) {
+        counts[dimension.key] += Math.min(2, hits);
+        matched = true;
+      }
+    }
+    if (!matched && selection) counts.insight += .25;
+  }
+  const maxEvidence = Math.max(...Object.values(counts));
+  const answerWeight = Math.min(.6, selections.length / 30 * .6);
+  const values = TALENT_DIMENSIONS.map((dimension, index) => {
+    const evidenceScore = 48 + counts[dimension.key] / maxEvidence * 42;
+    return Math.round(prior[index] * (1 - answerWeight) + evidenceScore * answerWeight);
+  });
+  const ranked = TALENT_DIMENSIONS.map((dimension, index) => ({ ...dimension, score: values[index] }))
+    .sort((a, b) => b.score - a.score);
+  return {
+    values,
+    ranked,
+    confidence: Math.round(10 + selections.length / 30 * 80),
+    answerCount: selections.length,
+    element,
+  };
+}
+
+function radarPoint(value, index, radius = 92) {
+  const angle = -Math.PI / 2 + index * Math.PI / 3;
+  const distance = radius * value / 100;
+  return [130 + Math.cos(angle) * distance, 130 + Math.sin(angle) * distance];
+}
+
+function radarPolygon(values, radius = 92) {
+  return values.map((value, index) => radarPoint(value, index, radius).map((part) => part.toFixed(1)).join(",")).join(" ");
+}
+
+function talentEnergyCard(state) {
+  const model = talentEnergyModel(state);
+  const top = model.ranked.slice(0, 2);
+  const gridPolygons = [25, 50, 75, 100].map((value) =>
+    `<polygon points="${radarPolygon(Array(6).fill(value))}" class="talent-grid-line"></polygon>`
+  ).join("");
+  const axes = TALENT_DIMENSIONS.map((dimension, index) => {
+    const [x, y] = radarPoint(100, index);
+    const [labelX, labelY] = radarPoint(100, index, 112);
+    return `<line x1="130" y1="130" x2="${x}" y2="${y}" class="talent-axis"></line><text x="${labelX}" y="${labelY}" class="talent-axis-label">${escapeHtml(dimension.label)}</text>`;
+  }).join("");
+  const scoreRows = model.ranked.map((item) =>
+    `<div class="talent-score-row"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></div><b>${item.score}</b><i style="--talent-score:${item.score}%"></i></div>`
+  ).join("");
+  return `<article class="card wide-card talent-energy-card">
+    <div class="talent-energy-head"><div><p class="kicker">TALENT ENERGY</p><h3>自我天賦能量分布</h3><p>以${escapeHtml(state.profile.day_stem || "")}${escapeHtml(model.element)}的先天傾向為起點，再由真實回答持續校準。</p></div><span class="model-confidence">命運資料完整度 <b>${model.confidence}%</b></span></div>
+    <div class="talent-energy-layout">
+      <div class="talent-radar-wrap"><svg class="talent-radar" viewBox="0 0 260 260" role="img" aria-label="六項自我天賦能量雷達圖">${gridPolygons}${axes}<polygon points="${radarPolygon(model.values)}" class="talent-shape"></polygon>${model.values.map((value, index) => { const [x, y] = radarPoint(value, index); return `<circle cx="${x}" cy="${y}" r="4" class="talent-dot"></circle>`; }).join("")}</svg></div>
+      <div class="talent-energy-copy"><div class="talent-highlight"><small>目前主要天賦</small><strong>${escapeHtml(top.map((item) => item.label).join(" × "))}</strong><p>${escapeHtml(top[0].description)}；搭配${escapeHtml(top[1].description)}，是目前最自然的能量組合。</p></div><div class="talent-score-list">${scoreRows}</div></div>
+    </div>
+    <div class="talent-evidence"><span>已納入 ${model.answerCount}/30 題真實回答</span><span>回答越完整，行為證據權重越高</span><span>每週確認模型後持續升級</span></div>
+  </article>`;
+}
+
+export function profile(state) {
+  const guardian = state.guardianAssets?.guardian;
+  const url = state.guardianAssets?.chibi_url;
+  const spec = guardian?.character_spec || {};
+  const traits = Array.isArray(spec.immutable_traits) ? spec.immutable_traits.slice(0, 6) : [];
+  const symbols = Array.isArray(spec.symbols) ? spec.symbols.slice(0, 3) : [];
+  const content = state.model?.content || {};
+  const traitTags = traits.length
+    ? traits.map((trait) => `<span>${escapeHtml(trait)}</span>`).join("")
+    : "<span>會隨探索逐漸清晰</span>";
+  const symbolTags = symbols.map((symbol) => `<span>${escapeHtml(symbol)}</span>`).join("");
+  return `${head("MY MODEL", "你的自我模型", "固定命盤、真實回答與行為證據分開保存。")}
+    <div class="grid">${talentEnergyCard(state)}<article class="card half-card guardian-panel"><div class="guardian-large">${url ? `<img src="${escapeHtml(url)}" alt="你的Q版守護天使">` : "<span>✦</span>"}</div>
+      <div class="guardian-identity"><small>守護天使的名字</small><h3>${escapeHtml(spec.name || "尚未成形")}</h3><p>${escapeHtml(spec.essence || "完成第一道探索後即可生成。")}</p></div>
+      ${guardian ? `<div class="guardian-profile-details"><div class="guardian-detail"><small>核心特性</small><div class="guardian-traits">${traitTags}</div></div>${spec.voice ? `<div class="guardian-detail"><small>陪伴方式</small><p>${escapeHtml(spec.voice)}</p></div>` : ""}${symbolTags ? `<div class="guardian-detail"><small>守護象徵</small><div class="guardian-symbols">${symbolTags}</div></div>` : ""}</div>` : ""}
+      ${!guardian && state.answers.length ? button("生成雙版本守護天使", "create-guardian") : ""}</article>
+      <article class="card half-card"><p class="kicker">MODEL V${state.model?.version || 0}</p><h3>理解信心 ${Math.round((state.model?.confidence ?? .1)*100)}%</h3><div class="stat"><span>天干固定層</span><b>${escapeHtml(state.profile.day_stem || "—")}${escapeHtml(state.profile.day_element || "")}</b></div><div class="stat"><span>已回答</span><b>${state.answers.length}/30</b></div><div class="stat"><span>已確認模式</span><b>${content.confirmed_patterns?.length || 0}</b></div><div class="quote">模型只在你確認每週更新草案後升級。</div></article>
+      ${state.isAdmin ? `<article class="card wide-card"><p class="kicker">ADMIN</p><h3>帳號主控後台</h3><p>查看使用狀況、AI失敗與退還次數；不預設展示私人對話。</p>${button("開啟後台", "open-admin", "secondary-button")}</article>` : ""}
+      <article class="card wide-card"><p class="kicker">ACCOUNT</p><h3>${escapeHtml(state.profile.display_name || "旅人")}</h3><p>${escapeHtml(state.profile.birth_date || "")} · ${escapeHtml(state.profile.birth_city || "")} · ${escapeHtml(state.profile.timezone || "Asia/Taipei")}</p>${button("登出", "logout", "secondary-button")}</article></div>`;
+}
+
+function adminDate(value) {
+  if (!value) return "尚無紀錄";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "尚無紀錄";
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function adminStatus(status) {
+  const labels = {
+    not_started: "尚未生成",
+    queued: "排隊中",
+    processing: "生成中",
+    ready: "已完成",
+    failed: "失敗",
+  };
+  return labels[status] || status || "—";
+}
+
+export function admin(metrics, accounts = [], periodDays = 30) {
+  const metricLabels = {
+    auth_users: "登入帳號",
+    onboarded_users: "完成建檔",
+    active_users_7d: "近7日活躍",
+    active_goals: "進行中目標",
+    ai_calls_30d: `近${periodDays}日 AI 使用`,
+    refunded_ai_calls_30d: "AI 退還",
+  };
+  const metricCards = Object.entries(metricLabels).map(([key, label]) =>
+    `<article class="card admin-metric"><p class="kicker">${escapeHtml(label)}</p><h3>${Number(metrics?.[key] ?? 0)}</h3></article>`
+  ).join("");
+  const accountCards = accounts.map((account) => {
+    const progress = Math.max(0, Math.min(30, Number(account.journey_progress || 0)));
+    const confidence = account.model_confidence == null ? "—" : `${Math.round(Number(account.model_confidence) * 100)}%`;
+    return `<article class="card admin-account">
+      <div class="admin-account-head"><div class="admin-account-avatar">${escapeHtml((account.display_name || account.email || "?").slice(0, 1).toUpperCase())}</div><div><h3>${escapeHtml(account.display_name || "尚未命名")}</h3><p>${escapeHtml(account.email || "無 Email")}</p></div><span class="admin-state ${account.onboarded ? "ready" : ""}">${account.onboarded ? "已建檔" : "未建檔"}</span></div>
+      <div class="admin-account-grid">
+        <div><small>探索進度</small><strong>${progress}/30</strong></div>
+        <div><small>模型版本</small><strong>${account.model_version ? `V${account.model_version}` : "—"}</strong></div>
+        <div><small>模型信心</small><strong>${confidence}</strong></div>
+        <div><small>守護天使</small><strong>${escapeHtml(adminStatus(account.guardian_status))}</strong></div>
+        <div><small>主目標</small><strong>${account.has_active_goal ? "進行中" : "未設定"}</strong></div>
+        <div><small>近${periodDays}日 AI</small><strong>${Number(account.ai_calls_30d || 0)} 次</strong></div>
+      </div>
+      <div class="admin-usage"><span>成功 ${Number(account.ai_succeeded_30d || 0)}</span><span class="${account.ai_refunded_30d ? "warning" : ""}">退還 ${Number(account.ai_refunded_30d || 0)}</span></div>
+      <div class="admin-account-foot"><span>最近登入：${escapeHtml(adminDate(account.last_sign_in_at))}</span><span>最近活動：${escapeHtml(adminDate(account.last_activity_at))}</span></div>
+    </article>`;
+  }).join("");
+  return `${head("ADMIN", "帳號主控後台", "只顯示使用狀況，不顯示出生資料、問題、對話或模型內文。", '<button class="secondary-button" type="button" data-route="profile">返回我的帳號</button>')}
+    <div class="admin-metrics">${metricCards}</div>
+    <section class="admin-section"><div class="admin-section-head"><div><p class="kicker">ACCOUNT USAGE</p><h3>所有帳號使用狀況</h3></div><span>${accounts.length} 個帳號</span></div>
+      <div class="admin-account-list">${accountCards || '<div class="card empty">目前沒有帳號資料。</div>'}</div>
+    </section>`;
+}

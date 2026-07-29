@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 定位羅盤｜10 題找到你的個人 IP 方向</title>
+<meta name="description" content="完全沒概念也沒關係。回答 10 個問題，AI 幫你找出 3 種最適合你的個人 IP 初步定位。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== 首頁 ========== -->
+<section id="screen-landing" class="screen active">
+  <div class="landing-wrap">
+    <div class="badge">✦ 免費・約 3 分鐘・不用留 Email</div>
+    <h1>還不知道自己能做什麼<br><span class="grad">個人 IP</span>？</h1>
+    <p class="lead">
+      你不需要先很厲害才能開始。<br>
+      回答 <strong>10 個簡單問題</strong>，AI 會從 8 種 IP 原型中，<br class="desktop-only">
+      幫你找出 <strong>3 種最適合你的初步定位</strong>。
+    </p>
+    <div class="feature-row">
+      <div class="feature"><span>🧭</span><b>找到方向</b><small>不再「想做但不知道做什麼」</small></div>
+      <div class="feature"><span>🤖</span><b>AI 分析</b><small>依你的性格、專長與時間評估</small></div>
+      <div class="feature"><span>🚀</span><b>行動建議</b><small>每個定位都附「第一步怎麼做」</small></div>
+    </div>
+    <button class="btn-primary" id="btn-start">開始測驗 →</button>
+    <p class="hint">已有 8 種 IP 原型資料庫：教學型・故事型・觀點型・生活型・療癒型・娛樂型・實作型・整理型</p>
+  </div>
+</section>
+
+<!-- ========== 測驗 ========== -->
+<section id="screen-quiz" class="screen">
+  <div class="quiz-wrap">
+    <div class="quiz-top">
+      <button class="btn-back" id="btn-back" aria-label="上一題">←</button>
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="progress-text" id="progress-text">1 / 10</div>
+    </div>
+    <div class="question-card" id="question-card">
+      <div class="q-num" id="q-num">Q1</div>
+      <h2 class="q-title" id="q-title"></h2>
+      <p class="q-subtitle" id="q-subtitle"></p>
+      <div class="options" id="options"></div>
+      <div class="custom-input-wrap" id="custom-input-wrap" hidden>
+        <input type="text" id="custom-input" maxlength="12" placeholder="輸入你的領域，例如：寵物、桌遊、咖啡">
+        <button class="btn-primary btn-sm" id="btn-custom-ok">確定</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== AI 分析中 ========== -->
+<section id="screen-analyzing" class="screen">
+  <div class="analyzing-wrap">
+    <div class="orb"></div>
+    <h2>AI 正在分析你的答案…</h2>
+    <ul class="steps" id="analyze-steps">
+      <li data-step>解讀你的表達風格與性格特質</li>
+      <li data-step>比對 8 種 IP 原型資料庫</li>
+      <li data-step>評估你的時間與目標可行性</li>
+      <li data-step>生成你的 3 個專屬定位</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ========== 結果 ========== -->
+<section id="screen-result" class="screen">
+  <div class="result-wrap">
+    <div class="badge">分析完成 ✓</div>
+    <h1>你的 3 個初步 IP 定位</h1>
+    <p class="lead" id="result-intro"></p>
+    <div id="result-cards"></div>
+    <div class="result-note">
+      <b>💡 下一步怎麼用這份結果？</b>
+      <p>選一個你看完「最有感覺」的定位（不一定是匹配度最高的），照著它的「第一步」做 30 天。定位是做出來的，不是想出來的——先開始，再修正。</p>
+    </div>
+    <div class="result-actions">
+      <button class="btn-primary" id="btn-copy">📋 複製結果</button>
+      <button class="btn-ghost" id="btn-restart">↻ 重新測驗</button>
+    </div>
+  </div>
+</section>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
