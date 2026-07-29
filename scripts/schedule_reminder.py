@@ -1,6 +1,6 @@
 """
-Daily Schedule Reminder — runs at 22:00 Taiwan time via GitHub Actions.
-Fetches tomorrow's Google Calendar events, generates reminders with GPT-4o,
+Daily Schedule Reminder — runs at 09:00 Taiwan time via GitHub Actions.
+Fetches today's Google Calendar events, generates reminders with Claude AI,
 sends via LINE.
 """
 import os
@@ -63,11 +63,11 @@ def _get_calendar_service():
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
 
 
-def _get_tomorrow_events() -> list[dict]:
+def _get_today_events() -> list[dict]:
     service = _get_calendar_service()
-    tomorrow = datetime.now(TZ) + timedelta(days=1)
-    start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
-    end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=0)
+    today = datetime.now(TZ)
+    start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = today.replace(hour=23, minute=59, second=59, microsecond=0)
 
     cal_list = service.calendarList().list().execute()
     cal_ids = [c["id"] for c in cal_list.get("items", [])]
@@ -111,14 +111,14 @@ def _format_event(event: dict) -> dict:
 
 
 def _generate_reminder(events: list[dict]) -> str:
-    tomorrow = (datetime.now(TZ) + timedelta(days=1)).strftime("%m/%d (%a)")
+    today = datetime.now(TZ).strftime("%m/%d (%a)")
 
     if not events:
         return (
-            f"📅 明天行程提醒（{tomorrow}）\n"
+            f"📅 今日行程提醒（{today}）\n"
             "━━━━━━━━━━━━━━\n"
-            "明天沒有行程安排 🎉\n"
-            "可以好好休息，或提前規劃下週！"
+            "今天沒有行程安排 🎉\n"
+            "可以好好休息，或提前規劃明天！"
         )
 
     events_text = "\n".join([
@@ -129,12 +129,12 @@ def _generate_reminder(events: list[dict]) -> str:
     ])
 
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    prompt = f"""明天（{tomorrow}）的行程：
+    prompt = f"""今天（{today}）的行程：
 {events_text}
 
 請以下面格式整理，繁體中文，簡潔實用：
 
-📅 明天行程提醒（{tomorrow}）
+📅 今日行程提醒（{today}）
 ━━━━━━━━━━━━━━
 （逐條列出每個行程的時間、名稱，並給 1-2 條具體注意事項，例如：提前幾分鐘出門、要帶什麼、要確認什麼）
 ━━━━━━━━━━━━━━
@@ -151,9 +151,9 @@ def _generate_reminder(events: list[dict]) -> str:
 
 
 def run():
-    log.info("開始撈取明天行程...")
+    log.info("開始撈取今天行程...")
     try:
-        raw = _get_tomorrow_events()
+        raw = _get_today_events()
         events = [_format_event(e) for e in raw]
         log.info(f"取得 {len(events)} 個行程")
 

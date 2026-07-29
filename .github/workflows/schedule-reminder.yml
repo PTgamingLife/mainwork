@@ -1,8 +1,8 @@
-name: Daily Schedule Reminder — 10 PM LINE
+name: Daily Schedule Reminder — 9 AM LINE
 
 on:
   schedule:
-    - cron: '0 14 * * *'  # 22:00 Taiwan time (UTC+8)
+    - cron: '0 1 * * *'  # 09:00 Taiwan time (UTC+8)
   workflow_dispatch:
 
 jobs:
