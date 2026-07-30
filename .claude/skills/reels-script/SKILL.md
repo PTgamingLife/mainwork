@@ -39,7 +39,8 @@ description: IG Reels 短影音設計器 + 自我學習迴圈。兩種用法:(1)
      1. `preview_start` 開 `https://www.instagram.com/reel/<ID>/embed/`(**一定要加 `/embed/`** —— 不加會被登入牆導回首頁,embed 版才有 video 元素)
      2. `javascript_tool` 取 `document.querySelector('video').currentSrc` 拿到 CDN 直連 URL
      3. URL 很長且含 `&`:先用 Write 存到 scratchpad 的 .txt,再 `VURL=$(tr -d '\r\n' < vurl.txt)` 帶入 curl(加 `-A` UA 與 `-e https://www.instagram.com/`)下載到 scratchpad
-     4. `ffprobe` 取片長/解析度;`ffmpeg -vf "select='gt(scene,0.2)',metadata=print:file=-"` 數場景變化次數 → 算出「平均幾秒一次視覺變化」
+     4. `ffprobe` 取片長/解析度;`ffmpeg -vf "select='gt(scene,TH)',metadata=print:file=-"` 數場景變化次數 → 算出「平均幾秒一次視覺變化」
+        - **門檻要看片型**(v2.3 修正):螢幕錄影/多場景型用 `0.20`;**同機位同背景的口播 jump cut 一律用 `0.10`** —— 0.20 會嚴重低估(Case #9 用 0.20 測得每 5.1 秒,0.10 才是接近真實的每 2.6 秒)。不確定時兩個門檻都跑,在 Case 裡並列。
      5. `ffmpeg -vf "fps=1/2.5,scale=260:-1,tile=7x3"` 做全片影格網格、`-ss 0 -t 4.5 -vf "fps=2,...,tile=3x3"` 做 hook 細部網格,再用 Read 讀圖 —— 這樣就能真的看到字卡、字幕、鏡位、螢幕錄影內容
      - 注意:`computer{action:"screenshot"}` 在瀏覽器面板沒顯示時會 timeout,不要靠它;走 ffmpeg 影格路線。
    - 使用者給截圖(尤其**後台洞察報告**:略過率/平均觀看時間/分享率/新增粉絲)→ 用 Read 讀圖。後台數據是歸因金礦,主動向使用者要。
