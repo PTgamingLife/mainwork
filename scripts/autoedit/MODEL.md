@@ -123,6 +123,8 @@
 - 中文字型:用 `msjhbd.ttc`(arial 會讓中文/「萬」變豆腐)。
 - drawtext 在 Windows 需 `fontfile=` 明指字型(否則 fontconfig segfault)。
 - render timeout:PIL 用原生 stroke、整段用 `no_cut`;長 render 放背景跑。
+- **圖片貼圖 `-loop 1` 會讓輸出無限延長**(曾編到 10 分鐘、1GB):render 已加 `-t {總長}` 限制輸出長度。看到成品異常大/render 極慢,先查是不是輸出長度爆掉。
+- `smartblur`(磨皮)在 1080p 極慢(~0.05x);只要「暖膚/降噪」就關掉它,留 hqdn3d+colortemperature+eq(可在呼叫前設 `CONFIG['enh_skin']=''`)。
 - python subprocess 不吃 MSYS `/c/...` 路徑,要用 `C:/...`;bash 則可用 `/c/...`。
 - 含中文的路徑在 bash tool 有時亂碼找不到檔 → 改用 PowerShell 或絕對路徑。
 

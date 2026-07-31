@@ -148,7 +148,9 @@ def render(plan_path: str, output: str) -> None:
     if not filt:
         run([FFMPEG, "-y", "-i", str(body), "-c", "copy", output])
         print(f"\n✅ 成品輸出: {output}"); return
+    # -t 限制輸出長度 = 內容總長,否則 -loop 1 的圖片貼圖會讓輸出無限延長
     run([FFMPEG, "-y", *inputs, "-filter_complex", ";".join(filt),
-         "-map", vmap, "-map", "0:a?", "-c:v", "libx264", "-crf", "20",
-         "-preset", "veryfast", "-c:a", "aac", output])
+         "-map", vmap, "-map", "0:a?", "-t", f"{new_t:.3f}",
+         "-c:v", "libx264", "-crf", "20", "-preset", "veryfast",
+         "-c:a", "aac", output])
     print(f"\n✅ 成品輸出: {output}")
