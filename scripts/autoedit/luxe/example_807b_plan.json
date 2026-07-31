@@ -2,7 +2,9 @@
   "video": "C:/Users/nancy/Downloads/807b_edit/src.mp4",
   "duration": 46.54,
   "split_start": 4.3,
-  "face_bias": 0.60,
+  "face_bias": 0.30,
+  "transcript": "C:/Users/nancy/Downloads/807b_edit/plan/segments.json",
+  "text_fixes": {"Cloud": "Claude", "Joke": ""},
   "beats": [
     {"start": 4.3, "end": 8.6, "anim": "chart", "params": {}, "zh": "這個月談成更多合作", "en": "MORE DEALS THIS MONTH"},
     {"start": 8.6, "end": 16.2, "anim": null, "zh": "精華課程幾乎都是英文", "en": "THE BEST COURSES ARE IN ENGLISH"},

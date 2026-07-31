@@ -43,8 +43,11 @@ CJKB = "C:/Windows/Fonts/msjhbd.ttc"
 LAT = "C:/Windows/Fonts/arialbd.ttf"
 CREAM_HEX = "0xF3EEE5"
 INK = (34, 30, 26); MUTE = (150, 142, 128); GOLD = (176, 138, 74)
-ANIM_Y = {"chart": 250, "coin": 210, "swap": 320, "cta": 440}
+ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430}
 ANIM_FN = {"chart": "line_chart", "coin": "coin_rain", "swap": "text_swap", "cta": "cta"}
+# 講者直式卡(比例貼近來源,cover 不裁臉、盡量帶肩)
+CARD_X, CARD_Y, CARD_W, CARD_H = 200, 955, 680, 900
+SUB_Y = 792                       # 字幕(逐句精確)疊在卡片上方
 
 
 def _ffmpeg():
@@ -67,21 +70,44 @@ def _run(cmd):
 
 
 def _mask_border(wk: Path):
-    m = Image.new("L", (1000, 810), 0)
-    ImageDraw.Draw(m).rounded_rectangle([0, 0, 1000, 810], radius=40, fill=255)
+    m = Image.new("L", (CARD_W, CARD_H), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, CARD_W, CARD_H], radius=40, fill=255)
     m.save(wk / "mask.png")
     b = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
-    ImageDraw.Draw(b).rounded_rectangle([40, 1070, 1040, 1880], radius=40,
-                                        outline=GOLD + (255,), width=4)
+    ImageDraw.Draw(b).rounded_rectangle(
+        [CARD_X, CARD_Y, CARD_X + CARD_W, CARD_Y + CARD_H], radius=40,
+        outline=GOLD + (255,), width=4)
     b.save(wk / "border.png")
 
 
-def _sub_png(zh, en, path):
-    im = Image.new("RGBA", (1080, 175), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    d.text((540, 48), zh, font=ImageFont.truetype(CJKB, 52), fill=INK + (255,), anchor="mm")
-    d.text((540, 112), "  ".join(en), font=ImageFont.truetype(LAT, 26),
-           fill=MUTE + (255,), anchor="mm")
+def _sub_png(text, path):
+    """逐句精確字幕(中文,秀氣描邊,置中);過長自動縮字級。"""
+    im = Image.new("RGBA", (1080, 110), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    size = 54
+    while size > 30:
+        f = ImageFont.truetype(CJKB, size)
+        if d.textlength(text, font=f) <= 1000:
+            break
+        size -= 2
+    d.text((540, 55), text, font=ImageFont.truetype(CJKB, size),
+           fill=INK + (255,), anchor="mm", stroke_width=4, stroke_fill=(243, 238, 229))
     im.save(path)
+
+
+def _load_cards(plan: dict, fixes: dict) -> list[dict]:
+    """逐句字幕來源:plan['subtitles'] 明確列表,或 plan['transcript'] 指向 segments.json。"""
+    cards = plan.get("subtitles")
+    if not cards and plan.get("transcript"):
+        seg = json.loads(Path(plan["transcript"]).read_text(encoding="utf-8"))
+        cards = seg["segments"][0]["cards"]
+    cards = cards or []
+    out = []
+    for c in cards:
+        t = c.get("text", "")
+        for bad, good in fixes.items():
+            t = t.replace(bad, good)
+        out.append({"start": c["start"], "end": c["end"], "text": t.strip()})
+    return out
 
 
 def render_luxe(plan_path: str, output: str) -> None:
@@ -96,14 +122,17 @@ def render_luxe(plan_path: str, output: str) -> None:
           "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",
           "-r", "30", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20",
           "-preset", "veryfast", "-c:a", "aac", "-ar", "48000", "-ac", "2", str(wk / "A.mp4")])
-    # 2) partB 米白上下分割
+    # 2) partB 米白上下分割(講者直式卡:cover 不裁臉、盡量帶肩)
     print("[luxe] partB 上下分割 ...")
     _run([FFMPEG, "-y", "-ss", str(t1), "-i", video,
           "-f", "lavfi", "-i", f"color=c={CREAM_HEX}:s=1080x1920:r=30",
           "-i", str(wk / "mask.png"),
           "-filter_complex",
-          f"[0:v]crop=iw:ih*0.88:0:0,scale=1000:-1,crop=1000:810:0:(ih-810)*{bias},setsar=1[spk];"
-          f"[spk]format=rgba[sr];[sr][2:v]alphamerge[sm];[1:v][sm]overlay=40:1070[bg]",
+          f"[0:v]crop=iw:ih*0.80:0:0,"
+          f"scale={CARD_W}:{CARD_H}:force_original_aspect_ratio=increase,"
+          f"crop={CARD_W}:{CARD_H}:(iw-{CARD_W})/2:(ih-{CARD_H})*{bias},setsar=1[spk];"
+          f"[spk]format=rgba[sr];[sr][2:v]alphamerge[sm];"
+          f"[1:v][sm]overlay={CARD_X}:{CARD_Y}[bg]",
           "-map", "[bg]", "-map", "0:a", "-shortest", "-r", "30", "-c:v", "libx264",
           "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "veryfast",
           "-c:a", "aac", "-ar", "48000", "-ac", "2", str(wk / "B.mp4")])
@@ -112,24 +141,34 @@ def render_luxe(plan_path: str, output: str) -> None:
     _run([FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(wk / "c.txt"),
           "-c", "copy", str(wk / "base.mp4")])
 
-    # 4) 疊 金框 + 動畫 + 雙語字幕
-    print("[luxe] 合成動畫+字幕 ...")
+    # 4) 疊 金框 + 動畫 + 逐句精確字幕
+    print("[luxe] 合成動畫+精確字幕 ...")
     inputs = ["-i", str(wk / "base.mp4"), "-loop", "1", "-i", str(wk / "border.png")]
     filt = ["[0:v]null[v0]", f"[v0][1:v]overlay=0:0:enable='between(t,{t1},{dur})'[v1]"]
     base = "[v1]"; idx = 2; n = 2
+    # 動畫(依 beats)
     for bi, bt in enumerate(plan["beats"]):
-        s, e = float(bt["start"]), float(bt["end"]); anim = bt.get("anim")
-        if anim:
-            info = getattr(L, ANIM_FN[anim])(str(wk / f"a{bi}"),
-                                             **{"dur": e - s, **bt.get("params", {})})
-            inputs += ["-framerate", str(info["fps"]), "-i", info["pattern"]]
-            x = (1080 - info["w"]) // 2; y = ANIM_Y[anim]
-            filt.append(f"[{idx}:v]setpts=PTS-STARTPTS+{s}/TB[an{idx}]")
-            filt.append(f"{base}[an{idx}]overlay={x}:{y}:enable='between(t,{s},{e})'[v{n}]")
-            base = f"[v{n}]"; n += 1; idx += 1
-        sp = wk / f"s{bi}.png"; _sub_png(bt.get("zh", ""), bt.get("en", ""), sp)
+        anim = bt.get("anim")
+        if not anim:
+            continue
+        s, e = float(bt["start"]), float(bt["end"])
+        info = getattr(L, ANIM_FN[anim])(str(wk / f"a{bi}"),
+                                         **{"dur": e - s, **bt.get("params", {})})
+        inputs += ["-framerate", str(info["fps"]), "-i", info["pattern"]]
+        x = (1080 - info["w"]) // 2; y = ANIM_Y[anim]
+        filt.append(f"[{idx}:v]setpts=PTS-STARTPTS+{s}/TB[an{idx}]")
+        filt.append(f"{base}[an{idx}]overlay={x}:{y}:enable='between(t,{s},{e})'[v{n}]")
+        base = f"[v{n}]"; n += 1; idx += 1
+    # 逐句精確字幕(用原片轉錄 cards;分割段才疊,全屏段沿用原燒字幕)
+    fixes = plan.get("text_fixes", {})
+    cards = _load_cards(plan, fixes)
+    for ci, c in enumerate(cards):
+        s = max(float(c["start"]), t1); e = float(c["end"])
+        if s >= e or not c["text"]:
+            continue
+        sp = wk / f"sub{ci}.png"; _sub_png(c["text"], sp)
         inputs += ["-loop", "1", "-i", str(sp)]
-        filt.append(f"{base}[{idx}:v]overlay=0:885:enable='between(t,{s},{e})'[v{n}]")
+        filt.append(f"{base}[{idx}:v]overlay=0:{SUB_Y}:enable='between(t,{s},{e})'[v{n}]")
         base = f"[v{n}]"; n += 1; idx += 1
 
     _run([FFMPEG, "-y", *inputs, "-filter_complex", ";".join(filt),
