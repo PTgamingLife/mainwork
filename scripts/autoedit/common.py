@@ -178,9 +178,9 @@ def split_subtitle(text: str, start: float, end: float,
         return [{"start": start, "end": end, "text": text}]
     ratio = _visible_len(left) / max(_visible_len(left) + _visible_len(right), 1)
     split_t = start + (end - start) * ratio
-    cards = [{"start": start, "end": split_t, "text": left}]
-    cards += split_subtitle(right, split_t, end, max_chars)
-    return cards
+    # 左右兩半都要遞迴切(否則無標點長句的左半會留成巨卡)
+    return (split_subtitle(left, start, split_t, max_chars)
+            + split_subtitle(right, split_t, end, max_chars))
 
 
 def similar(a: str, b: str) -> float:

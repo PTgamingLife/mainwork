@@ -110,6 +110,9 @@ def render(plan_path: str, output: str) -> None:
     # 合成:body + B-roll(全屏) + 圖貼(上方) + 動畫貼圖 + 字幕
     inputs = ["-i", str(body)]
     filt, base, n = [], "[0:v]", 1
+    if no_cut:   # no_cut 沒經過裁切階段 → 在此把底圖縮放到1080(+可選調色)
+        filt.append(f"[0:v]{vf}[v0]")
+        base = "[v0]"
     for clip, s, e in brolls:
         inputs += ["-i", clip]
         filt.append(f"[{n}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
