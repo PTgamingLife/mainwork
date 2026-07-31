@@ -5,15 +5,13 @@
   "face_bias": 0.30,
   "transcript": "C:/Users/nancy/Downloads/807b_edit/plan/segments.json",
   "text_fixes": {"Cloud": "Claude", "Joke": ""},
-  "beats": [
-    {"start": 4.3, "end": 8.6, "anim": "chart", "params": {}, "zh": "這個月談成更多合作", "en": "MORE DEALS THIS MONTH"},
-    {"start": 8.6, "end": 16.2, "anim": null, "zh": "精華課程幾乎都是英文", "en": "THE BEST COURSES ARE IN ENGLISH"},
-    {"start": 16.2, "end": 20.6, "anim": "coin", "params": {}, "zh": "我把課程免費中文化", "en": "TRANSLATED FREE INTO CHINESE"},
-    {"start": 20.6, "end": 24.8, "anim": null, "zh": "分享後接觸更多合作", "en": "SHARING OPENED MORE DOORS"},
-    {"start": 24.8, "end": 29.2, "anim": "swap", "params": {"old": "分享=價值消失", "new": "價值被放大"}, "zh": "怕分享讓價值消失?", "en": "AFRAID SHARING KILLS VALUE?"},
-    {"start": 29.2, "end": 34.0, "anim": "swap", "params": {"old": "才華交付不出去", "new": "才華被放大"}, "zh": "AI 放大你的才華", "en": "AI AMPLIFIES YOUR TALENT"},
-    {"start": 34.0, "end": 40.7, "anim": "swap", "params": {"old": "AI 取代你", "new": "AI 放大你"}, "zh": "AI 不是取代,是放大你", "en": "IT AMPLIFIES, NOT REPLACES"},
-    {"start": 40.7, "end": 44.4, "anim": null, "zh": "想用 AI 放大收入?", "en": "WANT TO SCALE WITH AI?"},
-    {"start": 44.4, "end": 46.54, "anim": "cta", "params": {"text": "留言「免費」"}, "zh": "留言領免費中文課", "en": "COMMENT FOR THE FREE COURSE"}
+  "_comment": "scenes = 用原片字句當節點:anchor 為該句的一段文字,動畫起點自動對齊那句在原片的時間;dur 為動畫時長。",
+  "scenes": [
+    {"anchor": "談了更多", "anim": "chart", "dur": 4.3},
+    {"anchor": "整理完", "anim": "coin", "dur": 4.4},
+    {"anchor": "很多的才華", "anim": "swap", "dur": 4.4, "params": {"old": "分享=價值消失", "new": "價值被放大"}},
+    {"anchor": "時代", "anim": "swap", "dur": 4.8, "params": {"old": "才華交付不出去", "new": "才華被放大"}},
+    {"anchor": "取代我們", "anim": "swap", "dur": 5.0, "params": {"old": "AI 取代你", "new": "AI 放大你"}},
+    {"anchor": "傳給你", "anim": "cta", "dur": 2.1, "params": {"text": "留言「免費」"}}
   ]
 }

@@ -110,6 +110,35 @@ def _load_cards(plan: dict, fixes: dict) -> list[dict]:
     return out
 
 
+def _scenes_to_beats(scenes: list[dict], cards: list[dict], t1: float, dur: float) -> list[dict]:
+    """把『錨點句 → 動畫』解析成 beats:每個動畫起點=該句在原片的時間,
+    終點=下一個場景起點。節點=你原始影片的字句段落。"""
+    resolved = []
+    for sc in scenes:
+        st = sc.get("start")
+        anchor = sc.get("anchor")
+        if st is None and anchor:
+            for c in cards:
+                if anchor in c["text"]:
+                    st = c["start"]; break
+            if st is None:
+                print(f"[luxe][warn] 找不到錨點句:{anchor!r} — 此動畫略過")
+                continue
+        resolved.append({**sc, "_start": max(float(st if st is not None else t1), t1)})
+    resolved.sort(key=lambda r: r["_start"])
+    beats = []
+    for i, r in enumerate(resolved):
+        s = r["_start"]
+        e = s + float(r.get("dur", 4.0))          # 錨點句起點 + 動畫時長
+        if i + 1 < len(resolved):                 # 不超過下一個場景
+            e = min(e, resolved[i + 1]["_start"])
+        e = min(e, dur)
+        if r.get("anim") and e > s:
+            beats.append({"start": s, "end": e, "anim": r["anim"],
+                          "params": r.get("params", {})})
+    return beats
+
+
 def render_luxe(plan_path: str, output: str) -> None:
     plan = json.loads(Path(plan_path).read_text(encoding="utf-8"))
     video = plan["video"]; dur = float(plan["duration"])
@@ -146,8 +175,15 @@ def render_luxe(plan_path: str, output: str) -> None:
     inputs = ["-i", str(wk / "base.mp4"), "-loop", "1", "-i", str(wk / "border.png")]
     filt = ["[0:v]null[v0]", f"[v0][1:v]overlay=0:0:enable='between(t,{t1},{dur})'[v1]"]
     base = "[v1]"; idx = 2; n = 2
-    # 動畫(依 beats)
-    for bi, bt in enumerate(plan["beats"]):
+    # 逐句字幕來源(也當動畫的節點)
+    fixes = plan.get("text_fixes", {})
+    cards = _load_cards(plan, fixes)
+    # 動畫節點:優先用『錨點句 scenes』對齊原片字句;否則用手寫 beats
+    if plan.get("scenes"):
+        beats = _scenes_to_beats(plan["scenes"], cards, t1, dur)
+    else:
+        beats = plan.get("beats", [])
+    for bi, bt in enumerate(beats):
         anim = bt.get("anim")
         if not anim:
             continue
@@ -160,8 +196,6 @@ def render_luxe(plan_path: str, output: str) -> None:
         filt.append(f"{base}[an{idx}]overlay={x}:{y}:enable='between(t,{s},{e})'[v{n}]")
         base = f"[v{n}]"; n += 1; idx += 1
     # 逐句精確字幕(用原片轉錄 cards;分割段才疊,全屏段沿用原燒字幕)
-    fixes = plan.get("text_fixes", {})
-    cards = _load_cards(plan, fixes)
     for ci, c in enumerate(cards):
         s = max(float(c["start"]), t1); e = float(c["end"])
         if s >= e or not c["text"]:
