@@ -5,7 +5,7 @@
 > ❌ 已移除「自動剪輯(auto-cut 砍片段/砍空白)」——影片整段保留,只做加工。
 > 程式在同目錄 `scripts/autoedit/` + CLI `scripts/ae.py`。
 
-**版本:v2.1**(2026-07-31 納入 Case #2 @growithfyn 進階動畫拆解)
+**版本:v2.2**(2026-07-31 luxe 米白奢華上下分割成為正式 Mode B)
 **平台**:Windows + Python 3.14;ffmpeg 由 winget 安裝,程式自動偵測路徑。
 
 ---
@@ -25,6 +25,16 @@
 **設計理念**:程式只負責「抓字幕 + 執行 ffmpeg」;**哪句配什麼貼圖/B-roll 由人(或 Claude)決定**,並且這個「決定」會隨著 `CASES.md` 累積越來越準(見第五章)。
 
 ---
+
+## 影片模式(可選其一)
+
+| 模式 | 風格 | 版面 | 指令 |
+|------|------|------|------|
+| **A · 疊圖**(預設) | 黃綠活潑 | 全屏講者 + 上方疊動畫貼圖 | `python ae.py render edit_plan.json -o 成品.mp4` |
+| **B · luxe 奢華** | 米白+金 premium | 第一句全屏 → 之後上下分割(講者下方視窗) | `python scripts/autoedit/luxe/render_luxe.py plan.json 成品.mp4` |
+
+> luxe(Mode B)三種語意動畫:`chart`(數字→上升折線圖)、`coin`(感覺→撒錢金幣)、`swap`(改變認知→刪舊字蓋新字)+ `cta`;雙語字幕;plan 格式與範例見 `luxe/render_luxe.py` docstring 與 `luxe/example_807b_plan.json`。動畫庫 `luxe/luxe_anim.py`。
+> 之後新設計風格 → 各自成一個 mode 檔,plan 選 mode。
 
 ## 二、三大能力
 
@@ -140,9 +150,9 @@
 - [ ] **頂部常駐標題膠囊條**(可在 edit_plan 設 title)。
 - [ ] **計數器改膠囊樣式 + icon 前綴**(貼近 Case #1)。
 - [ ] **app logo 圖示庫**(Pr/YouTube/code/晶片…)供 `sticker` 類直接引用(自有庫優先,缺的抓公開)。
-- [ ] **【Case #2 啟發】上下分割版面模式**:動畫黑畫布(上)+ 講者小視窗(下)+ 雙語字幕在中線。
+- [x] **【已做:Mode B】上下分割版面模式**:動畫黑畫布(上)+ 講者小視窗(下)+ 雙語字幕在中線。
 - [ ] **【Case #2】新動畫型**:清單卡(紅✗/▶)、華夫格1%點陣、計數器+虛線弧、大型動態字、假App-UI mockup、月曆UI。
-- [ ] **【Case #2】主題系統**:黃綠活潑 vs 黑+紅+白 premium,edit_plan 可選 theme。
+- [x] **主題/模式系統**:Mode A 黃綠疊圖 / Mode B 米白奢華分割(已可選);未來新風格各成一 mode。
 - [ ] **一鍵自動模式**:plan 讀逐字稿,依「已學到的編輯原則」自動產出每句 overlay 草稿,人只微調。
 - [ ] 之後升級本機網頁 UI(打勾選句、預覽、拖拉貼圖)。
 
@@ -155,3 +165,4 @@
 | v1.0 | 2026-07-17 | 初版:技術管線文件(analyze/plan/render、6 種貼圖、B-roll、CONFIG、踩坑) |
 | v2.0 | 2026-07-28 | **轉型為編輯學習模型**:移除自動剪輯(render 預設 no_cut)、確立字幕驅動三步流程、新增學習迴圈 + CASES.md、寫入 Case #1(@growithfyn)7 條編輯原則 |
 | v2.1 | 2026-07-31 | 納入 Case #2(@growithfyn 動畫炫技示範):上下分割版面、黑紅白視覺系統、清單卡/華夫格1%/計數器+虛線弧等新動畫型,寫入原則 8–11 + roadmap |
+| v2.2 | 2026-07-31 | luxe 米白奢華上下分割正式化為 Mode B(render_luxe.py + luxe_anim.py):第一句全屏、之後分割、chart/coin/swap/cta 語意動畫、雙語字幕、plan 驅動可重複用 |
