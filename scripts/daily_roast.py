@@ -40,6 +40,13 @@ STATE_MD = SKILL_DIR / "STATE.md"
 LOG_MD = SKILL_DIR / "LOG.md"
 FINANCE_JSON = ROOT / "household-finance" / "data.json"
 
+SALES = {                      # 銷售期程 — 改期程/單價/場次時,STATE.md 第一節也要一起改
+    "course_date": "2026-08-30",
+    "price": 6800,
+    "seats_per_session": 20,
+    "sessions_per_week": 1,
+}
+
 MODEL = "claude-sonnet-5"
 MAX_TOKENS = 1600
 LOG_TAIL_CHARS = 4000      # 只餵最近的紀錄，避免整份 LOG 一直長大
@@ -84,6 +91,27 @@ def _git_context() -> str:
         f"{n:>5}  {d}" for d, n in sorted(dirs.items(), key=lambda kv: -kv[1])[:15]
     ) or "(無檔案異動)"
     return f"### 近 {GIT_LOG_DAYS} 天 commit\n{commits}\n\n### 近 {GIT_LOG_DAYS} 天改動檔次（依目錄）\n{top}"
+
+
+def _sales_context(today: datetime) -> str:
+    """倒數與漏斗反推 — 日期算術在程式裡算，不要交給模型。"""
+    course = datetime.strptime(SALES["course_date"], "%Y-%m-%d").replace(tzinfo=TZ)
+    days_left = (course.date() - today.date()).days
+    if days_left < 0:
+        return (f"開課日 {SALES['course_date']} 已過({-days_left} 天前)。"
+                "STATE.md 的銷售期程已過期，今天第 ② 條就是要使用者定下一輪的日期與目標。")
+    weeks_left = max(days_left // 7, 0)
+    sessions_left = max(weeks_left * SALES["sessions_per_week"], 0)
+    capacity = sessions_left * SALES["seats_per_session"]
+    return (
+        f"- 開課日 {SALES['course_date']}，**距今 {days_left} 天**。\n"
+        f"- 以每週 {SALES['sessions_per_week']} 場、每場 {SALES['seats_per_session']} 人算，"
+        f"開課前還排得下約 **{sessions_left} 場**、總容量 **{capacity} 人**。\n"
+        f"- 單價 {SALES['price']:,} 元。滿場且成交率 20% → 約 "
+        f"{int(capacity * 0.2) * SALES['price']:,} 元；10% → 約 "
+        f"{int(capacity * 0.1) * SALES['price']:,} 元（成交率是未驗證假設）。\n"
+        f"- 實際報名/到場/成交數字看 STATE.md 第一之二節；那裡還是空的就直說「沒有數字＝沒有進度」。"
+    )
 
 
 def _channel_context() -> str:
@@ -133,6 +161,9 @@ def build_prompt(today: str) -> tuple[str, str]:
 
 ===== household-finance/data.json（財務原始資料）=====
 {_read(FINANCE_JSON)}
+
+===== 銷售倒數（程式算好的，直接引用，不要自己再算日期）=====
+{_sales_context(datetime.now(TZ))}
 
 ===== 商業模型三組件近況 =====
 {_channel_context()}
