@@ -86,6 +86,32 @@ def _git_context() -> str:
     return f"### 近 {GIT_LOG_DAYS} 天 commit\n{commits}\n\n### 近 {GIT_LOG_DAYS} 天改動檔次（依目錄）\n{top}"
 
 
+def _channel_context() -> str:
+    """三個商業組件的近況 — 商業層那條要同時評價 AI 教學 / Threads / Reels。"""
+    lines = []
+    for label, rel in (
+        ("Threads", ".claude/skills/threads-post/MODEL.md"),
+        ("Reels", ".claude/skills/reels-script/MODEL.md"),
+    ):
+        path = ROOT / rel
+        if not path.exists():
+            lines.append(f"- {label}:模型檔不存在({rel})")
+            continue
+        version = next(
+            (l.strip() for l in path.read_text(encoding="utf-8").splitlines()
+             if l.startswith("**模型版本")),
+            "(找不到版本行)",
+        )
+        last = subprocess.run(
+            ["git", "log", "-1", "--format=%ad", "--date=short", "--", rel],
+            cwd=ROOT, capture_output=True, text=True, timeout=30, check=False,
+        ).stdout.strip() or "未知"
+        lines.append(f"- {label}:{version}(模型最後更新 {last})")
+    lines.append("- AI 教學(claude-training-hub):產品在別的 repo,repo 內看不到近況，"
+                 "以 STATE.md 與使用者回報為準")
+    return "\n".join(lines)
+
+
 def build_prompt(today: str) -> tuple[str, str]:
     system = (
         _read(SKILL_MD)
@@ -94,7 +120,8 @@ def build_prompt(today: str) -> tuple[str, str]:
         "沒有人可以即時回答你的問題。所以：不要反問、不要說『需要你確認』就停住，"
         "拿現有證據直接給出三條。資訊不足的地方就把「去把這件事確認清楚」寫成當天的動作。\n"
         "輸出限制：純文字，不要用 Markdown 標題或程式碼區塊（LINE 不會渲染），"
-        "全文 900 字以內，嚴格照 SKILL.md 的四行格式，三條為限。"
+        "全文 1000 字以內，嚴格照 SKILL.md 的四行格式，三條為限"
+        "（第 ② 條前面另外加三行組件體檢：AI 教學 / Threads / Reels 各一行）。"
     )
     user = f"""今天是 {today}。以下是你能用的全部事實，請據此產出今天的三條。
 
@@ -107,11 +134,15 @@ def build_prompt(today: str) -> tuple[str, str]:
 ===== household-finance/data.json（財務原始資料）=====
 {_read(FINANCE_JSON)}
 
+===== 商業模型三組件近況 =====
+{_channel_context()}
+
 ===== git 活動 =====
 {_git_context()}
 
 請輸出：
 第一行「📌 今日三箭（{today}）」，接著昨天驗收一行，然後三條（①專案 ②商業 ③財務），
+其中第 ② 條要先給 AI 教學 / Threads / Reels 各一行體檢，再從最弱的一環出建議，
 最後一行「最低通關線：第 X 條 —— 理由一句」。
 """
     return system, user
