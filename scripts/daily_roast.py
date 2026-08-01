@@ -41,8 +41,9 @@ LOG_MD = SKILL_DIR / "LOG.md"
 FINANCE_JSON = ROOT / "household-finance" / "data.json"
 
 SALES = {                      # 銷售期程 — 改期程/單價/場次時,STATE.md 第一節也要一起改
-    "course_date": "2026-08-30",
-    "price": 18800,
+    "course_date": "2026-08-30",   # 18,800 進階課開課日
+    "price": 18800,                # 進階課(AI 變現能力)
+    "clinic_price": 300,           # 公益課(基本能力)= 每週那一場,課末轉化進階課
     "seats_per_session": 20,
     "sessions_per_week": 1,
 }
@@ -103,13 +104,17 @@ def _sales_context(today: datetime) -> str:
     weeks_left = max(days_left // 7, 0)
     sessions_left = max(weeks_left * SALES["sessions_per_week"], 0)
     capacity = sessions_left * SALES["seats_per_session"]
+    brackets = "；".join(
+        f"{int(r * 100)}% → {int(capacity * r)} 人 ≈ {int(capacity * r) * SALES['price']:,} 元"
+        for r in (0.20, 0.10, 0.05)
+    )
     return (
-        f"- 開課日 {SALES['course_date']}，**距今 {days_left} 天**。\n"
-        f"- 以每週 {SALES['sessions_per_week']} 場、每場 {SALES['seats_per_session']} 人算，"
-        f"開課前還排得下約 **{sessions_left} 場**、總容量 **{capacity} 人**。\n"
-        f"- 單價 {SALES['price']:,} 元。滿場且成交率 20% → 約 "
-        f"{int(capacity * 0.2) * SALES['price']:,} 元；10% → 約 "
-        f"{int(capacity * 0.1) * SALES['price']:,} 元（成交率是未驗證假設）。\n"
+        f"- 進階課(18,800)開課日 {SALES['course_date']}，**距今 {days_left} 天**。\n"
+        f"- 轉化場次 = 每週 {SALES['sessions_per_week']} 場 **{SALES['clinic_price']} 元公益課**"
+        f"（每場 {SALES['seats_per_session']} 人，課末轉化進階課；沒有另外的免費說明會）。\n"
+        f"- 開課前還排得下約 **{sessions_left} 場**、總容量 **{capacity} 人**；"
+        f"公益課本身現金流 {capacity * SALES['clinic_price']:,} 元。\n"
+        f"- 進階課營收級距（成交率為未驗證假設）：{brackets}。\n"
         f"- 實際報名/到場/成交數字看 STATE.md 第一之二節；那裡還是空的就直說「沒有數字＝沒有進度」。"
     )
 
