@@ -1,0 +1,236 @@
+{
+  "video": "C:/Users/nancy/Downloads/807b_edit/src.mp4",
+  "duration": 46.54,
+  "split_start": 4.3,
+  "face_bias": 0.3,
+  "transcript": "C:/Users/nancy/Downloads/807b_edit/plan/segments.json",
+  "text_fixes": {
+    "Cloud": "Claude",
+    "Joke": ""
+  },
+  "_comment": "scenes = 用原片字句當節點:anchor 為該句的一段文字,動畫起點自動對齊那句在原片的時間;dur 為動畫時長。",
+  "scenes": [
+    {
+      "anchor": "談了更多",
+      "anim": "title",
+      "dur": 3.6,
+      "params": {
+        "label": "RESULT",
+        "ghost": "More Deals",
+        "main": "更多合作案"
+      }
+    },
+    {
+      "anchor": "整理完",
+      "anim": "app_ui",
+      "dur": 4.4,
+      "params": {
+        "files": [
+          [
+            "ai-course/ch1.md",
+            86,
+            0
+          ],
+          [
+            "中文化/lesson-02.md",
+            52,
+            0
+          ],
+          [
+            "webpage/index.html",
+            31,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "anchor": "很多的才華",
+      "anim": "swap",
+      "dur": 4.4,
+      "params": {
+        "old": "分享=價值消失",
+        "new": "價值被放大"
+      }
+    },
+    {
+      "anchor": "時代",
+      "anim": "swap",
+      "dur": 4.8,
+      "params": {
+        "old": "才華交付不出去",
+        "new": "才華被放大"
+      }
+    },
+    {
+      "anchor": "取代我們",
+      "anim": "swap",
+      "dur": 5.0,
+      "params": {
+        "old": "AI 取代你",
+        "new": "AI 放大你"
+      }
+    },
+    {
+      "anchor": "傳給你",
+      "anim": "cta",
+      "dur": 2.1,
+      "params": {
+        "text": "留言「免費」"
+      }
+    }
+  ],
+  "subtitles": [
+    {
+      "start": 0.0,
+      "end": 1.33,
+      "text": "我做一件很蠢的事情"
+    },
+    {
+      "start": 1.33,
+      "end": 2.82,
+      "text": "可以拿來賣錢的AI課程"
+    },
+    {
+      "start": 2.82,
+      "end": 4.3,
+      "text": "我居然免費放在網路上"
+    },
+    {
+      "start": 4.3,
+      "end": 5.43,
+      "text": "但因為這樣"
+    },
+    {
+      "start": 5.43,
+      "end": 8.6,
+      "text": "我這個月談了更多AI合作的案子"
+    },
+    {
+      "start": 8.6,
+      "end": 10.72,
+      "text": "其實網路上已經有很多AI免費課程"
+    },
+    {
+      "start": 10.72,
+      "end": 12.41,
+      "text": "但最精華的通常都是英文版"
+    },
+    {
+      "start": 12.41,
+      "end": 14.1,
+      "text": "像Google或Claude出的課程"
+    },
+    {
+      "start": 14.1,
+      "end": 15.09,
+      "text": "大部分人看到全英文"
+    },
+    {
+      "start": 15.09,
+      "end": 16.2,
+      "text": "第一時間可能就放棄了"
+    },
+    {
+      "start": 16.2,
+      "end": 18.4,
+      "text": "所以我把這些課程整理完之後"
+    },
+    {
+      "start": 18.4,
+      "end": 19.25,
+      "text": "全部中文化"
+    },
+    {
+      "start": 19.25,
+      "end": 20.6,
+      "text": "放在我的網頁上面"
+    },
+    {
+      "start": 20.6,
+      "end": 21.41,
+      "text": "但因為這樣"
+    },
+    {
+      "start": 21.41,
+      "end": 23.02,
+      "text": "我開始跟身邊朋友分享"
+    },
+    {
+      "start": 23.02,
+      "end": 24.8,
+      "text": "也接觸到更多合作的可能"
+    },
+    {
+      "start": 24.8,
+      "end": 26.53,
+      "text": "其實很多人身上都有很多才華"
+    },
+    {
+      "start": 26.53,
+      "end": 28.0,
+      "text": "但我們怕一旦跟別人分享"
+    },
+    {
+      "start": 28.0,
+      "end": 29.2,
+      "text": "自己的價值就不見了"
+    },
+    {
+      "start": 29.2,
+      "end": 29.85,
+      "text": "但在AI時代"
+    },
+    {
+      "start": 29.85,
+      "end": 31.54,
+      "text": "AI可以放大我們每個人的價值"
+    },
+    {
+      "start": 31.54,
+      "end": 32.7,
+      "text": "把才華用更快更精確"
+    },
+    {
+      "start": 32.7,
+      "end": 34.0,
+      "text": "的方式交付到別人手上"
+    },
+    {
+      "start": 34.0,
+      "end": 36.49,
+      "text": "所以AI絕對不是拿來取代我們"
+    },
+    {
+      "start": 36.49,
+      "end": 38.59,
+      "text": "而是幫我們找到能幫別人"
+    },
+    {
+      "start": 38.59,
+      "end": 40.7,
+      "text": "解決最有價值問題的地方"
+    },
+    {
+      "start": 40.7,
+      "end": 42.46,
+      "text": "所以如果你也想透過AI"
+    },
+    {
+      "start": 42.46,
+      "end": 44.4,
+      "text": "放大自己的收入跟價值"
+    },
+    {
+      "start": 44.4,
+      "end": 45.11,
+      "text": "留言「免費」"
+    },
+    {
+      "start": 45.11,
+      "end": 46.54,
+      "text": "我把免費的中文課程傳給你"
+    }
+  ],
+  "theme": "dark"
+}

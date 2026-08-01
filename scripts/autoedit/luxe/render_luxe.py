@@ -41,10 +41,16 @@ import luxe_anim as L  # noqa: E402
 
 CJKB = "C:/Windows/Fonts/msjhbd.ttc"
 LAT = "C:/Windows/Fonts/arialbd.ttf"
-CREAM_HEX = "0xF3EEE5"
 INK = (34, 30, 26); MUTE = (150, 142, 128); GOLD = (176, 138, 74)
-ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430}
-ANIM_FN = {"chart": "line_chart", "coin": "coin_rain", "swap": "text_swap", "cta": "cta"}
+ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430, "app_ui": 170, "title": 220}
+ANIM_FN = {"chart": "line_chart", "coin": "coin_rain", "swap": "text_swap",
+           "cta": "cta", "app_ui": "app_ui", "title": "title_card"}
+# 主題:cream 米白奢華 / dark 深色珊瑚(Case #3)
+THEMES = {
+    "cream": {"bg": "0xF3EEE5", "ink": (34, 30, 26), "stroke": (243, 238, 229), "border": (176, 138, 74)},
+    "dark":  {"bg": "0x121113", "ink": (245, 242, 238), "stroke": (18, 17, 19), "border": (217, 119, 87)},
+}
+TH = THEMES["cream"]
 # 講者直式卡(比例貼近來源,cover 不裁臉、盡量帶肩)
 CARD_X, CARD_Y, CARD_W, CARD_H = 200, 955, 680, 900
 SUB_Y = 792                       # 字幕(逐句精確)疊在卡片上方
@@ -76,12 +82,12 @@ def _mask_border(wk: Path):
     b = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
     ImageDraw.Draw(b).rounded_rectangle(
         [CARD_X, CARD_Y, CARD_X + CARD_W, CARD_Y + CARD_H], radius=40,
-        outline=GOLD + (255,), width=4)
+        outline=TH["border"] + (255,), width=4)
     b.save(wk / "border.png")
 
 
 def _sub_png(text, path):
-    """逐句精確字幕(中文,秀氣描邊,置中);過長自動縮字級。"""
+    """逐句精確字幕(中文,秀氣描邊,置中);過長自動縮字級。顏色依主題。"""
     im = Image.new("RGBA", (1080, 110), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
     size = 54
     while size > 30:
@@ -90,7 +96,7 @@ def _sub_png(text, path):
             break
         size -= 2
     d.text((540, 55), text, font=ImageFont.truetype(CJKB, size),
-           fill=INK + (255,), anchor="mm", stroke_width=4, stroke_fill=(243, 238, 229))
+           fill=TH["ink"] + (255,), anchor="mm", stroke_width=4, stroke_fill=TH["stroke"])
     im.save(path)
 
 
@@ -141,6 +147,8 @@ def _scenes_to_beats(scenes: list[dict], cards: list[dict], t1: float, dur: floa
 
 def render_luxe(plan_path: str, output: str) -> None:
     plan = json.loads(Path(plan_path).read_text(encoding="utf-8"))
+    global TH
+    TH = THEMES.get(plan.get("theme", "cream"), THEMES["cream"])
     video = plan["video"]; dur = float(plan["duration"])
     t1 = float(plan.get("split_start", 4.3)); bias = float(plan.get("face_bias", 0.60))
     wk = Path(tempfile.mkdtemp(prefix="luxe_")); _mask_border(wk)
@@ -154,7 +162,7 @@ def render_luxe(plan_path: str, output: str) -> None:
     # 2) partB 米白上下分割(講者直式卡:cover 不裁臉、盡量帶肩)
     print("[luxe] partB 上下分割 ...")
     _run([FFMPEG, "-y", "-ss", str(t1), "-i", video,
-          "-f", "lavfi", "-i", f"color=c={CREAM_HEX}:s=1080x1920:r=30",
+          "-f", "lavfi", "-i", f"color=c={TH['bg']}:s=1080x1920:r=30",
           "-i", str(wk / "mask.png"),
           "-filter_complex",
           f"[0:v]crop=iw:ih*0.80:0:0,"

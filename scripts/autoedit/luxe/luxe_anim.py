@@ -133,3 +133,79 @@ def cta(out, text="留言「免費」", dur=2.2, fps=30, canvas=(760, 200)):
             d.text((cx, cy), text, font=f, fill=(255, 250, 244, int(255 * s)), anchor="mm")
         _save(im, W, H, out, i, "cta")
     return {"pattern": str(out / "cta_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+# ═════════ 深色珊瑚主題(Case #3:App-UI mockup / 標題卡 / 吉祥物)═════════
+DARK = (18, 17, 19)
+PANEL = (30, 29, 33)
+CORAL = (217, 119, 87)      # Claude 品牌色 #D97757
+WHT2 = (245, 242, 238)
+MUTE2 = (140, 138, 142)
+GREEN = (86, 196, 130)
+LINE2 = (48, 46, 52)
+
+
+def mascot(d, cx, cy, s, col=CORAL):
+    """Claude 像素吉祥物(橘色方頭機器人)。"""
+    u = s / 6
+    d.rounded_rectangle([cx - 3*u, cy - 3*u, cx + 3*u, cy + 1.6*u], radius=u*0.7, fill=col)
+    for ex in (-1.4, 1.4):                                   # 眼睛
+        d.line([cx + ex*u, cy - 1.4*u, cx + ex*u, cy - 0.2*u], fill=DARK, width=int(u*0.9))
+    for lx in (-2, 0, 2):                                    # 腳
+        d.rectangle([cx + lx*u - u*0.4, cy + 1.6*u, cx + lx*u + u*0.4, cy + 3*u], fill=col)
+
+
+def app_ui(out, outdir=None, dur=4.5, fps=30, canvas=(920, 560), files=None):
+    """擬真 Claude Code agent 面板:逐列出現的檔案 diff。"""
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    files = files or [("components/LoginForm.tsx", 86, 4),
+                      ("api/auth.ts", 52, 8), ("styles/login.css", 31, 2)]
+    fh = ImageFont.truetype("C:/Windows/Fonts/consolab.ttf", 26*SS)
+    fs = ImageFont.truetype("C:/Windows/Fonts/consolab.ttf", 22*SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        d.rounded_rectangle([0, 0, W*SS, H*SS], radius=24*SS, fill=PANEL+(255,), outline=LINE2+(255,), width=2*SS)
+        d.ellipse([34*SS-7*SS, 42*SS-7*SS, 34*SS+7*SS, 42*SS+7*SS], fill=CORAL+(255,))
+        d.text((58*SS, 42*SS), "Agent · Autonomous run", font=fs, fill=WHT2+(255,), anchor="lm")
+        d.text((34*SS, 96*SS), "▸ REVIEWING", font=fs, fill=CORAL+(255,), anchor="lm")
+        y0 = 150*SS
+        for k, (name, add, sub) in enumerate(files):
+            appear = _ease(min(max(t - 0.5 - k*0.7, 0)/0.5, 1))  # 逐列彈入
+            if appear <= 0:
+                continue
+            yy = y0 + k*82*SS + int((1-appear)*20*SS)
+            a = int(255*appear)
+            d.rounded_rectangle([28*SS, yy-6*SS, W*SS-28*SS, yy+56*SS], radius=10*SS, fill=(40,39,44,a))
+            # 綠勾
+            cx = 58*SS; cyy = yy+25*SS
+            d.line([cx-8*SS, cyy, cx-2*SS, cyy+7*SS], fill=GREEN+(a,), width=5*SS)
+            d.line([cx-2*SS, cyy+7*SS, cx+9*SS, cyy-7*SS], fill=GREEN+(a,), width=5*SS)
+            d.text((92*SS, cyy), name, font=fh, fill=WHT2+(a,), anchor="lm")
+            d.text((W*SS-160*SS, cyy), f"+{add}", font=fh, fill=GREEN+(a,), anchor="lm")
+            d.text((W*SS-70*SS, cyy), f"-{sub}", font=fh, fill=CORAL+(a,), anchor="lm")
+        _save(im, W, H, out, i, "ui")
+    return {"pattern": str(out / "ui_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def title_card(out, outdir=None, label="SKILL 1", ghost="Find Skills", main="第一個 Find Skills",
+               dur=3.0, fps=30, canvas=(940, 460)):
+    """動態字標題卡:小珊瑚標籤 + 大 ghost 疊影 + 粗體主標。"""
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    flab = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 34*SS)
+    fgh = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 130*SS)
+    fmn = ImageFont.truetype(CJKB, 68*SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        cx = W*SS//2
+        d.text((cx, 70*SS), "  ".join(label), font=flab, fill=CORAL+(255,), anchor="mm")
+        gy = 235*SS - int(_ease(min(t/0.6,1))*20*SS)
+        ga = int(70*_ease(min(t/0.6,1)))
+        d.text((cx, gy), ghost, font=fgh, fill=WHT2+(ga,), anchor="mm")   # ghost 疊影
+        ma = int(255*_ease(min(max(t-0.3,0)/0.6,1)))
+        d.text((cx, 300*SS), main, font=fmn, fill=WHT2+(ma,), anchor="mm")
+        _save(im, W, H, out, i, "title")
+    return {"pattern": str(out / "title_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
