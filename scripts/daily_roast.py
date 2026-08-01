@@ -42,7 +42,7 @@ FINANCE_JSON = ROOT / "household-finance" / "data.json"
 
 SALES = {                      # 銷售期程 — 改期程/單價/場次時,STATE.md 第一節也要一起改
     "course_date": "2026-08-30",
-    "price": 6800,
+    "price": 18800,
     "seats_per_session": 20,
     "sessions_per_week": 1,
 }
