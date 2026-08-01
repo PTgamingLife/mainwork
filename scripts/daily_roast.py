@@ -119,8 +119,34 @@ def _sales_context(today: datetime) -> str:
     )
 
 
+def _tracker_context(today: datetime) -> str:
+    """從 STATE.md 第一之二節的追蹤表讀場次進度 — 唯一事實來源，程式不另存一份數字。"""
+    rows = [
+        [c.strip().strip("*") for c in line.strip().strip("|").split("|")]
+        for line in _read(STATE_MD).splitlines()
+        if line.startswith("| #")
+    ]
+    if not rows:
+        return "- 解析不到追蹤表，請直接看 STATE.md 第一之二節。"
+
+    out = []
+    for r in rows:
+        label, date, signups = (r + ["", "", ""])[:3]
+        line = f"- {label}｜日期 {date or '待定'}｜報名 {signups or '—'}"
+        if date and date not in ("待定", "—"):
+            try:  # 表裡寫「8/6」這種格式，補上年份算天數
+                month, day = (int(x) for x in date.split("/")[:2])
+                target = datetime(today.year, month, day, tzinfo=TZ)
+                line += f"（距今 {(target.date() - today.date()).days} 天）"
+            except (ValueError, TypeError):
+                pass
+        out.append(line)
+    out.append("- 表裡沒有數字的欄位＝那件事還沒發生，不要當成有進度。")
+    return "\n".join(out)
+
+
 def _channel_context() -> str:
-    """三個商業組件的近況 — 商業層那條要同時評價 AI 教學 / Threads / Reels。"""
+    """四個商業組件的近況 — 商業層那條要同時評價，缺數據的就照實說是黑箱。"""
     lines = []
     for label, rel in (
         ("Threads", ".claude/skills/threads-post/MODEL.md"),
@@ -140,8 +166,10 @@ def _channel_context() -> str:
             cwd=ROOT, capture_output=True, text=True, timeout=30, check=False,
         ).stdout.strip() or "未知"
         lines.append(f"- {label}:{version}(模型最後更新 {last})")
-    lines.append("- AI 教學(claude-training-hub):產品在別的 repo,repo 內看不到近況，"
-                 "以 STATE.md 與使用者回報為準")
+    lines.append("- AI 教學(claude-training-hub,免費網站=吸流量入口):產品在別的 repo，"
+                 "repo 內看不到近況，以 STATE.md 與使用者回報為準")
+    lines.append("- IG 限動(實際銷售 300 公益課的地方):**沒有模型、沒有數據＝黑箱**，"
+                 "觸及/點擊/報名轉化都看不到，體檢時照實寫")
     return "\n".join(lines)
 
 
@@ -154,7 +182,7 @@ def build_prompt(today: str) -> tuple[str, str]:
         "拿現有證據直接給出三條。資訊不足的地方就把「去把這件事確認清楚」寫成當天的動作。\n"
         "輸出限制：純文字，不要用 Markdown 標題或程式碼區塊（LINE 不會渲染），"
         "全文 1000 字以內，嚴格照 SKILL.md 的四行格式，三條為限"
-        "（第 ② 條前面另外加三行組件體檢：AI 教學 / Threads / Reels 各一行）。"
+        "（商業那條前面另外加四行組件體檢：AI 教學 / Threads / Reels / IG 限動 各一行）。"
     )
     user = f"""今天是 {today}。以下是你能用的全部事實，請據此產出今天的三條。
 
@@ -170,16 +198,20 @@ def build_prompt(today: str) -> tuple[str, str]:
 ===== 銷售倒數（程式算好的，直接引用，不要自己再算日期）=====
 {_sales_context(datetime.now(TZ))}
 
-===== 商業模型三組件近況 =====
+===== 公益課場次進度（讀自 STATE.md 追蹤表）=====
+{_tracker_context(datetime.now(TZ))}
+
+===== 商業模型四組件近況 =====
 {_channel_context()}
 
 ===== git 活動 =====
 {_git_context()}
 
 請輸出：
-第一行「📌 今日三箭（{today}）」，接著昨天驗收一行，然後三條（①專案 ②商業 ③財務），
-其中第 ② 條要先給 AI 教學 / Threads / Reels 各一行體檢，再從最弱的一環出建議，
-最後一行「最低通關線：第 X 條 —— 理由一句」。
+第一行「📌 今日三箭（{today}）」，接著昨天驗收一行，然後三條，
+倒數期間順序為 ②商業 → ①專案 → ③財務（有硬期限的先講）。
+商業那條要先給 AI 教學 / Threads / Reels / IG 限動 各一行體檢，再從最弱的一環出建議。
+最後一行「最低通關線：第 X 條 —— 理由一句」（倒數期間預設給商業那條）。
 """
     return system, user
 
