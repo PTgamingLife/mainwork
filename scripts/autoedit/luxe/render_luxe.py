@@ -175,12 +175,14 @@ def render_luxe(plan_path: str, output: str) -> None:
     inputs = ["-i", str(wk / "base.mp4"), "-loop", "1", "-i", str(wk / "border.png")]
     filt = ["[0:v]null[v0]", f"[v0][1:v]overlay=0:0:enable='between(t,{t1},{dur})'[v1]"]
     base = "[v1]"; idx = 2; n = 2
-    # 逐句字幕來源(也當動畫的節點)
+    # 字幕來源(可為修好的 plan['subtitles']);錨點解析另用原片精準轉錄
     fixes = plan.get("text_fixes", {})
     cards = _load_cards(plan, fixes)
-    # 動畫節點:優先用『錨點句 scenes』對齊原片字句;否則用手寫 beats
     if plan.get("scenes"):
-        beats = _scenes_to_beats(plan["scenes"], cards, t1, dur)
+        anchor_cards = cards
+        if plan.get("transcript"):     # 動畫錨點永遠對原片精準時間
+            anchor_cards = _load_cards({"transcript": plan["transcript"]}, fixes)
+        beats = _scenes_to_beats(plan["scenes"], anchor_cards, t1, dur)
     else:
         beats = plan.get("beats", [])
     for bi, bt in enumerate(beats):
