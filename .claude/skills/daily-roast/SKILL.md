@@ -54,6 +54,16 @@ Roast 的力氣全部來自這個落差,不是來自罵人。
   **拿假數字做決策是最貴的一種節省**。
 - **最多三條**。第四條再有道理也留到明天——每天只給三顆子彈是這個 skill 的核心設計。
 
+## 自動排程(每天早上 6 點)
+
+`scripts/daily_roast.py` 掛在 `.github/workflows/schedule-reminder.yml`(行程提醒的同一個排程),
+會用**本檔當系統提示**、STATE.md + LOG.md + data.json + 近 7 天 git log 當事實,
+產出當天三條 → 推 LINE → 寫回 LOG.md 並 commit(`[skip ci]`)。
+
+所以**改這份 SKILL.md 就等於改每天早上那則訊息**。自動版的差異只有兩點:
+沒有人可以即時回答,所以不反問、直接給;輸出走純文字(LINE 不渲染 Markdown)、900 字以內。
+本機測試:`python scripts/daily_roast.py --stdout`(只印出來,不送 LINE、不寫檔)。
+
 ## 模式
 
 - 「今天的建議 / roast 我 / 每日三箭」→ 跑完整流程(驗收昨天 → 三條 → 寫 LOG)。
