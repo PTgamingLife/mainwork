@@ -209,3 +209,96 @@ def title_card(out, outdir=None, label="SKILL 1", ghost="Find Skills", main="第
         d.text((cx, 300*SS), main, font=fmn, fill=WHT2+(ma,), anchor="mm")
         _save(im, W, H, out, i, "title")
     return {"pattern": str(out / "title_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+# ═════════ 6 組程式動畫(深色珊瑚):FREE / 英文單字群 / 雙logo / 課程清單 ═════════
+def free_card(out, outdir=None, dur=2.0, fps=30, canvas=(900, 440)):
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    fbig = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 200 * SS)
+    fsub = ImageFont.truetype(CJKB, 56 * SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        s = _ease(min(t / 0.35, 1.0))
+        im, d = _cv(W, H)
+        cx, cy = W * SS // 2, int(H * 0.42) * SS
+        for k in range(12):                                   # 珊瑚放射線
+            a = math.radians(k * 30 + t * 40)
+            r1, r2 = 150 * SS, (150 + 40 * abs(math.sin(t*4))) * SS
+            d.line([cx + r1*math.cos(a), cy + r1*math.sin(a),
+                    cx + r2*math.cos(a), cy + r2*math.sin(a)],
+                   fill=CORAL + (int(200*s),), width=5 * SS)
+        f = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", int(200 * SS * (0.5 + 0.5*s)))
+        d.text((cx, cy), "FREE", font=f, fill=WHT2 + (int(255*s),), anchor="mm",
+               stroke_width=6 * SS, stroke_fill=DARK + (255,))
+        d.text((cx, int(H * 0.86) * SS), "免費送", font=fsub, fill=CORAL + (int(255*s),), anchor="mm")
+        _save(im, W, H, out, i, "free")
+    return {"pattern": str(out / "free_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def word_cloud(out, outdir=None, dur=2.0, fps=30, canvas=(980, 620), words=None):
+    words = words or ["Prompt", "Agent", "Context", "Token", "Workflow", "Skills",
+                      "Model", "API", "Output", "Vector", "Embedding", "Autonomous"]
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    import random; random.seed(11)
+    place = [(random.uniform(.1, .9), random.uniform(.12, .9),
+              random.uniform(.8, 1.5), random.random()) for _ in words]
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        for k, w in enumerate(words):
+            px, py, sz, delay = place[k]
+            ap = _ease(min(max(t - delay * 0.9, 0) / 0.35, 1.0))
+            if ap <= 0:
+                continue
+            fs = int(38 * SS * sz)
+            f = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", fs)
+            col = CORAL if k % 4 == 0 else WHT2
+            aa = int((120 if col == WHT2 else 230) * ap)
+            d.text((px * W * SS, py * H * SS), w, font=f, fill=col + (aa,), anchor="mm")
+        _save(im, W, H, out, i, "words")
+    return {"pattern": str(out / "words_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def logos(out, outdir=None, dur=2.0, fps=30, canvas=(760, 360),
+          asset="C:/Users/nancy/OneDrive/桌面/AI_use/claudeskill/code/scripts/autoedit/luxe/assets/google_claude.png"):
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    lg = Image.open(asset).convert("RGBA")
+    for i in range(n):
+        t = (i + 1) / fps
+        s = _ease(min(t / 0.4, 1.0))
+        im = Image.new("RGBA", (W * SS, H * SS), (0, 0, 0, 0))
+        w2 = int(W * SS * 0.9 * s); h2 = int(w2 * lg.height / lg.width)
+        if w2 > 4:
+            r = lg.resize((w2, h2), Image.LANCZOS)
+            im.alpha_composite(r, ((W * SS - w2) // 2, (H * SS - h2) // 2))
+        im.resize((W, H), Image.LANCZOS).save(out / f"logo_{i:05d}.png")
+    return {"pattern": str(out / "logo_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def list_card(out, outdir=None, dur=4.4, fps=30, canvas=(940, 640), title="課程內容", items=None):
+    items = items or ["認識你的 AI 新同事", "AI 溝通密碼",
+                      "Projects、Artifacts 與 Skills", "工作流整合", "深度加速器"]
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    ft = ImageFont.truetype(CJKB, 40 * SS)
+    fi = ImageFont.truetype(CJKB, 42 * SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        d.rounded_rectangle([0, 0, W*SS, H*SS], radius=26*SS, fill=PANEL+(255,), outline=LINE2+(255,), width=2*SS)
+        d.rounded_rectangle([36*SS, 34*SS, 36*SS+d.textlength(title, font=ft)+44*SS, 34*SS+66*SS],
+                            radius=33*SS, fill=CORAL+(255,))
+        d.text((58*SS, 67*SS), title, font=ft, fill=DARK+(255,), anchor="lm")
+        y0 = 150 * SS
+        for k, it in enumerate(items):
+            ap = _ease(min(max(t - 0.4 - k*0.55, 0) / 0.4, 1.0))
+            if ap <= 0:
+                continue
+            yy = y0 + k * 90 * SS + int((1-ap)*18*SS); a = int(255*ap)
+            d.polygon([(52*SS, yy-10*SS), (52*SS, yy+10*SS), (68*SS, yy)], fill=CORAL+(a,))  # ▸
+            d.text((92*SS, yy), it, font=fi, fill=WHT2+(a,), anchor="lm")
+        _save(im, W, H, out, i, "list")
+    return {"pattern": str(out / "list_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}

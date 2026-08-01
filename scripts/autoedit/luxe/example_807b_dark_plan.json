@@ -12,35 +12,36 @@
   "scenes": [
     {
       "anchor": "談了更多",
-      "anim": "title",
-      "dur": 3.6,
-      "params": {
-        "label": "RESULT",
-        "ghost": "More Deals",
-        "main": "更多合作案"
-      }
+      "anim": "chart",
+      "dur": 4.3
+    },
+    {
+      "anchor": "免費課程",
+      "anim": "free",
+      "dur": 2.0
+    },
+    {
+      "anchor": "英文版",
+      "anim": "words",
+      "dur": 2.2
+    },
+    {
+      "anchor": "Google",
+      "anim": "logos",
+      "dur": 2.5
     },
     {
       "anchor": "整理完",
-      "anim": "app_ui",
+      "anim": "list",
       "dur": 4.4,
       "params": {
-        "files": [
-          [
-            "ai-course/ch1.md",
-            86,
-            0
-          ],
-          [
-            "中文化/lesson-02.md",
-            52,
-            0
-          ],
-          [
-            "webpage/index.html",
-            31,
-            2
-          ]
+        "title": "課程內容",
+        "items": [
+          "認識你的 AI 新同事",
+          "AI 溝通密碼",
+          "Projects、Artifacts 與 Skills",
+          "工作流整合",
+          "深度加速器"
         ]
       }
     },

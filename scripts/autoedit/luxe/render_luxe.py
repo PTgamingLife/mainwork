@@ -42,9 +42,11 @@ import luxe_anim as L  # noqa: E402
 CJKB = "C:/Windows/Fonts/msjhbd.ttc"
 LAT = "C:/Windows/Fonts/arialbd.ttf"
 INK = (34, 30, 26); MUTE = (150, 142, 128); GOLD = (176, 138, 74)
-ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430, "app_ui": 170, "title": 220}
+ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430, "app_ui": 170,
+          "title": 220, "free": 210, "words": 150, "logos": 300, "list": 150}
 ANIM_FN = {"chart": "line_chart", "coin": "coin_rain", "swap": "text_swap",
-           "cta": "cta", "app_ui": "app_ui", "title": "title_card"}
+           "cta": "cta", "app_ui": "app_ui", "title": "title_card",
+           "free": "free_card", "words": "word_cloud", "logos": "logos", "list": "list_card"}
 # 主題:cream 米白奢華 / dark 深色珊瑚(Case #3)
 THEMES = {
     "cream": {"bg": "0xF3EEE5", "ink": (34, 30, 26), "stroke": (243, 238, 229), "border": (176, 138, 74)},
