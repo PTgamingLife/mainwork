@@ -302,3 +302,76 @@ def list_card(out, outdir=None, dur=4.4, fps=30, canvas=(940, 640), title="課�
             d.text((92*SS, yy), it, font=fi, fill=WHT2+(a,), anchor="lm")
         _save(im, W, H, out, i, "list")
     return {"pattern": str(out / "list_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+# ═════════ 扁平風人偶動畫(深色):被單字砸 / 交錢 ═════════
+def _person(d, cx, cy, r, color=WHT2, alpha=255):
+    col = tuple(color) + (alpha,)
+    d.ellipse([cx - r*.42, cy - r, cx + r*.42, cy - r*.16], fill=col)          # 頭
+    d.pieslice([cx - r*.72, cy - r*.1, cx + r*.72, cy + r*1.5], 180, 360, fill=col)  # 身
+
+
+def word_smash(out, outdir=None, dur=2.2, fps=30, canvas=(980, 680), words=None):
+    """一堆英文單字掉下來砸到一個小人,小人被砸到最後垂頭(放棄)。"""
+    words = words or ["English", "Prompt", "Token", "Context", "Skills",
+                      "API", "Model", "Agent", "Syntax", "Output", "Async", "Vector"]
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    import random; random.seed(5)
+    ws = [(random.uniform(.12, .88), random.uniform(0, .5), random.uniform(.9, 1.5),
+           random.uniform(.7, 1.2)) for _ in words]
+    px, py = W // 2 * SS, int(H * 0.80) * SS
+    for i in range(n):
+        t = (i + 1) / fps
+        p = t / (dur)
+        im, d = _cv(W, H)
+        hits = 0
+        for k, w in enumerate(words):
+            x0, delay, spd, sz = ws[k]
+            prog = max(0, (p - delay) * spd * 2.4)
+            if prog <= 0:
+                continue
+            land = min(prog, 1)
+            y = (0.05 + land * 0.70) * H * SS
+            if land >= 1:
+                hits += 1
+            f = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", int(34 * SS * sz))
+            col = CORAL if k % 3 == 0 else WHT2
+            d.text((x0 * W * SS, y), w, font=f, fill=col + (220,), anchor="mm")
+        # 小人:被砸越多越垂頭
+        droop = min(hits / 8, 1) * _ease(min(max(p-0.5,0)/0.5,1))
+        shake = int(math.sin(t * 40) * 6 * SS * (1 - droop)) if hits else 0
+        r = int(52 * SS * (1 - 0.15 * droop))
+        _person(d, px + shake, py + int(30 * SS * droop), r, color=WHT2)
+        if droop > 0.4:                                       # 放棄:頭上冒 …
+            fz = ImageFont.truetype(CJKB, 40 * SS)
+            d.text((px + 70*SS, py - 60*SS), "…", font=fz, fill=MUTE2 + (int(255*droop),), anchor="mm")
+        _save(im, W, H, out, i, "smash")
+    return {"pattern": str(out / "smash_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def handoff(out, outdir=None, dur=4.0, fps=30, canvas=(980, 560), coins=2):
+    """左邊小人把錢($)交給右邊小人(分享/交付)。"""
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    lx, rx, cy = int(W*0.22)*SS, int(W*0.78)*SS, int(H*0.52)*SS
+    r = 60 * SS
+    fc = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 40 * SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        bobL = int(math.sin(t*4) * 5 * SS); bobR = int(math.sin(t*4+1) * 5 * SS)
+        _person(d, lx, cy + bobL, r, color=WHT2)
+        _person(d, rx, cy + bobR, r, color=CORAL)
+        for c in range(coins):                                # 錢幣一枚枚飛過去
+            e = ((t / dur) * coins - c) % 1.0 if (t/dur)*coins >= c else -1
+            if e < 0:
+                continue
+            ee = _ease(e)
+            cx = lx + r + (rx - r - lx - r) * ee
+            cyy = cy - int(math.sin(ee * math.pi) * 90 * SS)
+            d.ellipse([cx-26*SS, cyy-26*SS, cx+26*SS, cyy+26*SS],
+                      fill=(214, 170, 92, 255), outline=(150, 116, 52, 255), width=4*SS)
+            d.text((cx, cyy), "$", font=fc, fill=(90, 68, 30, 255), anchor="mm")
+        _save(im, W, H, out, i, "hand")
+    return {"pattern": str(out / "hand_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}

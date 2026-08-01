@@ -31,6 +31,11 @@
       "dur": 2.5
     },
     {
+      "anchor": "放棄",
+      "anim": "smash",
+      "dur": 2.2
+    },
+    {
       "anchor": "整理完",
       "anim": "list",
       "dur": 4.4,
@@ -44,6 +49,11 @@
           "深度加速器"
         ]
       }
+    },
+    {
+      "anchor": "分享",
+      "anim": "handoff",
+      "dur": 4.0
     },
     {
       "anchor": "很多的才華",
@@ -65,11 +75,18 @@
     },
     {
       "anchor": "取代我們",
-      "anim": "swap",
+      "anim": "clip",
       "dur": 5.0,
       "params": {
-        "old": "AI 取代你",
-        "new": "AI 放大你"
+        "file": "C:/Users/nancy/Downloads/807b_edit/ai/alchemy.mp4"
+      }
+    },
+    {
+      "anchor": "透過",
+      "anim": "clip",
+      "dur": 3.6,
+      "params": {
+        "file": "C:/Users/nancy/Downloads/807b_edit/ai/keyboard.mp4"
       }
     },
     {

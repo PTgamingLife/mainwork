@@ -43,10 +43,12 @@ CJKB = "C:/Windows/Fonts/msjhbd.ttc"
 LAT = "C:/Windows/Fonts/arialbd.ttf"
 INK = (34, 30, 26); MUTE = (150, 142, 128); GOLD = (176, 138, 74)
 ANIM_Y = {"chart": 230, "coin": 190, "swap": 300, "cta": 430, "app_ui": 170,
-          "title": 220, "free": 210, "words": 150, "logos": 300, "list": 150}
+          "title": 220, "free": 210, "words": 150, "logos": 300, "list": 150,
+          "smash": 130, "handoff": 230}
 ANIM_FN = {"chart": "line_chart", "coin": "coin_rain", "swap": "text_swap",
            "cta": "cta", "app_ui": "app_ui", "title": "title_card",
-           "free": "free_card", "words": "word_cloud", "logos": "logos", "list": "list_card"}
+           "free": "free_card", "words": "word_cloud", "logos": "logos", "list": "list_card",
+           "smash": "word_smash", "handoff": "handoff"}
 # 主題:cream 米白奢華 / dark 深色珊瑚(Case #3)
 THEMES = {
     "cream": {"bg": "0xF3EEE5", "ink": (34, 30, 26), "stroke": (243, 238, 229), "border": (176, 138, 74)},
@@ -200,6 +202,13 @@ def render_luxe(plan_path: str, output: str) -> None:
         if not anim:
             continue
         s, e = float(bt["start"]), float(bt["end"])
+        if anim == "clip":     # AI 生成影片:疊進上方動畫區(縮成上半的直式卡)
+            inputs += ["-i", bt["params"]["file"]]
+            filt.append(f"[{idx}:v]scale=-2:760,setpts=PTS-STARTPTS+{s}/TB[an{idx}]")
+            filt.append(f"{base}[an{idx}]overlay=x=(W-w)/2:y=70:"
+                        f"enable='between(t,{s},{e})'[v{n}]")
+            base = f"[v{n}]"; n += 1; idx += 1
+            continue
         info = getattr(L, ANIM_FN[anim])(str(wk / f"a{bi}"),
                                          **{"dur": e - s, **bt.get("params", {})})
         inputs += ["-framerate", str(info["fps"]), "-i", info["pattern"]]
