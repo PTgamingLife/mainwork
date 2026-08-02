@@ -70,7 +70,14 @@ CONFIG = {
     "broll_orientation": "vertical",   # Reels 直式;橫式片改 "horizontal"
 
     # --- 素材庫重用 ---
-    "reuse_min_score": 0.28,    # 相似度門檻:過了就直接用舊素材,不再生成
+    # 門檻依實測校準(2026-08-02,線上庫):pg_trgm 對中文只抓「字面重疊」,
+    # 抓不到同義 —— 例:庫裡是「桌面特寫:筆電與雜亂桌面」,
+    #   「桌面上的筆電特寫」→ 0.158(字面重疊)
+    #   「拍我的電腦桌」    → 0.000(語意相同但用字不同,完全抓不到)
+    #   無關句子            → 0.000(噪聲底線乾淨,所以門檻可以壓低)
+    # 因此:中文 intent 只能當輔助,**tags 才是主力比對機制**(全中 +0.35)。
+    # 正確用法是 cut 之後先讓 Claude 補 tags,再跑 `match` 重新比對。
+    "reuse_min_score": 0.15,    # 相似度門檻:過了就直接用舊素材,不再生成
     "reuse_cost_est": 0.05,     # 單段生成成本估值(美元),只用來估「省了多少」
 
     # --- 字幕 ---
@@ -171,9 +178,11 @@ def stage_cut(video: str, outdir: Path) -> None:
     print(f"   逐字稿:   {outdir/'transcript.srt'}")
     print(f"   B-roll計畫: {outdir/'broll_plan.json'}  ({len(plan)} 段)")
     print(f"   素材庫沿用 {len(reused)} 段(約省 ${saved:.2f}),待生成 {len(todo)} 段")
-    print("\n下一步:把待生成那幾段的 intent 寫成 prompt(建議 3 個變體)→ 生成 → 填回 \"clip\",")
-    print("        再用 `library add` 登記進素材庫,下次同題材就不用再生。")
-    print("最後跑:  python auto_edit.py overlay", cut_mp4, outdir / "broll_plan.json", "-o 成品.mp4")
+    print("\n下一步(順序很重要):")
+    print("  1. 把待生成那幾段的 intent 改寫成畫面語意,並補上 tags —— 中文比對靠 tags,不補幾乎不會命中")
+    print(f"  2. python auto_edit.py match {outdir/'broll_plan.json'}   ← 補完再比一次,能省的在這裡")
+    print("  3. 剩下的才寫 prompt(建議 3 變體)去生成,填回 \"clip\",再 `library add` 入庫")
+    print("  4. python auto_edit.py overlay", cut_mp4, outdir / "broll_plan.json", "-o 成品.mp4")
 
 
 def build_broll_plan(segs: list[dict]) -> list[dict]:
@@ -206,23 +215,54 @@ def build_broll_plan(segs: list[dict]) -> list[dict]:
             "asset_id": "",            # ← 沿用素材庫時自動填,overlay 會回寫使用紀錄
             "reuse": None,             # ← 命中素材庫時的比對資訊
         }
-        hit = lib.best_match(
-            s["text"], tags=None,
-            orientation=CONFIG["broll_orientation"],
-            min_score=CONFIG["reuse_min_score"])
-        if hit:
-            item["clip"] = hit["file_path"]
-            item["asset_id"] = hit["id"]
-            item["prompt"] = hit.get("prompt", "")
-            item["reuse"] = {
-                "score": round(float(hit.get("score", 0)), 3),
-                "matched_intent": hit.get("intent") or hit.get("prompt", ""),
-                "use_count": hit.get("use_count", 0),
-            }
-            print(f"   ♻ {item['start']:.1f}s 沿用既有素材 "
-                  f"(分數 {item['reuse']['score']}): {Path(hit['file_path']).name}")
+        try_reuse(item)
         plan.append(item)
     return plan
+
+
+def try_reuse(item: dict) -> bool:
+    """查素材庫,夠像就把 clip / asset_id 填進這段計畫。回傳有沒有命中。
+
+    比對用 intent + tags:中文 intent 只抓得到字面重疊(見 CONFIG 註解),
+    tags 填了才是可靠的命中來源。
+    """
+    if item.get("clip"):
+        return False
+    query = item.get("intent") or item.get("based_on") or ""
+    hit = lib.best_match(
+        query, tags=item.get("tags") or None,
+        orientation=CONFIG["broll_orientation"],
+        min_score=CONFIG["reuse_min_score"])
+    if not hit:
+        return False
+    item["clip"] = hit["file_path"]
+    item["asset_id"] = hit["id"]
+    item["prompt"] = hit.get("prompt", "")
+    item["reuse"] = {
+        "score": round(float(hit.get("score", 0)), 3),
+        "matched_intent": hit.get("intent") or hit.get("prompt", ""),
+        "use_count": hit.get("use_count", 0),
+    }
+    print(f"   ♻ {item['start']:.1f}s 沿用既有素材 "
+          f"(分數 {item['reuse']['score']}): {Path(hit['file_path']).name}")
+    return True
+
+
+def stage_match(plan_path: str) -> None:
+    """補完 intent/tags 之後重跑比對 —— 這才是重用真正會命中的時機。"""
+    p = Path(plan_path)
+    plan = json.loads(p.read_text(encoding="utf-8"))
+    pending = [it for it in plan if not it.get("clip")]
+    if not pending:
+        print("每段都已有 clip,沒東西要比對。")
+        return
+    no_tags = sum(1 for it in pending if not it.get("tags"))
+    print(f"待比對 {len(pending)} 段,其中 {no_tags} 段沒填 tags(命中率會低很多)。")
+    hits = sum(1 for it in pending if try_reuse(it))
+    p.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+    saved = hits * CONFIG["reuse_cost_est"]
+    print(f"\n✅ 命中 {hits} 段(約省 ${saved:.2f}),仍需生成 {len(pending) - hits} 段。")
+    print(f"   已更新: {p}")
 
 
 # ─────────────────────────── STAGE 3: overlay ───────────────────────────
@@ -330,7 +370,9 @@ def stage_library_add(args) -> None:
 
 
 def stage_library_search(args) -> None:
-    hits = lib.search(args.query, orientation=args.orientation, limit=args.limit)
+    tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
+    hits = lib.search(args.query, tags=tags or None,
+                      orientation=args.orientation, limit=args.limit)
     if not hits:
         print("找不到可重用的素材。")
         return
@@ -375,9 +417,13 @@ def main() -> None:
 
     ls = lbs.add_parser("search", help="查有沒有可重用的素材")
     ls.add_argument("query")
+    ls.add_argument("--tags", default="", help="逗號分隔;中文查詢一定要帶 tags 才準")
     ls.add_argument("--orientation", default=CONFIG["broll_orientation"],
                     choices=["vertical", "horizontal"])
     ls.add_argument("--limit", type=int, default=5)
+
+    mt = sub.add_parser("match", help="補完 intent/tags 後重新比對素材庫")
+    mt.add_argument("plan")
 
     args = ap.parse_args()
     if args.cmd == "cut":
@@ -386,6 +432,8 @@ def main() -> None:
         stage_overlay(args.cut_mp4, args.plan, args.output)
     elif args.cmd == "enhance":
         stage_enhance(args.video, args.output)
+    elif args.cmd == "match":
+        stage_match(args.plan)
     elif args.cmd == "library":
         (stage_library_add if args.libcmd == "add" else stage_library_search)(args)
 
