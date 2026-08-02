@@ -1,7 +1,7 @@
 {
   "video": "C:/Users/nancy/Downloads/807b_edit/src.mp4",
   "duration": 46.54,
-  "split_start": 4.3,
+  "split_start": 1.3,
   "face_bias": 0.3,
   "transcript": "C:/Users/nancy/Downloads/807b_edit/plan/segments.json",
   "text_fixes": {
@@ -10,6 +10,14 @@
   },
   "_comment": "scenes = 用原片字句當節點:anchor 為該句的一段文字,動畫起點自動對齊那句在原片的時間;dur 為動畫時長。",
   "scenes": [
+    {
+      "start": 1.3,
+      "anim": "clip",
+      "dur": 3.0,
+      "params": {
+        "file": "C:/Users/nancy/Downloads/807b_edit/ai/slap.mp4"
+      }
+    },
     {
       "anchor": "談了更多",
       "anim": "chart",
