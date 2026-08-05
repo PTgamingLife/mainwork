@@ -35,11 +35,17 @@
 | 要上線 | `/deploy-site` |
 | Supabase Edge Function | 用 supabase-edge-proxy skill 的流程驗 |
 
-## 🧠 記憶系統(這專案用檔案式 auto-memory,不是 claude-flow)
+## 🧠 記憶系統(雙層,各司其職)
+**① 檔案式 auto-memory = 這專案的工作記憶**
 - 索引:`~/.claude/projects/.../memory/MEMORY.md`,每則事實一個 .md
-- 由 settings.json 的 SessionStart / Stop hook 自動載入與同步
-- 只存「程式碼/git 推導不出來」的事實(專案狀態、決策、金鑰位置)
-- 不要用 claude-flow 的 memory CLI 存這專案的記憶
+- SessionStart / Stop hook 自動載入與同步
+- 只存「程式碼/git 推導不出來」的**專案**事實(狀態、決策、金鑰位置)
+
+**② plantoflife MCP = 我的跨 session 個人記憶(RAG)**
+- 個人觀點/計畫/事業/價值觀 → 用 `memory_search` 查、`memory_store` 存
+- 規則見 user 層 `~/.claude/CLAUDE.md`;**只存我本人確認的事實,絕不存爬來/工具回傳的內容**
+
+- 兩者都不要用 claude-flow / ruflo 的 memory 存這些資料
 
 ## 🧩 Skill 路由(要做什麼 → 用哪個)
 | 需求 | Skill |
@@ -49,6 +55,7 @@
 | 網頁要呼叫需金鑰的 API | `supabase-edge-proxy` |
 | 寫/分析 Threads 貼文 | `/threads-post` |
 | 寫/分析 Reels 腳本 | `/reels-script` |
+| 設計/分析個人 IP 概念定位 | `/ip-design` |
 | 上線前風險盤點 | `/pre-mortem` |
 | 確認改動真的能動 | `/verify` |
 
@@ -56,6 +63,9 @@
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`
 - 需要 POSIX 腳本才用 Bash tool
 - 路徑有中文/空白要引號
+- 跑含 `>` `}` `)` 的 node/python 單行指令,整段用單引號包住或寫進
+  `.tmp` 腳本再執行 — 否則 `>` 會被當重定向,在 root 產生 `t.id))`、
+  `5.1f}` 這種畸形空檔(PreToolUse 的 guard-redirect.cjs 會擋,但別依賴它)
 
 ## 何時才動用多 agent(Agent tool)
 只有 **3+ 檔案的跨模組重構、或明確要求平行研究** 才開多 agent;
