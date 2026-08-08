@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./gsap.min.js"></script>
+<style>
+  :root{ --bg:#121113; --coral:#D97757; --gold:#D6AA5C; --ink:#F5F2EE; --mute:#8C8E90; }
+  html,body{margin:0;padding:0;background:var(--bg);width:1080px;height:1920px;overflow:hidden;
+            font-family:"Microsoft JhengHei","Segoe UI",sans-serif;}
+  #stage{position:relative;width:1080px;height:1920px;}
+  .kicker{position:absolute;left:90px;top:150px;color:var(--coral);font-weight:700;
+          font-size:34px;letter-spacing:8px;}
+  .rule{position:absolute;left:90px;top:210px;width:260px;height:3px;background:var(--coral);transform-origin:left;}
+  h1{position:absolute;left:90px;top:250px;margin:0;color:var(--ink);font-weight:800;font-size:96px;}
+  h1 .g{color:var(--coral);}
+  svg{position:absolute;left:90px;top:470px;}
+  .grid{stroke:#2b2a2f;stroke-width:2;}
+  .area{fill:var(--coral);opacity:.16;}
+  .line{fill:none;stroke:var(--coral);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;}
+  .dot{fill:var(--bg);stroke:var(--coral);stroke-width:6;}
+  .end{fill:var(--coral);}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="kicker">RESULT</div>
+  <div class="rule" id="rule"></div>
+  <h1>接案量 <span class="g">一路向上</span></h1>
+  <svg width="900" height="430" viewBox="0 0 900 430">
+    <line class="grid" x1="0" y1="107" x2="900" y2="107"/>
+    <line class="grid" x1="0" y1="215" x2="900" y2="215"/>
+    <line class="grid" x1="0" y1="323" x2="900" y2="323"/>
+    <line class="grid" x1="0" y1="430" x2="900" y2="430"/>
+    <path class="area" id="area" d="M18,370 L180,301 L342,327 L504,198 L666,138 L864,40 L864,430 L18,430 Z"/>
+    <path class="line" id="line" d="M18,370 L180,301 L342,327 L504,198 L666,138 L864,40"/>
+    <g id="dots">
+      <circle class="dot" cx="18" cy="370" r="9"/>
+      <circle class="dot" cx="180" cy="301" r="9"/>
+      <circle class="dot" cx="342" cy="327" r="9"/>
+      <circle class="dot" cx="504" cy="198" r="9"/>
+      <circle class="dot" cx="666" cy="138" r="9"/>
+    </g>
+    <circle class="end" id="end" cx="864" cy="40" r="16"/>
+    <polygon class="end" id="arrow" points="898,-6 878,10 904,18"/>
+  </svg>
+</div>
+<script>
+  const line = document.getElementById('line');
+  const L = line.getTotalLength();
+  line.style.strokeDasharray = L;
+  line.style.strokeDashoffset = L;
+  const tl = gsap.timeline({paused:true});
+  tl.from("#rule",{scaleX:0,duration:.5,ease:"power2.out"},0)
+    .from("h1",{y:30,opacity:0,duration:.6,ease:"power3.out"},.1)
+    .to(line,{strokeDashoffset:0,duration:1.8,ease:"power1.inOut"},.4)
+    .from("#area",{opacity:0,duration:1.2},.6)
+    .from("#dots circle",{scale:0,transformOrigin:"center",duration:.35,stagger:.28,ease:"back.out(2)"},.5)
+    .from("#end",{scale:0,transformOrigin:"center",duration:.4,ease:"back.out(2.5)"},2.0)
+    .from("#arrow",{scale:0,opacity:0,transformOrigin:"center",duration:.35,ease:"back.out(2.5)"},2.1);
+  window.__dur = tl.duration();
+  window.seek = (t)=>{ tl.pause(); tl.time(Math.min(t, tl.duration())); };
+  window.seek(0);
+</script>
+</body>
+</html>

@@ -90,6 +90,7 @@
 - 好處:整個 web 動畫生態(GSAP 緩動、**Lottie 免費動畫庫**、SVG、WebGL 轉場),質感跳專業級、程式更少。
 - **保留不變**:字幕精準對位、講者上下分割、Supabase 24h、學習迴圈、DIRECTOR 分鏡。只換「動畫怎麼畫」那層。
 - 遷移方式:PoC 先用 HTML+GSAP 寫一個場景(折線圖/標題卡)→ Playwright 截圖 → 比 PIL 版 → 逐步替換。
+- ✅ **已 PoC 通過 + 引擎建好**:`luxe/luxe_html.py`(title/list/counter/swap 4 場景,GSAP+Playwright 透明 PNG)、`luxe/examples/`(chart PoC)。下一步:render_luxe 的對映 anim 切到 luxe_html,舊 PIL 當 fallback。
 
 ### B.【立即採用】卡片密度 / 節奏規則(決定放幾個動畫)
 | 片長 | 每卡秒數 |
