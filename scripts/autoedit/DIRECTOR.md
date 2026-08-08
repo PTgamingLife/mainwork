@@ -76,3 +76,60 @@
 | 版本 | 日期 | 變更 |
 |------|------|------|
 | v1.0 | 2026-08-02 | 導入「AI-2D 動畫導演」框架,改寫成對映本工具動畫庫的導演層;分鏡表 → edit_plan 流程 |
+
+---
+
+## 六、借鑑 HyperFrames(heygen/hyperframes;逐段採用決定)
+
+> HyperFrames = 「寫 HTML → 無頭 Chrome 逐幀截圖 → FFmpeg 出 MP4」的 agent 影片框架。
+> 跟我們同目標但更成熟。以下是逐段判斷後**要吸收進本模型**的部分。
+
+### A.【大升級·roadmap】動畫作者層:PIL → HTML/CSS/GSAP/Lottie + Playwright
+- 現況:luxe_anim 用 PIL 逐幀手畫(受限、費工)。
+- 目標:場景改用 **HTML/CSS + GSAP/Lottie** 寫,用 **Playwright(無頭 Chrome)逐幀截圖** + 現有 FFmpeg 合成。
+- 好處:整個 web 動畫生態(GSAP 緩動、**Lottie 免費動畫庫**、SVG、WebGL 轉場),質感跳專業級、程式更少。
+- **保留不變**:字幕精準對位、講者上下分割、Supabase 24h、學習迴圈、DIRECTOR 分鏡。只換「動畫怎麼畫」那層。
+- 遷移方式:PoC 先用 HTML+GSAP 寫一個場景(折線圖/標題卡)→ Playwright 截圖 → 比 PIL 版 → 逐步替換。
+
+### B.【立即採用】卡片密度 / 節奏規則(決定放幾個動畫)
+| 片長 | 每卡秒數 |
+|---|---|
+| <60s | 6–8s |
+| 60s–3min | 8–12s |
+| 3–10min | 12–20s |
+- 密度倍率:高(清單/數據/短促)×0.7、中 ×1.0、長(敘事)×1.5;**最少 5 個動畫卡**。
+
+### C.【採用】版面策略(擴充我們的 stack)
+| 版面 | 講者位置 | 卡片區 | 用途 |
+|---|---|---|---|
+| split | 右半 | 側欄 | 講者+數據並排 |
+| **stack**(我們現用) | 上/下半 | lower-third | 講者+摘要 |
+| pip | 角落小窗 | 全屏 | 內容為主、講者次要 |
+| overlay | 全屏 | 疊玻璃層 | 電影感 |
+- 版面切換用 0.5–0.7s ease 過場。
+
+### D.【採用】storyboard 卡片 schema(擴充我們的 scenes)
+每個鏡加:`zone`(fullscreen/lower-third/side-panel/video-overlay)、`intent`(自然語言描述,給設計用)、`accentIndex`(主題色索引)、`contentHints`(kicker/title/detail/quote/data)。
+
+### E.【採用】直式尺寸基準(1080×1920,比橫式 ×1.3)
+Hero 標題 88–132px、內文 30–40px、左右留白 24–36px。
+
+### F.【採用】主題用色彩變數
+`--accent-N` / `--bg` / `--text`,主題可攜(對映我們 cream/dark/pixel);HTML 化後直接用。
+
+### G.【採用】BRIEF 鎖定 + VO_MODE
+專案開頭鎖死決策(主題/受眾/theme/版面/語音/VO_MODE=逐字 or 重構),寫進 plan 頂層,**半途不再反覆問**。
+
+### H.【採用·補我們缺口】全動畫(pixel/faceless)需 TTS 旁白
+- pixel 全動畫模式沒有真人聲 → 需 **TTS 生成旁白**(Higgsfield audio / 離線 TTS),再 **sync-durations** 把每個場景時長對齊旁白。
+- 靜音片可省 SCRIPT,BGM 由 storyboard 的 music 欄決定。
+
+### I.【採用·原則】
+- **動畫全程發展、不要 hook 後就凍結**(配合旁白逐步 reveal)。
+- **value-before-evidence**:先立教學點,再鋪陳(呼應 reels 模型)。
+- 字幕:短句、關鍵詞、能獨立理解、不擋臉(已內建)。
+
+### 版本
+| 版本 | 日期 | 變更 |
+|------|------|------|
+| v1.1 | 2026-08-02 | 逐段吸收 HyperFrames:動畫層 HTML/GSAP 化(roadmap)、密度節奏表、版面策略、storyboard schema、直式尺寸、色彩變數、BRIEF/VO_MODE、全動畫 TTS |

@@ -5,7 +5,7 @@
 > ❌ 已移除「自動剪輯(auto-cut 砍片段/砍空白)」——影片整段保留,只做加工。
 > 程式在同目錄 `scripts/autoedit/` + CLI `scripts/ae.py`。
 
-**版本:v2.3**(2026-07-31 luxe 米白奢華上下分割成為正式 Mode B)
+**版本:v2.4**(2026-07-31 luxe 米白奢華上下分割成為正式 Mode B)
 **平台**:Windows + Python 3.14;ffmpeg 由 winget 安裝,程式自動偵測路徑。
 
 ---
@@ -159,6 +159,8 @@
 - [x] **主題/模式系統**:Mode A 黃綠疊圖 / Mode B 米白奢華分割(已可選);未來新風格各成一 mode。
 - [ ] **一鍵自動模式**:plan 讀逐字稿,依「已學到的編輯原則」自動產出每句 overlay 草稿,人只微調。
 - [ ] 之後升級本機網頁 UI(打勾選句、預覽、拖拉貼圖)。
+- [ ] **【借鑑 HyperFrames·大升級】動畫層 PIL → HTML/CSS/GSAP/Lottie + Playwright 無頭截圖**;保留字幕/講者/學習迴圈,只換動畫作者層。詳見 DIRECTOR.md 第六章。
+- [ ] **【HyperFrames】pixel 全動畫加 TTS 旁白 + 場景時長對齊**;採密度/節奏表定動畫數;版面補 pip/overlay;storyboard schema 加 zone/intent。
 
 ---
 
@@ -171,3 +173,4 @@
 | v2.1 | 2026-07-31 | 納入 Case #2(@growithfyn 動畫炫技示範):上下分割版面、黑紅白視覺系統、清單卡/華夫格1%/計數器+虛線弧等新動畫型,寫入原則 8–11 + roadmap |
 | v2.2 | 2026-07-31 | luxe 米白奢華上下分割正式化為 Mode B(render_luxe.py + luxe_anim.py):第一句全屏、之後分割、chart/coin/swap/cta 語意動畫、雙語字幕、plan 驅動可重複用 |
 | v2.3 | 2026-08-01 | 納入 Case #3(最高階對標):全螢幕動畫卡↔全屏講者交替、動態字標題卡、擬真App-UI mockup、品牌吉祥物/珊瑚色視覺識別 → 未來 Mode C |
+| v2.4 | 2026-08-02 | 借鑑 heygen/HyperFrames:DIRECTOR 第六章逐段採用(HTML/GSAP動畫層 roadmap、密度節奏、版面策略、storyboard schema、直式尺寸、BRIEF/VO_MODE、全動畫TTS) |
