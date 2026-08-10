@@ -26,7 +26,10 @@ CONFIG["sub_style"] = ("Fontname=WenQuanYi Zen Hei,Fontsize=15,Bold=1,Outline=1.
                        "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000")
 
 plan_path, output = sys.argv[1], sys.argv[2]
+nosub = "--nosub" in sys.argv[3:]        # 原片已有燒死字幕時,不要再疊一層
 plan = json.loads(Path(plan_path).read_text(encoding="utf-8"))
+if nosub:
+    plan["burn_subtitles"] = False
 kept = []
 for ov in plan.get("overlays", []):
     if ov.get("type") == "broll" and not Path(ov["clip"]).exists():
