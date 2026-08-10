@@ -5,7 +5,7 @@
 > ❌ 已移除「自動剪輯(auto-cut 砍片段/砍空白)」——影片整段保留,只做加工。
 > 程式在同目錄 `scripts/autoedit/` + CLI `scripts/ae.py`。
 
-**版本:v2.5**(2026-08-10 人臉自動置中 + 燒死字幕漸層 + 使用者掌控斷句)
+**版本:v2.6**(2026-08-10 B-roll 生成納入三道門檻 + 成本閘)
 **平台**:Windows + Python 3.14;ffmpeg 由 winget 安裝,程式自動偵測路徑。
 
 ---
@@ -72,10 +72,23 @@
 
 ## 四、B-roll 工作流(Higgsfield MCP)
 
-1. 依句子語意寫 prompt → `generate_video`(`kling3_0_turbo`, `9:16`, 5秒 ≈ 7.5 點;`get_cost:true` 先估)。
-2. 非同步 → `job_display` 取 `rawUrl` → curl 下載。
-3. 路徑填 `edit_plan.overlays` 的 `broll.clip` → render。
+> 🚦 **一律走 `stage-ai-video-production` skill 的三道門檻**(B-roll 快線版),
+> 因為 `generate_video` 一送出就燒點數 = 不可逆支出。門檻不能跳,只能壓縮產出規格。
+
+1. **G1 一句話分鏡**:哪句字幕 + 這段要演出什麼語意 + 起訖秒數 → 等我點頭。
+   格式:`S01 | 字幕「…」 | 68.0–74.0s | 語意:… | 9:16`
+2. **G2 提示詞 + 成本**:寫出動作因果順序的影片提示詞(不是抽象形容詞),
+   `get_cost:true` 先估點數,列出總點數與上限 → 等我點頭。**未過 G2 一次都不准送。**
+3. **G3 生成 + 驗收**:`generate_video`(`kling3_0_turbo`, `9:16`, 5秒 ≈ 7.5 點)→
+   非同步 `job_display` 取 `rawUrl` → curl 下載 → 過 **B-roll 驗收 6 項**
+   (連續性/構圖安全區/動作因果/無意外文字/首尾可銜接/秒數有餘裕)。
+   單鏡重抽上限 2 次,第 3 次前先停下來講原因。
+4. 驗收過的才填 `edit_plan.overlays` 的 `broll.clip` → render。
+
 - B-roll = **全屏切換**(蓋掉講者);貼圖 = **疊上方**(講者可見)。B-roll 期間仍保留字幕/貼圖/CTA。
+- **Logo / 標題 / 精確文字 / 數字一律不交給影片模型**,後期用 `stickers.py` 疊(AI 生的假字最傷質感)。
+- 生成秒數要比 `overlays` 的 `end-start` 長一點,留裁切餘裕;檔名用 ASCII(`S01_v02.mp4`)。
+- 每次生成記進 `docs/video-ledger/<PROJECT>.md`:日期/鏡號/模型/job_id/版本/秒數/點數/是否採用/失敗原因。
 
 ---
 
@@ -184,4 +197,5 @@
 | v2.2 | 2026-07-31 | luxe 米白奢華上下分割正式化為 Mode B(render_luxe.py + luxe_anim.py):第一句全屏、之後分割、chart/coin/swap/cta 語意動畫、雙語字幕、plan 驅動可重複用 |
 | v2.3 | 2026-08-01 | 納入 Case #3(最高階對標):全螢幕動畫卡↔全屏講者交替、動態字標題卡、擬真App-UI mockup、品牌吉祥物/珊瑚色視覺識別 → 未來 Mode C |
 | v2.4 | 2026-08-02 | 借鑑 heygen/HyperFrames:DIRECTOR 第六章逐段採用(HTML/GSAP動畫層 roadmap、密度節奏、版面策略、storyboard schema、直式尺寸、BRIEF/VO_MODE、全動畫TTS) |
+| v2.6 | 2026-08-10 | **B-roll 生成納入 `stage-ai-video-production` 三道門檻**(G1 一句話分鏡 / G2 提示詞+成本估 / G3 生成+6 項驗收):未過 G2 不得送 `generate_video`、重抽上限 2 次、精確文字一律後期疊、生成紀錄進 `docs/video-ledger/` |
 | v2.5 | 2026-08-10 | Case #5(807c 實作淬煉):**人臉自動置中**(YuNet `face_center`)、**燒死字幕底部漸層**(`card_fade`)、**使用者掌控斷句**(`\|` 標記+`char_timeline`+`resegment.py` 對回時間)、補回 `clone`/`flow` 動畫並註冊 `counter`/`ring`;寫入原則 12–14、踩坑(OpenCV 中文路徑/render 完成偵測/cv2 5.0 無 Haar) |

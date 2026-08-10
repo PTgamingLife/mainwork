@@ -18,6 +18,8 @@
 以下屬對外/不可逆動作,**先說明要做什麼、等我明確同意再執行**:
 - 部署上線:`/deploy-site`、GitHub Pages 發佈、push / force push
 - 發佈內容:Threads 貼文、Reels 上片、LINE 推播
+- 燒點數:Higgsfield `generate_video`/`generate_image`/`upscale_*`
+  (先 `get_cost:true` 估、寫清楚幾點,且必須先過 `stage-ai-video-production` 的 G2)
 - 資料庫:Supabase migration、execute_sql(尤其 DROP/DELETE/UPDATE)
 - 刪除檔案、清空資料、覆蓋既有作品
 
@@ -55,6 +57,8 @@
 | 網頁要呼叫需金鑰的 API | `supabase-edge-proxy` |
 | 寫/分析 Threads 貼文 | `/threads-post` |
 | 寫/分析 Reels 腳本 | `/reels-script` |
+| AI 生成影片畫面(分鏡→關鍵幀→生成) | `stage-ai-video-production` |
+| 口播影片後製(貼圖/B-roll/調色) | `scripts/autoedit/MODEL.md` + `scripts/ae.py` |
 | 設計/分析個人 IP 概念定位 | `/ip-design` |
 | 上線前風險盤點 | `/pre-mortem` |
 | 確認改動真的能動 | `/verify` |
