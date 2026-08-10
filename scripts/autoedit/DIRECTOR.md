@@ -57,11 +57,15 @@
 
 分鏡表 → 直接寫成 luxe plan:
 - 每個「有動畫的鏡」→ 一個 `scenes[]`:`{"anchor":"該句一段文字","anim":"對映動畫","dur":秒,"params":{…}}`
-- 字幕 → `subtitles[]`(逐句、修口誤)。
+  - `anchor` 找「原片精準轉錄」中**第一個**含該字串的句子當起點 → 錨點字要夠獨特,否則會抓到後面同字的句子(807c「微乎其微」抓到 46s 而非 31s)。
+- 字幕 → `subtitles[]`(逐句、修口誤);或 `transcript` 指向 segments.json 自動吃。
 - theme:`cream` / `dark`;`split_start`:第一句全屏到幾秒。
-- AI clip 鏡:先用「生成提示詞」跑 Higgsfield → 下載 → `{"anim":"clip","params":{"file":路徑}}`。
+- **講者卡(v2.5 新)**:`face_center`(預設 true,YuNet 自動人臉置中);`card_fade`(true=卡片底部漸層蓋來源燒死字幕);`burned_sub_top`(燒字位置,預設 0.86,越小裁越多)。
+- AI clip 鏡:先用「生成提示詞」跑 Higgsfield → 下載(**ASCII 檔名**)→ `{"anim":"clip","params":{"file":路徑}}`。
+- **使用者掌控斷句流程(v2.5 新)**:給「連續全文 + `\|` 標斷句」讓使用者移動/增刪 `\|`、改字 → `resegment.py <斷句檔> <char_timeline.json>` 對回原片時間 → 塞進 `subtitles[]`。
 
 → `python scripts/autoedit/luxe/render_luxe.py plan.json 成品.mp4`
+（成品檔名用 ASCII;render 放背景、監看 python 收工再驗解碼 —— 見 MODEL.md 踩坑)
 
 ---
 
@@ -76,6 +80,7 @@
 | 版本 | 日期 | 變更 |
 |------|------|------|
 | v1.0 | 2026-08-02 | 導入「AI-2D 動畫導演」框架,改寫成對映本工具動畫庫的導演層;分鏡表 → edit_plan 流程 |
+| v1.2 | 2026-08-10 | 第四章補 v2.5 能力:講者卡 `face_center`/`card_fade`/`burned_sub_top`、使用者掌控斷句(`\|`+resegment.py)、錨點取第一個相符句的注意事項、ASCII 檔名/背景 render 提醒 |
 
 ---
 

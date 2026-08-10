@@ -5,7 +5,7 @@
 > ❌ 已移除「自動剪輯(auto-cut 砍片段/砍空白)」——影片整段保留,只做加工。
 > 程式在同目錄 `scripts/autoedit/` + CLI `scripts/ae.py`。
 
-**版本:v2.4**(2026-07-31 luxe 米白奢華上下分割成為正式 Mode B)
+**版本:v2.5**(2026-08-10 人臉自動置中 + 燒死字幕漸層 + 使用者掌控斷句)
 **平台**:Windows + Python 3.14;ffmpeg 由 winget 安裝,程式自動偵測路徑。
 
 ---
@@ -109,6 +109,9 @@
 9. **選一套內聚視覺系統**:黃綠活潑 or 黑+紅+白 premium,別亂用色。(Case #2)
 10. **講道理用清單卡**:痛點=紅✗清單、功能=紅▶清單,紅膠囊當標題。(Case #2)
 11. **痛點→解法→願景→CTA** 的敘事弧,配「數字計數器+虛線弧、華夫格1%、大型動態字、假App-UI mockup」等動畫。(Case #2)
+12. **講者小窗要「人臉置中 + 帶肩」**:用 YuNet(cv2 5.0)自動偵測臉,算「卡片比例、臉置於 ~42% 高度」的裁切窗(`face_center`,預設開;偵不到臉 fallback 固定 bias)。固定 bias 會因人物在畫面的位置不同而歪 → 一律自動偵測。(807c)
+13. **來源自帶「燒死字幕」時,別硬裁**:字幕常緊貼臉下方,裁掉就得過度放大→糊+切頭。改用**卡片底部柔化漸層**蓋掉(`card_fade`,漸層淡入到卡片底色),構圖維持舒服;我的乾淨字幕在卡片上方不受影響。最乾淨仍是「請對方給無燒字幕的原檔」。(807c)
+14. **字幕斷句由使用者掌控**:whisper 依停頓切的卡常斷在詞中間。給使用者「連續全文 + `\|` 標斷句」讓他移動/增刪 `\|`、改字;用 `char_timeline`(每字→時間)+ `resegment.py` 對齊回原片時間(刪英文/合併/改字都能對)。(807c)
 
 ---
 
@@ -145,6 +148,11 @@
 - `smartblur`(磨皮)在 1080p 極慢(~0.05x);只要「暖膚/降噪」就關掉它,留 hqdn3d+colortemperature+eq(可在呼叫前設 `CONFIG['enh_skin']=''`)。
 - python subprocess 不吃 MSYS `/c/...` 路徑,要用 `C:/...`;bash 則可用 `/c/...`。
 - 含中文的路徑在 bash tool 有時亂碼找不到檔 → 改用 PowerShell 或絕對路徑。
+- **OpenCV(cv2)在 Windows 讀不了含中文的路徑**(專案在「桌面」下):模型檔要先複製到 ASCII 暫存再 `FaceDetectorYN_create`;讀影格用 `cv2.imdecode(np.fromfile(path))` 繞過。**成品輸出檔名也用 ASCII**(如 `807c_final.mp4`),否則 bash 驗證階段會 Illegal byte sequence。
+- **render 完成偵測別亂猜**:ffmpeg 邊寫邊產生半成品檔 → 「檔案一出現就當完成」會抓到壞檔。正解=等 **render 的 python 程序結束**(PowerShell 輪詢),再 `ffmpeg -v error -f null -` 驗完整解碼。最終合成有 ~70+ overlay(動畫+clip+逐句字幕)時 ffmpeg 很慢,整支 106s 約 13 分鐘,**放背景 + 監看 python 收工**,別用前景(Bash 10 分鐘 timeout 會砍掉)。
+- 「Conversion failed!」出現但成品 full-duration 可完整解碼 → 多半是某支 clip 尾端 EOF 的良性報錯,檔案可用(先 `-f null -` 驗一次)。
+- **cv2 5.0 沒有 `CascadeClassifier`**(Haar 移除),改用 `FaceDetectorYN`(需 `assets/yunet.onnx`,~230KB,OpenCV zoo)。
+- OneDrive 刪檔重建後,`luxe_anim` 的 `clone`/`flow` 曾遺失、`counter`/`ring` 改名為 `make_counter2`/`make_progress_ring` → `render_luxe.ANIM_FN`/`ANIM_Y` 要對齊註冊,否則 render 抛 KeyError。
 
 ---
 
@@ -157,6 +165,8 @@
 - [x] **【已做:Mode B】上下分割版面模式**:動畫黑畫布(上)+ 講者小視窗(下)+ 雙語字幕在中線。
 - [ ] **【Case #2】新動畫型**:清單卡(紅✗/▶)、華夫格1%點陣、計數器+虛線弧、大型動態字、假App-UI mockup、月曆UI。
 - [x] **主題/模式系統**:Mode A 黃綠疊圖 / Mode B 米白奢華分割(已可選);未來新風格各成一 mode。
+- [x] **講者卡人臉自動置中**(YuNet)+ **燒死字幕底部漸層**(`face_center`/`card_fade`,render_luxe)。
+- [x] **使用者掌控斷句**:`逐字稿_斷句版`(`\|` 標斷句)+ `char_timeline` + `resegment.py` 對回時間 → 塞 plan['subtitles']。
 - [ ] **一鍵自動模式**:plan 讀逐字稿,依「已學到的編輯原則」自動產出每句 overlay 草稿,人只微調。
 - [ ] 之後升級本機網頁 UI(打勾選句、預覽、拖拉貼圖)。
 - [ ] **【借鑑 HyperFrames·大升級】動畫層 PIL → HTML/CSS/GSAP/Lottie + Playwright 無頭截圖**;保留字幕/講者/學習迴圈,只換動畫作者層。詳見 DIRECTOR.md 第六章。
@@ -174,3 +184,4 @@
 | v2.2 | 2026-07-31 | luxe 米白奢華上下分割正式化為 Mode B(render_luxe.py + luxe_anim.py):第一句全屏、之後分割、chart/coin/swap/cta 語意動畫、雙語字幕、plan 驅動可重複用 |
 | v2.3 | 2026-08-01 | 納入 Case #3(最高階對標):全螢幕動畫卡↔全屏講者交替、動態字標題卡、擬真App-UI mockup、品牌吉祥物/珊瑚色視覺識別 → 未來 Mode C |
 | v2.4 | 2026-08-02 | 借鑑 heygen/HyperFrames:DIRECTOR 第六章逐段採用(HTML/GSAP動畫層 roadmap、密度節奏、版面策略、storyboard schema、直式尺寸、BRIEF/VO_MODE、全動畫TTS) |
+| v2.5 | 2026-08-10 | Case #5(807c 實作淬煉):**人臉自動置中**(YuNet `face_center`)、**燒死字幕底部漸層**(`card_fade`)、**使用者掌控斷句**(`\|` 標記+`char_timeline`+`resegment.py` 對回時間)、補回 `clone`/`flow` 動畫並註冊 `counter`/`ring`;寫入原則 12–14、踩坑(OpenCV 中文路徑/render 完成偵測/cv2 5.0 無 Haar) |

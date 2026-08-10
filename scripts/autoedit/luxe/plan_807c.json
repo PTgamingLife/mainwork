@@ -1,0 +1,24 @@
+{
+  "video": "C:/Users/nancy/Downloads/807c_edit/src.mp4",
+  "duration": 106.53,
+  "split_start": 2.0,
+  "face_center": true,
+  "card_fade": true,
+  "theme": "dark",
+  "transcript": "C:/Users/nancy/Downloads/807c_edit/plan/segments.json",
+  "text_fixes": { "counter": "Claude", "Cloud": "Claude" },
+  "scenes": [
+    { "start": 2.0, "anim": "title", "dur": 13.0, "params": { "label": "THE REAL CURRENCY", "ghost": "Attention", "main": "注意力 是人生貨幣" } },
+    { "anchor": "90", "anim": "counter", "dur": 3.0, "params": { "from": 0, "to": 90, "label": "% 沒改變" } },
+    { "anchor": "朋友", "anim": "clone", "dur": 5.0, "params": { "clones": 3, "label": "很多同好" } },
+    { "anchor": "微乎其微", "anim": "swap", "dur": 4.0, "params": { "old": "學了很多", "new": "改變微乎其微" } },
+    { "anchor": "資訊", "anim": "clip", "dur": 6.0, "params": { "file": "C:/Users/nancy/Downloads/807c_edit/ai/info.mp4" } },
+    { "anchor": "滑手機", "anim": "clip", "dur": 5.0, "params": { "file": "C:/Users/nancy/Downloads/807c_edit/ai/phone.mp4" } },
+    { "anchor": "10分鐘", "anim": "swap", "dur": 5.0, "params": { "old": "沒人每天帶你", "new": "缺一個教練" } },
+    { "anchor": "更好的工具", "anim": "flow", "dur": 7.0, "params": { "items": 4, "label": "經驗灌進 AI 當教練" } },
+    { "anchor": "365天", "anim": "chart", "dur": 3.0, "params": {} },
+    { "anchor": "37倍", "anim": "counter", "dur": 4.0, "params": { "from": 1, "to": 37, "label": "倍 · 每天+1%" } },
+    { "anchor": "自動化", "anim": "list", "dur": 5.0, "params": { "title": "三個月後", "items": ["AI 動畫", "AI 自動化", "專屬 APP"] } },
+    { "anchor": "留言", "anim": "cta", "dur": 3.0, "params": { "text": "留言「自我成長」" } }
+  ]
+}

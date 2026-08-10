@@ -375,3 +375,100 @@ def handoff(out, outdir=None, dur=4.0, fps=30, canvas=(980, 560), coins=2):
             d.text((cx, cyy), "$", font=fc, fill=(90, 68, 30, 255), anchor="mm")
         _save(im, W, H, out, i, "hand")
     return {"pattern": str(out / "hand_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+# ═════════ 補:圓環進度(N%)/ 數字飆升(深色珊瑚)═════════
+def make_progress_ring(out, outdir=None, dur=3.5, fps=30, canvas=(640, 640), pct=90, label=""):
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    cx, cy, r = W*SS//2, H*SS//2, int(min(W, H)*0.36)*SS
+    for i in range(n):
+        p = _ease((i+1)/n); im, d = _cv(W, H)
+        d.arc([cx-r, cy-r, cx+r, cy+r], 0, 360, fill=(255, 255, 255, 45), width=16*SS)
+        if p > .01:
+            d.arc([cx-r, cy-r, cx+r, cy+r], -90, -90+360*(pct/100)*p, fill=CORAL+(255,), width=16*SS)
+        f = ImageFont.truetype(CJKB, 120*SS)
+        d.text((cx, cy-10*SS), f"{int(round(pct*p))}%", font=f, fill=WHT2+(255,), anchor="mm",
+               stroke_width=4*SS, stroke_fill=DARK+(255,))
+        if label:
+            fl = ImageFont.truetype(CJKB, 46*SS)
+            d.text((cx, cy+r+50*SS), label, font=fl, fill=MUTE2+(255,), anchor="mm")
+        _save(im, W, H, out, i, "ring")
+    return {"pattern": str(out / "ring_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def make_counter2(out, outdir=None, dur=4.0, fps=30, canvas=(760, 380), label="", **kw):
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    a, b = float(kw.get("from", 0)), float(kw.get("to", 100))
+    fnum = ImageFont.truetype(CJKB, 150*SS)
+    for i in range(n):
+        p = _ease((i+1)/n); val = a+(b-a)*p; im, d = _cv(W, H)
+        txt = f"{val/10000:.1f}萬" if val >= 10000 else f"{int(round(val))}"
+        d.text((W*SS//2, int(H*0.42)*SS), txt, font=fnum, fill=CORAL+(255,), anchor="mm",
+               stroke_width=6*SS, stroke_fill=DARK+(255,))
+        if label:
+            fl = ImageFont.truetype(CJKB, 48*SS)
+            d.text((W*SS//2, int(H*0.82)*SS), label, font=fl, fill=WHT2+(255,), anchor="mm")
+        _save(im, W, H, out, i, "cnt2")
+    return {"pattern": str(out / "cnt2_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def clone(out, outdir=None, dur=3.0, fps=30, canvas=(900, 500), clones=3, label=""):
+    """中央一個小人 → 複製成多個分身向外展開(認識很多同好/技能複製放大)。"""
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    cx, cy, r = W*SS//2, int(H*0.44)*SS, 62*SS
+    span = int(W*0.30)*SS
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        for k in range(clones):
+            off = (k - (clones-1)/2) / max((clones-1)/2, 1)      # -1..1
+            delay = abs(off) * 0.5
+            ap = _ease(min(max(t - delay, 0)/0.5, 1.0))
+            if ap <= 0:
+                continue
+            x = cx + int(off * span * ap)
+            col = WHT2 if k == (clones-1)//2 else CORAL
+            _person(d, x, cy, r, color=col, alpha=int(255*ap))
+        if label:
+            fl = ImageFont.truetype(CJKB, 46*SS)
+            d.text((cx, int(H*0.88)*SS), label, font=fl, fill=WHT2+(255,), anchor="mm")
+        _save(im, W, H, out, i, "clone")
+    return {"pattern": str(out / "clone_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
+
+
+def flow(out, outdir=None, dur=3.5, fps=30, canvas=(980, 560), items=4, label=""):
+    """幾張經驗卡由左飛入、疊成一疊 → 匯入右側 AI 方塊(經驗灌進 AI 當教練)。"""
+    out = Path(outdir or out); out.mkdir(parents=True, exist_ok=True)
+    W, H = canvas; n = max(int(dur * fps), 1)
+    cw, ch = int(W*0.30)*SS, int(H*0.20)*SS
+    stackx, stacky = int(W*0.30)*SS, int(H*0.30)*SS
+    aix, aiy, air = int(W*0.80)*SS, int(H*0.42)*SS, int(H*0.20)*SS
+    fai = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 60*SS)
+    for i in range(n):
+        t = (i + 1) / fps
+        im, d = _cv(W, H)
+        # 右側 AI 方塊(目標)
+        d.rounded_rectangle([aix-air, aiy-air, aix+air, aiy+air], radius=28*SS,
+                            fill=PANEL+(255,), outline=CORAL+(255,), width=4*SS)
+        d.text((aix, aiy), "AI", font=fai, fill=CORAL+(255,), anchor="mm")
+        for k in range(items):
+            delay = k * 0.35
+            ap = _ease(min(max(t - delay, 0)/0.5, 1.0))
+            if ap <= 0:
+                continue
+            merge = _ease(min(max(t - delay - 0.6, 0)/0.6, 1.0))   # 疊好後再被吸入 AI
+            sx = int(-cw + (stackx + k*10*SS + cw) * ap)           # 由左飛入
+            sy = stacky + k*14*SS
+            x = int(sx + (aix - sx) * merge); y = int(sy + (aiy - sy) * merge)
+            a = int(255 * (1 - 0.8*merge))
+            d.rounded_rectangle([x, y, x+cw, y+ch], radius=14*SS,
+                                fill=PANEL+(a,), outline=WHT2+(a,), width=3*SS)
+            d.line([x+18*SS, y+ch//2, x+cw-18*SS, y+ch//2], fill=CORAL+(a,), width=5*SS)
+        if label:
+            fl = ImageFont.truetype(CJKB, 44*SS)
+            d.text((W*SS//2, int(H*0.90)*SS), label, font=fl, fill=WHT2+(255,), anchor="mm")
+        _save(im, W, H, out, i, "flow")
+    return {"pattern": str(out / "flow_%05d.png"), "fps": fps, "frames": n, "w": W, "h": H}
