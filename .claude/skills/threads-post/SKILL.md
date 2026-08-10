@@ -1,5 +1,6 @@
 ---
 name: threads-post
+category: social
 description: Threads 貼文設計器 + 自我學習迴圈。兩種用法:(1) 給標題與素材,依 MODEL.md 生成 Threads 內文;(2) 上傳貼文截圖,分析流量原因並更新模型。觸發詞:「幫我寫 threads」「設計貼文」「threads 內文」「分析這篇貼文截圖」「更新貼文模型」。
 ---
 
