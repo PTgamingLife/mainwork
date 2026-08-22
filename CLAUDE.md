@@ -52,6 +52,7 @@
 ## 🧩 Skill 路由(要做什麼 → 用哪個)
 | 需求 | Skill |
 |---|---|
+| 每日派任務/覆盤/營收推進(創業合夥人) | `/cofounder` |
 | 網頁改完要測 | `/web-test` |
 | 作品上線成獨立 repo + Pages | `/deploy-site` |
 | 網頁要呼叫需金鑰的 API | `supabase-edge-proxy` |
