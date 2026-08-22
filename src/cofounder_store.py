@@ -9,6 +9,7 @@ Supabase 掛掉時回落到 repo 裡的 cofounder/data.json,讓階段 1 的資�
 """
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -98,7 +99,8 @@ def set_state(member_id: str, data: dict) -> bool:
             _url("cofounder_state"),
             headers=_headers("resolution=merge-duplicates,return=minimal"),
             params={"on_conflict": "member_id"},
-            json={"member_id": member_id, "data": data},
+            json={"member_id": member_id, "data": data,
+                  "updated_at": datetime.now(timezone.utc).isoformat()},
             timeout=TIMEOUT,
         )
         resp.raise_for_status()
