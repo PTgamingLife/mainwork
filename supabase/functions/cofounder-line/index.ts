@@ -324,7 +324,11 @@ async function handleEvent(ev: any): Promise<void> {
   // 這個 endpoint 必須 --no-verify-jwt(LINE 不帶 JWT),等於完全公開,
   // 沒有 allowlist 的話任何知道網址的人都能燒掉 API 額度。
   if (!member) {
-    if (BIND_CODE && text === `綁定 ${BIND_CODE}`) {
+    // 綁定字串放寬:全形空格、多餘空白、大小寫、簡體「绑定」都接受。
+    // 嚴格相等太脆弱 —— 注音輸入很容易打出全形空格,結果會靜默失敗。
+    const normalized = text.replace(/[\s　]+/g, " ").trim().toLowerCase();
+    const expected = [`綁定 ${BIND_CODE}`, `绑定 ${BIND_CODE}`].map((s) => s.toLowerCase());
+    if (BIND_CODE && expected.includes(normalized)) {
       const created = await sbInsert("cofounder_members", { line_user_id: lineUserId });
       member = created[0];
       await sbInsert("cofounder_state", { member_id: member.id, data: {} }, "return=minimal");

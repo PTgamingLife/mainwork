@@ -37,6 +37,12 @@ ok("綁定後有回覆", H.calls.lineReply.length === 1, JSON.stringify(H.calls.
 H.reset();
 await H.post(ev("e4", "綁定 WRONG", "U-new"));
 ok("錯誤綁定碼 → 不建成員", H.db.members.length === 0);
+H.reset();
+await H.post(ev("e4b", "綁定　GO123", "U-new"));   // 全形空格
+ok("全形空格也能綁定", H.db.members.length === 1);
+H.reset();
+await H.post(ev("e4c", "  绑定  go123  ", "U-new")); // 簡體 + 多空白 + 大小寫
+ok("簡體/多空白/大小寫也能綁定", H.db.members.length === 1);
 
 console.log("\n[3] 一般對話 → Haiku");
 H.reset(); member();
