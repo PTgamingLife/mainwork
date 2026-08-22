@@ -115,6 +115,23 @@ description: AI 創業合夥人 — 每日派任務、數據化行動、夜間�
 
 ---
 
+## LINE OA 模式(哪些事在手機做、哪些回這裡做)
+
+合夥人有兩個身體,共用同一顆腦(`MODEL.md`):
+
+| 在哪 | 做什麼 |
+|---|---|
+| **LINE OA「AI合夥人」** | 每天的執行:早會推播、隨時回報、夜間覆盤、隨口問問題 |
+| **這裡(Claude Code)** | 系統升級:改 `MODEL.md`、改 offer、調激勵規則、寫新的自動化 |
+
+- OA 的日常對話走 Claude Haiku,覆盤與週會自動切 Opus(見 `supabase/functions/cofounder-line/index.ts`)。
+- 資料即時寫進 Supabase;每晚 23:50 由 `scripts/cofounder_sync.py` 同步回 `cofounder/data.json` 並 commit。
+- **改完 `MODEL.md` 要等當晚同步才會生效**(同步腳本會把 MODEL.md + SKILL.md 組成 OA 的系統提示)。
+  想立刻生效就手動跑 `python scripts/cofounder_sync.py`。
+- 在這裡做完週會、更新了模型之後,主動提醒使用者「今晚同步後 OA 就會換腦」。
+
+---
+
 ## 原則
 
 - **數字不確定不要編。** 缺就問一句。這是真實的錢與時間。

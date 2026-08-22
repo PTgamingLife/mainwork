@@ -1,0 +1,72 @@
+name: AI 合夥人 — 早會 / 覆盤 / 同步
+
+# 台北時間 → UTC(UTC+8):
+#   07:30 早會   → 23:30 UTC(前一天)
+#   21:30 覆盤   → 13:30 UTC
+#   23:50 同步   → 15:50 UTC
+on:
+  schedule:
+    - cron: '30 23 * * *'
+    - cron: '30 13 * * *'
+    - cron: '50 15 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 要跑哪一段
+        required: true
+        default: test-morning
+        type: choice
+        options: [test-morning, test-review, morning, review, sync]
+
+concurrency:
+  group: cofounder-daily
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: 決定要跑哪一段
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "30 23 * * *" ]; then
+            echo "mode=morning" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "30 13 * * *" ]; then
+            echo "mode=review" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=sync" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 執行
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN }}
+          COFOUNDER_LINE_USER_ID: ${{ secrets.COFOUNDER_LINE_USER_ID }}
+          COFOUNDER_SUPABASE_URL: ${{ secrets.COFOUNDER_SUPABASE_URL }}
+          COFOUNDER_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.COFOUNDER_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          case "${{ steps.pick.outputs.mode }}" in
+            morning)      python scripts/cofounder_push.py --morning ;;
+            review)       python scripts/cofounder_push.py --review ;;
+            test-morning) python scripts/cofounder_push.py --morning --test ;;
+            test-review)  python scripts/cofounder_push.py --review --test ;;
+            sync)
+              git config user.name  "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              python scripts/cofounder_sync.py
+              ;;
+          esac
