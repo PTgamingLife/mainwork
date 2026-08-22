@@ -6,7 +6,7 @@
 
 需要的環境變數:
     ANTHROPIC_API_KEY
-    COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN, COFOUNDER_LINE_USER_ID
+    COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN
     COFOUNDER_SUPABASE_URL, COFOUNDER_SUPABASE_SERVICE_ROLE_KEY
 """
 import argparse
@@ -113,11 +113,13 @@ def generate(system: str, task: str, model: str) -> str:
     return "\n".join(b.text for b in resp.content if b.type == "text").strip()
 
 
-def push(text: str) -> None:
+def push(text: str, target: str) -> None:
+    """推播對象取自資料庫的成員(綁定時就存好了),不需要另外設環境變數。"""
     token = os.environ.get("COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN")
-    target = os.environ.get("COFOUNDER_LINE_USER_ID")
-    if not token or not target:
-        raise SystemExit("缺 COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN 或 COFOUNDER_LINE_USER_ID")
+    if not token:
+        raise SystemExit("缺 COFOUNDER_LINE_CHANNEL_ACCESS_TOKEN")
+    if not target:
+        raise SystemExit("成員沒有 line_user_id,先在 LINE 打「綁定 <碼>」完成綁定")
     # src.line_sender 每次呼叫才讀 LINE_CHANNEL_ACCESS_TOKEN,
     # 這裡指到合夥人 OA 的 token,不會動到健康管理 bot 的設定。
     os.environ["LINE_CHANNEL_ACCESS_TOKEN"] = token
@@ -154,7 +156,7 @@ def main() -> None:
         print(text)
         return
 
-    push(text)
+    push(text, member.get("line_user_id", ""))
     store.save_message(member["id"], "assistant", text, model=model,
                        intent="morning" if args.morning else "review")
     print(f"[push] sent ({len(text)} chars, {model})")
