@@ -67,15 +67,15 @@
   "segments": [
     {
       "name": "(待填)區隔 A",
-      "samples": 0,
+      "note": "samples < 3 不准拿來做決策。score = (quoted_price × close_rate) ÷ reach_cost",
+      "score": null,
       "quotes": [],
-      "paid_before": null,
-      "quoted_price": null,
+      "status": "觀察中",
+      "samples": 0,
       "close_rate": null,
       "reach_cost": null,
-      "score": null,
-      "status": "觀察中",
-      "note": "samples < 3 不准拿來做決策。score = (quoted_price × close_rate) ÷ reach_cost"
+      "paid_before": null,
+      "quoted_price": null
     }
   ],
   "daily": [],
