@@ -1,67 +1,67 @@
 {
   "meta": {
+    "note": "AI 創業合夥人資料檔。用對話更新:「早會」「今日回報 …」「覆盤」「週會」。數字不確定不要編,先問。",
+    "phase": "M1",
+    "started": "2026-08-22",
+    "updated": "2026-08-23",
     "version": "0.1",
     "currency": "TWD",
-    "started": "2026-08-22",
     "deadline": "2026-11-22",
-    "goal_monthly_revenue": 200000,
-    "phase": "M1",
     "daily_hours": 5,
-    "updated": "2026-08-23",
-    "note": "AI 創業合夥人資料檔。用對話更新:「早會」「今日回報 …」「覆盤」「週會」。數字不確定不要編,先問。"
+    "goal_monthly_revenue": 200000
   },
   "north_star": {
-    "conversations": 3,
+    "note": "M1 每日目標值。deals/revenue 的日目標為 0 是正常的(靠提案累積轉換),月目標看 plan。週會時依漏斗數學調整。",
+    "deals": 0,
     "leads": 2,
     "pitches": 1,
-    "deals": 0,
     "revenue": 0,
     "ai_ratio": 40,
-    "note": "M1 每日目標值。deals/revenue 的日目標為 0 是正常的(靠提案累積轉換),月目標看 plan。週會時依漏斗數學調整。"
+    "conversations": 3
   },
   "plan": [
     {
-      "month": "M1",
-      "from": "2026-08-22",
       "to": "2026-09-21",
-      "target_revenue": 60000,
+      "from": "2026-08-22",
       "focus": "Offer 測試衝刺 → 定案 → 前 2 位付費客(早鳥 15,000)",
+      "month": "M1",
       "assumed_price": 15000,
-      "assumed_close_rate": 0.2,
-      "pitches_needed": 20
+      "pitches_needed": 20,
+      "target_revenue": 60000,
+      "assumed_close_rate": 0.2
     },
     {
-      "month": "M2",
-      "from": "2026-09-22",
       "to": "2026-10-21",
-      "target_revenue": 120000,
+      "from": "2026-09-22",
       "focus": "單價回正 25,000 × 4–5 位,交付流程產品化成課程素材",
+      "month": "M2",
       "assumed_price": 25000,
-      "assumed_close_rate": 0.2,
-      "pitches_needed": 25
+      "pitches_needed": 25,
+      "target_revenue": 120000,
+      "assumed_close_rate": 0.2
     },
     {
-      "month": "M3",
-      "from": "2026-10-22",
       "to": "2026-11-21",
-      "target_revenue": 200000,
+      "from": "2026-10-22",
       "focus": "服務 4 位(10 萬)+ 小班 15 人 × 6,600(10 萬)",
+      "month": "M3",
       "assumed_price": 25000,
-      "assumed_close_rate": 0.2,
-      "pitches_needed": 30
+      "pitches_needed": 30,
+      "target_revenue": 200000,
+      "assumed_close_rate": 0.2
     }
   ],
   "offers": [
     {
       "id": "O1",
       "name": "(待填)假設 A",
-      "hypothesis": "對誰、解決什麼痛、憑什麼是你",
-      "audience": "",
       "price": null,
       "status": "hypothesis",
-      "confidence": "未驗證",
+      "created": "2026-08-22",
+      "audience": "",
       "evidence": [],
-      "created": "2026-08-22"
+      "confidence": "未驗證",
+      "hypothesis": "對誰、解決什麼痛、憑什麼是你"
     }
   ],
   "segments": [
@@ -81,56 +81,56 @@
   "daily": [],
   "revenue": [],
   "streak": {
-    "current": 0,
     "best": 0,
+    "current": 0,
     "last_hit_date": null
   },
   "quests": [
     {
-      "week": 1,
-      "name": "Offer 測試衝刺",
       "boss": "7 天完成 20 場真實對話,收斂成 1 個主 offer + 1 個備案",
+      "name": "Offer 測試衝刺",
+      "rule": "本週不做任何課程製作。每場問固定 3 題(見 MODEL.md 二章)。",
+      "week": 1,
       "metric": "conversations",
-      "target": 20,
-      "progress": 0,
       "status": "active",
-      "rule": "本週不做任何課程製作。每場問固定 3 題(見 MODEL.md 二章)。"
+      "target": 20,
+      "progress": 0
     }
   ],
   "badges": [
     {
-      "name": "開張",
       "desc": "第一筆入帳",
+      "name": "開張",
       "earned": false,
       "earned_date": null
     },
     {
-      "name": "破 5 萬",
       "desc": "單月營收破 50,000",
+      "name": "破 5 萬",
       "earned": false,
       "earned_date": null
     },
     {
-      "name": "破 10 萬",
       "desc": "單月營收破 100,000",
+      "name": "破 10 萬",
       "earned": false,
       "earned_date": null
     },
     {
-      "name": "破 20 萬",
       "desc": "單月營收破 200,000 — 目標達成",
+      "name": "破 20 萬",
       "earned": false,
       "earned_date": null
     },
     {
-      "name": "七日不斷",
       "desc": "streak 連續 7 天達標",
+      "name": "七日不斷",
       "earned": false,
       "earned_date": null
     },
     {
-      "name": "半自動",
       "desc": "AI 交付率連續 7 天 ≥ 60%",
+      "name": "半自動",
       "earned": false,
       "earned_date": null
     }
