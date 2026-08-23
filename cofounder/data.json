@@ -66,19 +66,101 @@
   ],
   "segments": [
     {
-      "name": "(待填)區隔 A",
-      "note": "samples < 3 不准拿來做決策。score = (quoted_price × close_rate) ÷ reach_cost",
+      "id": "S1",
+      "name": "公司內部文書 / 報告 / PPT",
+      "note": "3 人相似原話,達 MODEL.md 7.5 的訊號門檻。但卡點各不相同:劉=公司合規禁用(不是 AI 不夠好)、(待補)=懶得學(無承諾貨幣)、(待補)=已在用 AI 但整理報告幫助有限。三人都沒問到花過多少錢,所以無法計分。",
       "score": null,
-      "quotes": [],
-      "status": "觀察中",
-      "samples": 0,
+      "people": [
+        "劉",
+        "(待補)",
+        "(待補)"
+      ],
+      "quotes": [
+        "劉:能夠幫處理枯燥的垃圾工作其實目前 AI 已經可以做好,不過卡在許多公司機密需要保密的關係,能夠幫上忙的 AI 現在一個都不能用",
+        "(待補):公司報告 / 不會超過 10 小時 / 我現很懶 / 年紀大",
+        "(待補):產報告 做 ppt 之類的 / 10 小時 真的要喔 都從零開始的話 甚至更長 / 會用 ai 查資料 整理報告上 目前 ai 幫助有限 可以部分協助"
+      ],
+      "status": "訊號成立,待驗價",
+      "samples": 3,
       "close_rate": null,
-      "reach_cost": null,
+      "reach_cost": 1,
+      "paid_before": null,
+      "quoted_price": null
+    },
+    {
+      "id": "S1a",
+      "name": "(S1 子訊號)企業合規禁用 AI",
+      "note": "痛點不是 AI 能力不足,是組織不准用。買主可能是公司而非個人,預算來源不同。待追問:全禁還是有規範?誰有決定權?有人偷用嗎?",
+      "score": null,
+      "people": [
+        "劉"
+      ],
+      "quotes": [
+        "劉:卡在許多公司機密需要保密的關係,能夠幫上忙的 AI 現在一個都不能用"
+      ],
+      "status": "觀察中",
+      "samples": 1,
+      "close_rate": null,
+      "reach_cost": 2,
+      "paid_before": null,
+      "quoted_price": null
+    },
+    {
+      "id": "S2",
+      "name": "個人品牌 / 專業介紹影片",
+      "note": "唯一付出承諾貨幣的人(主動給名片、願意補素材)。但價格回答是模糊訊號「看成果再說」。風險:已先答應免費做十秒影片,之後定價會被錨定。待追問:之前影片外包過嗎?一支多少?",
+      "score": null,
+      "people": [
+        "陳"
+      ],
+      "quotes": [
+        "陳:代替我做影片分享",
+        "陳:有 粗略學過 沒很深入",
+        "陳:哈哈哈哈 看成果再說 並沒有定數",
+        "陳:憑這些資訊可做影片嗎 / 當然是 / 喔喔了解 我再補充"
+      ],
+      "status": "觀察中",
+      "samples": 1,
+      "close_rate": null,
+      "reach_cost": 1,
+      "paid_before": null,
+      "quoted_price": null
+    },
+    {
+      "id": "S3",
+      "name": "團隊 / 人員管理",
+      "note": "痛點真實但本人自陳沒餘力,屬禮貌回應。samples < 3,不可據此做決策。",
+      "score": null,
+      "people": [
+        "柔"
+      ],
+      "quotes": [
+        "柔:管理人這個問題實在有夠麻煩,即使有規章制度,但大家還是沒辦法好好遵守",
+        "柔:可能我目前處於心有餘力而不足,消化學習的部分沒那麼快"
+      ],
+      "status": "觀察中",
+      "samples": 1,
+      "close_rate": null,
+      "reach_cost": 1,
       "paid_before": null,
       "quoted_price": null
     }
   ],
-  "daily": [],
+  "daily": [
+    {
+      "date": "2026-08-23",
+      "conversations": 5,
+      "leads": 2,
+      "pitches": 0,
+      "deals": 0,
+      "revenue": 0.0,
+      "ai_ratio": 30,
+      "mission": "開 3 場真人對話,問完 Mom Test 3 題,把「他花過多少錢」的原話一字不改記下來",
+      "result": "partial",
+      "blocker": "",
+      "note": "發 20 回 5(25% 回覆率),對話數超標。但 5 場裡 0 場問到「花過多少錢」—— Mom Test 第 2 題全數落空,所以拿不到承諾貨幣。訊號:公司文書/報告/PPT 出現 3 次,達門檻。"
+    }
+  ],
   "revenue": [],
   "streak": {
     "best": 0,
