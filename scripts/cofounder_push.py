@@ -91,7 +91,9 @@ def build_system(state: dict, daily: list, revenue: list, today: str) -> str:
         "你是使用者的 AI 創業合夥人,目標是 3 個月內把月收推到 200,000 TWD。"
         "用繁體中文、台灣用語。"
     )
-    public = {k: v for k, v in state.items() if k != "system_prompt"}
+    reviews = state.get("recent_reviews") or []
+    public = {k: v for k, v in state.items()
+              if k not in ("system_prompt", "recent_reviews")}
     return "\n".join([
         prompt,
         "",
@@ -102,6 +104,15 @@ def build_system(state: dict, daily: list, revenue: list, today: str) -> str:
         f"【目前狀態】{json.dumps(public, ensure_ascii=False)}",
         f"【近 14 天每日數字】{json.dumps(daily[-14:], ensure_ascii=False, default=str)}",
         f"【入帳明細】{json.dumps(revenue[-20:], ensure_ascii=False, default=str)}",
+        "",
+        "【最近的覆盤結論】(由新到舊)",
+        ("\n\n".join(reviews) if reviews else "(尚無)"),
+        "",
+        "**覆盤結論有約束力。** 昨天覆盤決定的事(要問誰、要問什麼、什麼先不做),",
+        "今天必須延續。要推翻它,得先明說「我改變主意,因為 X」,不能當作沒發生過。",
+        "",
+        "**5 小時是硬預算。** 排出來的任務加總不得超過 5 小時,也不要同時要求",
+        "「回訪舊的 N 個」又「新開 N 場」—— 講清楚今天的關卡進度要靠哪一種推進。",
     ])
 
 

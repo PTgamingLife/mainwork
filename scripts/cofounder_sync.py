@@ -12,6 +12,7 @@
 import argparse
 import io
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -55,6 +56,20 @@ def build_system_prompt() -> str:
         "=== 商業模型(MODEL.md) ===",
         model_md,
     ])
+
+
+def recent_reviews(limit: int = 3) -> list[str]:
+    """抓 REVIEWS.md 最近幾筆覆盤,讓晨會/覆盤讀得到「為什麼」而不只是數字。
+
+    沒有這個,合夥人只看得到「昨天提案 0」,看不到「所以今天要撤回免費」,
+    於是每天早上都會重新發明一次結論,甚至推翻昨天的判斷而不自知。
+    """
+    text = (SKILL_DIR / "REVIEWS.md").read_text(encoding="utf-8")
+    # 每筆以 "## YYYY-MM-DD" 開頭;範本在 HTML 註解裡,要排除
+    body = text.split("-->")[-1]
+    parts = re.split(r"\n(?=## \d{4}-\d{2}-\d{2})", body)
+    entries = [s.strip() for s in parts if s.strip().startswith("## 2")]
+    return entries[:limit]
 
 
 def normalize_daily(rows: list[dict]) -> list[dict]:
@@ -119,6 +134,7 @@ def main() -> None:
     prompt = build_system_prompt()
     new_state = {k: v for k, v in merged.items() if k not in DB_OWNED}
     new_state["system_prompt"] = prompt
+    new_state["recent_reviews"] = recent_reviews()
 
     if args.test:
         print(f"[test] 會寫入 data.json:daily {len(daily)} 筆、revenue {len(revenue)} 筆")
@@ -132,6 +148,7 @@ def main() -> None:
     store.set_state(member["id"], new_state)
     print(f"[sync] data.json ← daily {len(daily)} 筆、revenue {len(revenue)} 筆")
     print(f"[sync] system_prompt → Supabase({len(prompt)} 字)")
+    print(f"[sync] recent_reviews → Supabase({len(new_state['recent_reviews'])} 筆)")
 
     if args.no_commit:
         return
