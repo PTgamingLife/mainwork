@@ -722,3 +722,45 @@ input[type="file"] { display:none; }
 /* ── fs-btn active in v2 ── */
 .fs-btn.active { background:var(--gold-main); color:white; }
 .fs-btn:not(.active):hover { background:var(--gold-pale); color:var(--gold-deep); }
+
+/* ── 最顯老的三個臉部細節 ── */
+.aging-summary {
+  background:var(--bg-secondary); border-radius:var(--radius-sm);
+  padding:10px 12px; margin-bottom:12px;
+  font-size:13px; color:var(--text-mid); line-height:1.8;
+}
+.aging-item { padding:12px 0; border-bottom:1px solid var(--gold-pale); }
+.aging-item:last-of-type { border-bottom:none; }
+.aging-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.aging-rank {
+  width:22px; height:22px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; background:var(--gold-main); color:white;
+  font-size:12px; font-weight:700;
+}
+.aging-name { font-size:15px; font-weight:700; color:var(--text-dark); }
+.aging-zone {
+  font-size:11px; color:var(--text-soft);
+  background:var(--bg-secondary); border-radius:99px; padding:2px 8px;
+}
+.aging-meter {
+  height:5px; border-radius:99px; background:var(--bg-secondary);
+  margin:8px 0 8px 30px; overflow:hidden;
+}
+.aging-meter-fill {
+  height:100%; border-radius:99px;
+  background:linear-gradient(90deg,var(--gold-main),var(--alert-color));
+}
+.aging-line {
+  font-size:12px; color:var(--text-soft); line-height:1.75;
+  padding-left:30px; margin-top:3px;
+}
+.aging-care {
+  font-size:12px; color:var(--gold-deep); line-height:1.75;
+  margin:6px 0 0 30px; padding:8px 10px;
+  background:rgba(34,193,195,.08); border-left:3px solid var(--gold-main);
+  border-radius:var(--radius-sm);
+}
+.aging-disc {
+  font-size:11px; color:var(--text-hint); line-height:1.7; margin-top:10px;
+}
