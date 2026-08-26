@@ -1,67 +1,117 @@
 {
   "meta": {
-    "note": "AI 創業合夥人資料檔。用對話更新:「早會」「今日回報 …」「覆盤」「週會」。數字不確定不要編,先問。",
-    "phase": "M1",
+    "note": "90 天累計 20 萬(5 家 × 40,000)為驗證里程碑;月收 20 萬順延第 4 個月起衝。受眾 Rule of One:健康管理從業者。",
+    "phase": "P1",
     "started": "2026-08-23",
     "updated": "2026-08-26",
     "version": "0.1",
+    "audience": "健康管理從業者",
     "currency": "TWD",
-    "deadline": "2026-11-22",
+    "deadline": "2026-11-20",
+    "goal_deals": 5,
+    "unit_price": 40000,
     "daily_hours": 5,
+    "goal_90day_revenue": 200000,
     "goal_monthly_revenue": 200000
   },
   "north_star": {
-    "note": "M1 每日目標值。deals/revenue 的日目標為 0 是正常的(靠提案累積轉換),月目標看 plan。週會時依漏斗數學調整。",
+    "note": "leads=新名單(原始);conversations=有效接觸(ICP 對話,含 BANT)。提案是週指標,連兩週 0 觸發 No-Go。",
     "deals": 0,
-    "leads": 2,
-    "pitches": 1,
+    "leads": 7,
+    "weekly": {
+      "audits": 2,
+      "pitches": 1
+    },
+    "pitches": 0,
     "revenue": 0,
     "ai_ratio": 40,
+    "streak_rule": "當日 leads >= 7 且 conversations >= 3",
     "conversations": 3
   },
   "plan": [
     {
-      "to": "2026-09-22",
+      "to": "2026-09-21",
       "from": "2026-08-23",
-      "focus": "Offer 測試衝刺 → 定案 → 前 2 位付費客(早鳥 15,000)",
-      "month": "M1",
-      "assumed_price": 15000,
-      "pitches_needed": 20,
-      "target_revenue": 60000,
-      "assumed_close_rate": 0.2
+      "focus": "驗證 ICP + Offer:完成訪談、健檢、首批提案。第一優先資產=AI Health OS 成熟度健檢表",
+      "month": "P1",
+      "validation": "有人願意付錢(≥ 1 家)",
+      "assumed_price": 40000,
+      "pitches_needed": 2,
+      "target_revenue": 40000,
+      "assumed_close_rate": 0.5
     },
     {
-      "to": "2026-10-22",
-      "from": "2026-09-23",
-      "focus": "單價回正 25,000 × 4–5 位,交付流程產品化成課程素材",
-      "month": "M2",
-      "assumed_price": 25000,
-      "pitches_needed": 25,
-      "target_revenue": 120000,
-      "assumed_close_rate": 0.2
+      "to": "2026-10-21",
+      "from": "2026-09-22",
+      "focus": "完成 Pilot:交付首批客戶並追 KPI",
+      "month": "P2",
+      "validation": "產生可量化成果(累計 3 家 / 12 萬)",
+      "assumed_price": 40000,
+      "pitches_needed": 4,
+      "target_revenue": 80000,
+      "assumed_close_rate": 0.5
     },
     {
-      "to": "2026-11-22",
-      "from": "2026-10-23",
-      "focus": "服務 4 位(10 萬)+ 小班 15 人 × 6,600(10 萬)",
-      "month": "M3",
-      "assumed_price": 25000,
-      "pitches_needed": 30,
-      "target_revenue": 200000,
-      "assumed_close_rate": 0.2
+      "to": "2026-11-20",
+      "from": "2026-10-22",
+      "focus": "複製成交:案例化、轉介紹、優化漏斗",
+      "month": "P3",
+      "validation": "5 家 / 20 萬",
+      "assumed_price": 40000,
+      "pitches_needed": 4,
+      "target_revenue": 80000,
+      "assumed_close_rate": 0.5
     }
   ],
   "offers": [
     {
-      "id": "O1",
-      "name": "(待填)假設 A",
+      "id": "L0",
+      "name": "免費內容／講座",
+      "role": "Lead Magnet",
+      "price": 0,
+      "status": "planned",
+      "purpose": "取得名單"
+    },
+    {
+      "id": "L1",
+      "name": "AI Health 快速健檢",
+      "role": "入門商品",
       "price": null,
-      "status": "hypothesis",
-      "created": "2026-08-22",
-      "audience": "",
-      "evidence": [],
-      "confidence": "未驗證",
-      "hypothesis": "對誰、解決什麼痛、憑什麼是你"
+      "status": "planned",
+      "purpose": "建立信任"
+    },
+    {
+      "id": "L2",
+      "name": "AI Health 深度診斷",
+      "role": "核心前端產品",
+      "price": null,
+      "status": "planned",
+      "purpose": "促成提案"
+    },
+    {
+      "id": "L3",
+      "name": "90 天 AI Health OS",
+      "role": "主力營收產品",
+      "price": 40000,
+      "status": "testing",
+      "purpose": "創造案例",
+      "confidence": "未驗證"
+    },
+    {
+      "id": "L4",
+      "name": "AI OS 月度陪跑",
+      "role": "經常性收入",
+      "price": null,
+      "status": "planned",
+      "purpose": "建立 MRR"
+    },
+    {
+      "id": "L5",
+      "name": "AI Health OS 授權／培訓",
+      "role": "第二階段產品",
+      "price": null,
+      "status": "planned",
+      "purpose": "規模化"
     }
   ],
   "segments": [
@@ -80,12 +130,14 @@
         "(待補):公司報告 / 不會超過 10 小時 / 我現很懶 / 年紀大",
         "(待補):產報告 做 ppt 之類的 / 10 小時 真的要喔 都從零開始的話 甚至更長 / 會用 ai 查資料 整理報告上 目前 ai 幫助有限 可以部分協助"
       ],
-      "status": "訊號成立,待驗價",
+      "status": "封存(改版前,非目標受眾)",
       "samples": 3,
       "close_rate": null,
       "reach_cost": 1,
+      "archived_at": "2026-08-24",
       "paid_before": null,
-      "quoted_price": null
+      "quoted_price": null,
+      "archive_reason": "v0.3 受眾鎖定健康管理從業者(Rule of One)。這四筆訪談對象是泛熟人與辦公室文書族,不屬於目標受眾。原話保留作為未來 Niche Up 的參考,但不得用於現階段決策。"
     },
     {
       "id": "S1a",
@@ -98,12 +150,14 @@
       "quotes": [
         "劉:卡在許多公司機密需要保密的關係,能夠幫上忙的 AI 現在一個都不能用"
       ],
-      "status": "觀察中",
+      "status": "封存(改版前,非目標受眾)",
       "samples": 1,
       "close_rate": null,
       "reach_cost": 2,
+      "archived_at": "2026-08-24",
       "paid_before": null,
-      "quoted_price": null
+      "quoted_price": null,
+      "archive_reason": "v0.3 受眾鎖定健康管理從業者(Rule of One)。這四筆訪談對象是泛熟人與辦公室文書族,不屬於目標受眾。原話保留作為未來 Niche Up 的參考,但不得用於現階段決策。"
     },
     {
       "id": "S2",
@@ -119,12 +173,14 @@
         "陳:哈哈哈哈 看成果再說 並沒有定數",
         "陳:憑這些資訊可做影片嗎 / 當然是 / 喔喔了解 我再補充"
       ],
-      "status": "觀察中",
+      "status": "封存(改版前,非目標受眾)",
       "samples": 1,
       "close_rate": null,
       "reach_cost": 1,
+      "archived_at": "2026-08-24",
       "paid_before": null,
-      "quoted_price": null
+      "quoted_price": null,
+      "archive_reason": "v0.3 受眾鎖定健康管理從業者(Rule of One)。這四筆訪談對象是泛熟人與辦公室文書族,不屬於目標受眾。原話保留作為未來 Niche Up 的參考,但不得用於現階段決策。"
     },
     {
       "id": "S3",
@@ -138,10 +194,44 @@
         "柔:管理人這個問題實在有夠麻煩,即使有規章制度,但大家還是沒辦法好好遵守",
         "柔:可能我目前處於心有餘力而不足,消化學習的部分沒那麼快"
       ],
-      "status": "觀察中",
+      "status": "封存(改版前,非目標受眾)",
       "samples": 1,
       "close_rate": null,
       "reach_cost": 1,
+      "archived_at": "2026-08-24",
+      "paid_before": null,
+      "quoted_price": null,
+      "archive_reason": "v0.3 受眾鎖定健康管理從業者(Rule of One)。這四筆訪談對象是泛熟人與辦公室文書族,不屬於目標受眾。原話保留作為未來 Niche Up 的參考,但不得用於現階段決策。"
+    },
+    {
+      "id": "H1",
+      "icp": "診所/健身房/營養師/體重管理中心/健康顧問等,有客戶名單與追蹤需求、且能自己決定導入的人",
+      "name": "健康管理從業者(主戰場)",
+      "note": "v0.3 主戰場。samples < 3 不得用於決策。每場對話後記:他的原話、花過多少錢、BANT 四項各是什麼。",
+      "score": null,
+      "people": [],
+      "quotes": [],
+      "status": "未驗證",
+      "samples": 0,
+      "close_rate": null,
+      "reach_cost": null,
+      "paid_before": null,
+      "quoted_price": null,
+      "pain_hypothesis": "陌生名單 → 健康諮詢 → 持續追蹤 → 客戶經營 全靠人工,追蹤斷點造成流失"
+    },
+    {
+      "id": "H1a",
+      "name": "(H1 子假設)客戶隱私讓他們不敢用公有雲 AI",
+      "note": "把改版前挖到最有價值的一句洞察,平移到健康場域測試。診所握有客戶健康資料,合規顧慮可能比一般公司更強。",
+      "score": null,
+      "people": [],
+      "quotes": [
+        "(來自封存 S1a 的洞察,待在健康場域驗證)劉:卡在許多公司機密需要保密的關係,能夠幫上忙的 AI 現在一個都不能用"
+      ],
+      "status": "未驗證",
+      "samples": 0,
+      "close_rate": null,
+      "reach_cost": null,
       "paid_before": null,
       "quoted_price": null
     }
@@ -169,13 +259,13 @@
   },
   "quests": [
     {
-      "boss": "7 天完成 20 場真實對話,收斂成 1 個主 offer + 1 個備案",
-      "name": "Offer 測試衝刺",
-      "rule": "本週不做任何課程製作。每場問固定 3 題(見 MODEL.md 二章)。",
+      "boss": "做出 AI Health OS 成熟度健檢表 v1,並建立 40 個健康管理從業者名單",
+      "name": "健檢表 + 首批健康從業者名單",
+      "rule": "8.1 現階段瓶頸是量不是 offer。健檢表同時是獲客、診斷、提案與資料收集工具,做完才有東西可談。",
       "week": 1,
-      "metric": "conversations",
+      "metric": "leads",
       "status": "active",
-      "target": 20,
+      "target": 40,
       "progress": 0
     }
   ],
@@ -219,5 +309,15 @@
   ],
   "recent_reviews": [
     "## 2026-08-23(第 1 天 · streak 0)\n\n**今日必勝任務**:開 3 場真人對話,問完 Mom Test 3 題,把「他花過多少錢」的原話一字不改記下來。\n\n**實績 / 配額**:對話 5/3 ✅ · 名單 2/2 ✅ · 提案 0/1 ❌ · 成交 0 · 入帳 0 · AI 交付率 30%/40% ❌\n發 20 則,回 5 則,回覆率 25%。\n\n**燈號**\n- 行動量 🟡 — 量達標(5/3),但質沒有:**5 場裡 0 場問到「花過多少錢」**。Mom Test 第 2 題全數落空。\n- 轉換率 🔴 — 0 次提案。提案是最強的領先指標,也是最容易逃避的一步。\n- AI 槓桿 🟡 — 30%,差在「AI 化」那 30 分鐘沒跑,「對話紀錄→痛點摘要」腳本未寫。\n\n**落後帳**:本月 0 / 60,000。M1 剩 30 天,需 20 次提案,**每天 0.67 次**。今天欠 1 次。\n\n**失敗歸因**:不是沒時間、不是沒名單 —— 是**問法**。三個具體錯誤:\n1. 劉講出「AI 夠好但公司不准用」這句最有價值的原話後,自己接話結案(「就只好等公司架伺服器了」),沒有往下追。\n2. 對方講完痛點後習慣自己下結論而不是追問(Mom Test 最常見的失敗:講太多)。\n3. 對陳先提了免費做影片,而他是唯一付出承諾貨幣的人(主動給名片、願補素材)—— 定價被自己錨定。\n\n**訊號**:「公司文書/報告/PPT」3 人相似原話,達 7.5 的訊號門檻 → S1 成立。\n但三人卡點不同(合規禁用 / 懶得學 / AI 幫助有限),且無人報價,**無法計分,不可據此定 offer**。\n\n**明天**:不找新人,回頭追問這 4 個。劉問合規結構與決策權;C 問「之前為省這 10 小時花過錢嗎」;\n陳先撤回免費、改問「之前影片外包一支多少」;B 放掉(懶+年紀大=無承諾貨幣)。\n\n---"
-  ]
+  ],
+  "funnel_assumptions": {
+    "icp": 80,
+    "bant": 40,
+    "note": "全部是待驗證假設,不是預測。以真實數據逐週取代。",
+    "deals": 5,
+    "audits": 20,
+    "pitches": 10,
+    "raw_leads": 200,
+    "unit_price": 40000
+  }
 }
