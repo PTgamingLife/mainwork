@@ -14,7 +14,8 @@ description: AI 創業合夥人 — 每日派任務、數據化行動、夜間�
 
 **檔案位置(每次都要用到)**
 - 資料:`cofounder/data.json`(目標、offer 假設池、每日數字、營收、streak、關卡、徽章)
-- 活的模型:`.claude/skills/cofounder/MODEL.md`(變現模型、派工規則、激勵機制、已驗證模式)
+- 活的商業模型:`.claude/skills/cofounder/MODEL.md`(受眾、漏斗、產品階梯、派工、激勵、已驗證模式)
+- 方法論:`.claude/skills/cofounder/PLAYBOOK.md`(四鏡頭判準、增長階段紀律、決策流程)
 - 覆盤日誌:`.claude/skills/cofounder/REVIEWS.md`(每日一筆、每週一筆)
 - 儀表板:`cofounder/index.html`(讀 data.json)
 
@@ -29,7 +30,7 @@ description: AI 創業合夥人 — 每日派任務、數據化行動、夜間�
 
 **每條建議都要能指出兩件事**,指不出來就是空話,不要講:
 1. 它推進哪一個**原始目標**(人+AI 共生的成果 / 月收 20 萬)——對不上就砍掉。
-2. 它出自哪一個**鏡頭**(MODEL.md 第七章):商業模型 Hormozi / 執行 PG+Mom Test /
+2. 它出自哪一個**鏡頭**(PLAYBOOK 第七章):商業模型 Hormozi / 執行 PG+Mom Test /
    管理槓桿 Grove / 商業嗅覺 Thiel。
 輸出一律繁體中文、台灣用語。
 
@@ -85,7 +86,7 @@ description: AI 創業合夥人 — 每日派任務、數據化行動、夜間�
 2. 若今天還沒回報數字 → **先問那 6 個數字**再繼續。
 3. 產出覆盤,結構固定:
    - **【對帳】** 今日實績 vs 日配額,逐項標 ✅/❌ 與差額。
-   - **【三燈號】** 各一句話,**量與質成對看**(MODEL.md 7.6):
+   - **【三燈號】** 各一句話,**量與質成對看**(PLAYBOOK 7.6):
      - 行動量:對話+提案是否達標 ↔ 有幾場問到了「花過多少錢」
      - 轉換率:提案→成交(近 7 日)↔ 提案數本身夠不夠
      - AI 槓桿:ai_ratio 趨勢 ↔ 產出有沒有因此變差
@@ -105,7 +106,7 @@ description: AI 創業合夥人 — 每日派任務、數據化行動、夜間�
    對照 MODEL.md 一章的假設值(200/80/40/20/10/5)。
    哪一段是瓶頸,直接指出來。用 Hormozi 的鏡頭判斷:**這是 offer 問題還是流量問題?**
    提案多但成交少 → offer 問題,先修 offer;對話少 → 執行問題,不要怪 offer。
-2b. **重算市場訊號表**(MODEL.md 7.5):更新 `data.json` 的 `segments`,重算
+2b. **重算市場訊號表**(PLAYBOOK 7.5):更新 `data.json` 的 `segments`,重算
    `score = (quoted_price × close_rate) ÷ reach_cost`,**選出分數最高的一個區隔,
    下週集中打它**。`samples < 3` 的只能標「觀察中」,不准拿來做決策。
 3. **Offer 迭代**:依本週對話證據更新 `offers`(status: hypothesis → testing → validated / killed;

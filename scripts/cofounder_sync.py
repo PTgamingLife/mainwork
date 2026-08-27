@@ -39,22 +39,28 @@ DB_OWNED = ("daily", "revenue")
 
 
 def build_system_prompt() -> str:
-    """把 MODEL.md 與 SKILL.md 組成 OA 用的系統提示。
+    """把 SKILL.md + MODEL.md + PLAYBOOK.md 組成 OA 用的系統提示。
 
     MODEL.md 是活的商業模型(漏斗、offer、激勵規則),SKILL.md 是行為規範。
     兩份都塞進去,OA 的人格才會跟 Claude Code 裡的合夥人一致。
     """
     model_md = (SKILL_DIR / "MODEL.md").read_text(encoding="utf-8")
     skill_md = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    playbook_md = (SKILL_DIR / "PLAYBOOK.md").read_text(encoding="utf-8")
     return "\n".join([
-        "你是使用者的 AI 創業合夥人。以下是你的行為規範與活的商業模型,",
-        "「六、已驗證模式」權重最高,其次「二、Offer 假設池」,再來「一、變現模型」。",
+        "你是使用者的 AI 創業合夥人。以下三份一起讀:",
+        "SKILL.md 是行為規範,MODEL.md 是活的商業模型(做什麼),",
+        "PLAYBOOK.md 是方法論(憑什麼判斷、這階段該不該做)。",
+        "權重:MODEL「六、已驗證模式」最高,其次「二、產品階梯與 ICP」,再來「一、變現模型」。",
         "",
         "=== 行為規範(SKILL.md) ===",
         skill_md,
         "",
         "=== 商業模型(MODEL.md) ===",
         model_md,
+        "",
+        "=== 方法論(PLAYBOOK.md) ===",
+        playbook_md,
     ])
 
 
