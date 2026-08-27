@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI Health OS 成熟度健檢 — 健康從業者客戶追蹤現況</title>
+<meta name="description" content="11 題、3 分鐘。看看你的客戶追蹤流程在同業裡的位置。">
+<style>
+  :root{
+    --bg:#0f1419; --card:#1a2129; --ink:#eef3f8; --muted:#93a4b5; --line:#2b3641;
+    --accent:#2ec27e; --accent2:#1f9d6b; --warn:#e0a33e; --bad:#e0604e;
+    --tap:#233040;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:560px;margin:0 auto;padding:0 20px 40px;min-height:100%;display:flex;flex-direction:column}
+  .bar{position:sticky;top:0;background:var(--bg);padding:16px 0 12px;z-index:5}
+  .bar .track{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+  .bar .track>i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s ease}
+  .bar .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
+  .step{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 0 24px;animation:in .22s ease}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h1{font-size:26px;line-height:1.35;margin:0 0 6px;letter-spacing:.3px}
+  .hint{font-size:13.5px;color:var(--muted);margin:0 0 22px}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:block;width:100%;text-align:left;background:var(--tap);color:var(--ink);
+    border:1.5px solid transparent;border-radius:13px;padding:16px 18px;font-size:16px;
+    font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:active{background:#2b3a4d}
+  .opt.on{border-color:var(--accent);background:#1b3329}
+  .other{margin-top:2px}
+  .other input{width:100%;background:var(--tap);border:1.5px solid var(--line);border-radius:13px;
+    padding:15px 18px;color:var(--ink);font-size:16px;font-family:inherit}
+  .other input:focus{outline:none;border-color:var(--accent)}
+  .nav{display:flex;gap:10px;margin-top:22px}
+  button.go{flex:1;background:var(--accent);color:#06210f;border:0;border-radius:13px;
+    padding:16px;font-size:16.5px;font-weight:700;font-family:inherit;cursor:pointer}
+  button.go:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
+  button.back{background:none;border:0;color:var(--muted);font-size:14px;font-family:inherit;
+    padding:16px 4px;cursor:pointer}
+  /* 結果頁 */
+  .score{text-align:center;padding:10px 0 18px}
+  .score .n{font-size:60px;font-weight:800;line-height:1;letter-spacing:-1px}
+  .score .l{font-size:13px;color:var(--muted);margin-top:6px}
+  .lights{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+  .lt{background:var(--card);border-radius:13px;padding:14px 16px;border-left:4px solid var(--line)}
+  .lt.g{border-left-color:var(--accent)} .lt.y{border-left-color:var(--warn)} .lt.r{border-left-color:var(--bad)}
+  .lt .t{font-size:14.5px;font-weight:700;display:flex;justify-content:space-between;gap:10px}
+  .lt .d{font-size:13px;color:var(--muted);margin-top:4px}
+  .lt .pill{font-size:11.5px;padding:2px 9px;border-radius:20px;background:var(--tap);color:var(--muted);flex:none}
+  .card{background:var(--card);border-radius:14px;padding:18px;margin-top:16px}
+  .card h2{font-size:15px;margin:0 0 10px}
+  .card p{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+  .card input{width:100%;background:var(--tap);border:1.5px solid var(--line);border-radius:11px;
+    padding:14px 16px;color:var(--ink);font-size:16px;font-family:inherit;margin-bottom:10px}
+  .card input:focus{outline:none;border-color:var(--accent)}
+  .ok{font-size:13.5px;color:var(--accent);text-align:center;padding:10px 0}
+  .err{font-size:13px;color:var(--bad);text-align:center;padding:8px 0}
+  .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><div class="track"><i id="pg"></i></div>
+    <div class="meta"><span id="pgL">開始</span><span id="pgR"></span></div></div>
+  <div id="app"></div>
+  <div class="foot" id="foot">AI Health OS 成熟度健檢 · 11 題約 3 分鐘<br>填答內容只用於同業彙整,不會外流</div>
+</div>
+
+<script>
+const SB_URL = "https://wcemkmwrlvijxxwybrgs.supabase.co";
+const SB_KEY = "sb_publishable_grlcrRPSJNWMA7VRzhve8A_tUu-VQnn";
+const TABLE  = "health_check_responses";
+
+// 每題:段落 / 題目 / 提示 / 選項[文字,分數] / 是否允許「其他」
+const Q = [
+ {s:"A 名單來源",q:"你的新客戶,主要從哪裡來?",h:"選最主要的那一個",o:[["轉介紹為主",2],["IG／FB 等社群",2],["路過、走進來",1],["有在投廣告",3],["沒有固定來源",0]],other:true},
+ {s:"A 名單來源",q:"上個月大概進來幾個新名單?",h:"沒在算也是一個答案",o:[["30 個以上",3],["16–30 個",2],["6–15 個",1],["0–5 個",0],["沒在算",0]]},
+ {s:"B 紀錄流程",q:"名單和聯絡資料,記在哪裡?",h:"",o:[["有系統／CRM",3],["Excel 或 Google 試算表",2],["紙本、筆記本",1],["就在 LINE 對話裡翻",0],["沒特別記",0]],other:true},
+ {s:"B 紀錄流程",q:"諮詢紀錄怎麼留?",h:"",o:[["有固定表單或系統",3],["Excel",2],["紙本",1],["打在 LINE 訊息裡",0],["記在腦子裡",0]],other:true},
+ {s:"C 追蹤斷點",q:"客戶開始之後,你多久追蹤一次?",h:"",o:[["每天",3],["每週",3],["每月",1],["想到才追",0],["客戶主動找我才回",0]]},
+ {s:"C 追蹤斷點",q:"上個月有幾個客戶「不見了」?",h:"就是那種突然沒回、也沒說要停的",o:[["0 個",3],["1–2 個",2],["3–5 個",1],["5 個以上",0],["不知道／沒在算",0]]},
+ {s:"C 追蹤斷點",q:"你通常是什麼時候發現他不見的?",h:"",o:[["當週就發現",3],["一個月內",2],["更久之後",1],["通常沒發現,是他自己不來了",0]]},
+ {s:"C 追蹤斷點",q:"追蹤這件事,每週大概花你多少小時?",h:"包含傳訊息、看紀錄、想要講什麼",o:[["1 小時以內",3],["1–3 小時",2],["3–5 小時",1],["5–10 小時",0],["10 小時以上",0]]},
+ {s:"D 回購",q:"舊客戶回購率大概多少?",h:"",o:[["一半以上",3],["3 成左右",2],["1 成左右",1],["幾乎沒有",0],["不知道",0]]},
+ {s:"D 痛點",q:"這四段裡,哪一段最讓你想放棄?",h:"找客戶 / 諮詢 / 追蹤 / 回購",o:[["找客戶",0],["諮詢",0],["追蹤",0],["回購",0]],other:true,noscore:true},
+ {s:"D 痛點",q:"為了解決這件事,你之前花過多少錢或時間?",h:"這題最重要 —— 沒花過也是很有價值的答案",o:[["沒花過",0],["只花時間,沒花錢",0],["1 萬以內",0],["1–5 萬",0],["5 萬以上",0]],other:true,noscore:true}
+];
+const SEG = {"A":[0,1],"B":[2,3],"C":[4,5,6,7],"D":[8]};
+const SEGNAME = {A:"名單來源",B:"紀錄流程",C:"追蹤斷點",D:"客戶回購"};
+const SEGMSG = {
+  A:["名單來源穩定,量夠了","來源可以再集中一個管道","名單是最上游 —— 這裡空了,後面都白做"],
+  B:["紀錄有結構,資料撈得出來","資料散在兩三個地方,查一次要翻很久","紀錄在 LINE 或腦子裡 = 這些資料等於不存在"],
+  C:["追蹤節奏穩,流失看得見","追蹤有做,但發現得太慢","追蹤是斷點 —— 客戶不見了你才知道,通常已經來不及"],
+  D:["回購撐得起營收","回購有,但沒在管理","不知道回購率,等於每個月從零開始"]
+};
+
+let i = 0;
+const ans = {};
+const app = document.getElementById("app");
+const started = Date.now();
+
+function paint(){
+  const total = Q.length;
+  document.getElementById("pg").style.width = (i/total*100)+"%";
+  document.getElementById("pgL").textContent = i < total ? Q[i].s : "完成";
+  document.getElementById("pgR").textContent = i < total ? `${i+1} / ${total}` : "";
+  i < total ? question() : result();
+}
+
+function question(){
+  const q = Q[i], a = ans[i] || {};
+  app.innerHTML = `
+    <div class="step">
+      <h1>${q.q}</h1>
+      ${q.h ? `<p class="hint">${q.h}</p>` : `<p class="hint"></p>`}
+      <div class="opts">
+        ${q.o.map((o,n)=>`<button class="opt${a.idx===n?" on":""}" data-n="${n}">${o[0]}</button>`).join("")}
+        ${q.other?`<div class="other"><input id="oth" placeholder="其他(可自己寫)" value="${a.idx===-1?(a.text||""):""}"></div>`:""}
+      </div>
+      <div class="nav">
+        ${i>0?`<button class="back" id="bk">← 上一題</button>`:""}
+        <button class="go" id="nx" ${a.idx===undefined?"disabled":""}>${i===Q.length-1?"看結果":"下一題"}</button>
+      </div>
+    </div>`;
+
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.n;
+    ans[i]={idx:n,text:q.o[n][0],score:q.o[n][1]};
+    const o=document.getElementById("oth"); if(o) o.value="";
+    setTimeout(()=>{ i++; paint(); }, 160);
+  });
+  const oth=document.getElementById("oth");
+  if(oth) oth.oninput=()=>{
+    const v=oth.value.trim();
+    app.querySelectorAll(".opt").forEach(b=>b.classList.remove("on"));
+    if(v){ ans[i]={idx:-1,text:v,score:0}; } else { delete ans[i]; }
+    document.getElementById("nx").disabled = !v;
+  };
+  const nx=document.getElementById("nx"); if(nx) nx.onclick=()=>{ i++; paint(); };
+  const bk=document.getElementById("bk"); if(bk) bk.onclick=()=>{ i--; paint(); };
+}
+
+function segScore(k){
+  const idx=SEG[k]; let got=0, max=0;
+  idx.forEach(n=>{ got += (ans[n]?.score)||0; max += Math.max(...Q[n].o.map(o=>o[1])); });
+  return max? got/max : 0;
+}
+
+function result(){
+  const segs=Object.keys(SEG).map(k=>({k,r:segScore(k)}));
+  const overall=Math.round(segs.reduce((s,x)=>s+x.r,0)/segs.length*100);
+  const weakest=segs.slice().sort((a,b)=>a.r-b.r)[0];
+  const cls=r=>r>=0.7?"g":r>=0.4?"y":"r";
+  const lvl=r=>r>=0.7?0:r>=0.4?1:2;
+
+  app.innerHTML=`
+    <div class="step">
+      <div class="score">
+        <div class="n" style="color:${overall>=70?"var(--accent)":overall>=40?"var(--warn)":"var(--bad)"}">${overall}</div>
+        <div class="l">AI Health Score(滿分 100)</div>
+      </div>
+      <div class="lights">
+        ${segs.map(s=>`<div class="lt ${cls(s.r)}">
+            <div class="t"><span>${SEGNAME[s.k]}</span><span class="pill">${Math.round(s.r*100)}</span></div>
+            <div class="d">${SEGMSG[s.k][lvl(s.r)]}</div></div>`).join("")}
+      </div>
+      <div class="card">
+        <h2>你最該先解決的是「${SEGNAME[weakest.k]}」</h2>
+        <p>這份健檢會彙整 10 位健康從業者的結果。留個聯絡方式,彙整完成後我把<b>同業對照</b>寄給你 —— 你可以看到自己在同業裡的位置。不推銷,不留給第三方。</p>
+        <input id="nm" placeholder="怎麼稱呼你?(選填)">
+        <input id="ct" placeholder="Email 或 LINE ID(選填)">
+        <button class="go" id="sb">送出</button>
+        <div id="msg"></div>
+      </div>
+    </div>`;
+  // 注意:不能寫成 onclick=submit —— 會把 event 當成 silent 參數傳進去,成功訊息就不會顯示
+  document.getElementById("sb").onclick=()=>submit(false);
+  // 沒留聯絡方式也要收到資料:離開頁面前送一次
+  window.addEventListener("pagehide",()=>{ if(!sent) submit(true); },{once:true});
+}
+
+let sent=false;
+async function submit(silent){
+  if(sent) return;
+  const btn=document.getElementById("sb"), msg=document.getElementById("msg");
+  const payload={
+    answers:Q.map((q,n)=>({q:q.q,section:q.s,answer:ans[n]?.text??null,is_other:ans[n]?.idx===-1})),
+    scores:Object.fromEntries(Object.keys(SEG).map(k=>[k,Math.round(segScore(k)*100)])),
+    overall:Math.round(Object.keys(SEG).reduce((s,k)=>s+segScore(k),0)/4*100),
+    name:(document.getElementById("nm")?.value||"").trim()||null,
+    contact:(document.getElementById("ct")?.value||"").trim()||null,
+    seconds:Math.round((Date.now()-started)/1000),
+    source:new URLSearchParams(location.search).get("src")||null
+  };
+  if(btn&&!silent){ btn.disabled=true; btn.textContent="送出中…"; }
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TABLE}`,{
+      method:"POST",
+      headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,
+               "Content-Type":"application/json",Prefer:"return=minimal"},
+      body:JSON.stringify(payload), keepalive:true});
+    if(!r.ok) throw new Error(r.status);
+    sent=true;
+    if(!silent){ document.querySelector(".card").innerHTML=
+      `<h2>收到了,謝謝你 🙏</h2><p>彙整完 10 位之後我會把同業對照寄給你。<br>如果剛剛想到什麼沒寫進去的,直接回我訊息就好。</p>`; }
+  }catch(e){
+    if(!silent&&msg){ msg.className="err";
+      msg.textContent="送出失敗,可以直接把上面的分數截圖傳給我。"; btn.disabled=false; btn.textContent="再試一次"; }
+  }
+}
+paint();
+</script>
+</body>
+</html>
