@@ -6,16 +6,19 @@ auto_edit.py — 口播影片自動剪輯 + B-roll 流水線 (可重複使用)
 三個階段,分開跑,中間可插入 AI 生成 B-roll:
 
   1) cut      自動砍靜音/停頓 + 轉逐字稿 + 產出 B-roll 計畫草稿
+              (會先查 Supabase 素材庫,有夠像的舊素材就直接填入,不用再生成)
               python auto_edit.py cut  我的口播.mp4 -o out/
 
-  2) (人工/MCP) 依 out/broll_plan.json 的 prompt 用 Higgsfield 生成 B-roll
-              把生成的影片檔填回 plan 裡每個項目的 "clip" 欄位
+  2) (Claude/人工) 把 plan 裡每段的 intent 寫成 3 個 prompt 變體 → 用 Higgsfield 生成
+              把生成的影片檔填回 plan 裡每個項目的 "clip" 欄位,再登記進素材庫:
+              python auto_edit.py library add 素材.mp4 --prompt "..." --intent "..."
 
   3) overlay  把 B-roll 疊回精剪影片的對應時間點 + (可選)燒字幕
               python auto_edit.py overlay out/cut.mp4 out/broll_plan.json -o 成品.mp4
 
 設定值在下方 CONFIG 區塊,直接改數字即可。
-相依: ffmpeg(自動偵測)、auto-editor、faster-whisper。
+相依: ffmpeg(自動偵測)、auto-editor、faster-whisper;素材庫需 config/.env 的
+      SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY(沒設也能跑,只是不比對重用)。
 """
 from __future__ import annotations
 import argparse
@@ -25,6 +28,17 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / "config" / ".env")
+except ModuleNotFoundError:
+    pass  # dotenv 非必要;env 也可由外部直接提供
+
+from src import broll_library as lib
 
 # Windows 主控台預設 cp950,強制 stdout/stderr 走 utf-8 避免 emoji/中文崩潰
 for _s in (sys.stdout, sys.stderr):
@@ -44,9 +58,27 @@ CONFIG = {
     "language": "zh",           # 口播語言;None=自動偵測
 
     # --- B-roll 計畫 ---
-    "broll_every_sec": 18,      # 大約每隔幾秒安排一段 B-roll
-    "broll_len": 4.0,           # 每段 B-roll 顯示秒數
-    "broll_min_gap": 8,         # 兩段 B-roll 至少間隔秒數
+    # 節奏基準來自 reels-script/MODEL.md 第 9 條:單鏡口播的停留天花板是 6–7 秒,
+    # 要求每 2–3 秒一個視覺變化。B-roll 只是節奏來源之一(另兩個是 jump cut 與
+    # 螢幕錄影,見第 13、15 條),所以這裡抓「每 8 秒一段、每段 2.5 秒」,
+    # 讓 B-roll 補的是 jump cut 之外的空檔,而不是每 18 秒才動一次。
+    "broll_every_sec": 8,       # 大約每隔幾秒安排一段 B-roll
+    "broll_len": 2.5,           # 每段 B-roll 顯示秒數
+    "broll_min_gap": 5,         # 兩段 B-roll 至少間隔秒數
+    "broll_skip_head_sec": 3.0,  # 開頭幾秒不放 B-roll — hook(0–3 秒)要留給臉/字卡
+    "broll_style": "default",   # 風格 key(寫進 plan,供生成時套用固定視覺語彙)
+    "broll_orientation": "vertical",   # Reels 直式;橫式片改 "horizontal"
+
+    # --- 素材庫重用 ---
+    # 門檻依實測校準(2026-08-02,線上庫):pg_trgm 對中文只抓「字面重疊」,
+    # 抓不到同義 —— 例:庫裡是「桌面特寫:筆電與雜亂桌面」,
+    #   「桌面上的筆電特寫」→ 0.158(字面重疊)
+    #   「拍我的電腦桌」    → 0.000(語意相同但用字不同,完全抓不到)
+    #   無關句子            → 0.000(噪聲底線乾淨,所以門檻可以壓低)
+    # 因此:中文 intent 只能當輔助,**tags 才是主力比對機制**(全中 +0.35)。
+    # 正確用法是 cut 之後先讓 Claude 補 tags,再跑 `match` 重新比對。
+    "reuse_min_score": 0.15,    # 相似度門檻:過了就直接用舊素材,不再生成
+    "reuse_cost_est": 0.05,     # 單段生成成本估值(美元),只用來估「省了多少」
 
     # --- 字幕 ---
     "burn_subtitles": True,     # overlay 階段是否燒上字幕
@@ -133,36 +165,104 @@ def stage_cut(video: str, outdir: Path) -> None:
         for i, s in enumerate(segs, 1))
     (outdir / "transcript.srt").write_text(srt, encoding="utf-8")
 
-    print("\n[3/3] 產出 B-roll 計畫草稿 ...")
+    print("\n[3/3] 產出 B-roll 計畫草稿 + 比對素材庫 ...")
     plan = build_broll_plan(segs)
     (outdir / "broll_plan.json").write_text(
         json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    reused = [p for p in plan if p["clip"]]
+    todo = [p for p in plan if not p["clip"]]
+    saved = len(reused) * CONFIG["reuse_cost_est"]
+
     print(f"\n✅ 完成。精剪影片: {cut_mp4}")
     print(f"   逐字稿:   {outdir/'transcript.srt'}")
     print(f"   B-roll計畫: {outdir/'broll_plan.json'}  ({len(plan)} 段)")
-    print("\n下一步:依 broll_plan.json 的 prompt 生成 B-roll,把檔案路徑填回每段的 \"clip\",")
-    print("再跑:  python auto_edit.py overlay", cut_mp4, outdir / "broll_plan.json", "-o 成品.mp4")
+    print(f"   素材庫沿用 {len(reused)} 段(約省 ${saved:.2f}),待生成 {len(todo)} 段")
+    print("\n下一步(順序很重要):")
+    print("  1. 把待生成那幾段的 intent 改寫成畫面語意,並補上 tags —— 中文比對靠 tags,不補幾乎不會命中")
+    print(f"  2. python auto_edit.py match {outdir/'broll_plan.json'}   ← 補完再比一次,能省的在這裡")
+    print("  3. 剩下的才寫 prompt(建議 3 變體)去生成,填回 \"clip\",再 `library add` 入庫")
+    print("  4. python auto_edit.py overlay", cut_mp4, outdir / "broll_plan.json", "-o 成品.mp4")
 
 
 def build_broll_plan(segs: list[dict]) -> list[dict]:
-    """依時間間隔挑句子,產出 B-roll 提示草稿(prompt 之後可由人/AI 精修)。"""
+    """依時間間隔挑句子排 B-roll 位置,並先查素材庫有沒有可直接沿用的。
+
+    prompt 刻意留空:直接把中文逐字稿塞進英文模板(舊做法)會產生
+    「illustrating: 我覺得這件事很重要」這種無法成像的句子。改成只給 intent,
+    由 Claude 依 reels-script/MODEL.md 的視覺語彙寫成 3 個 prompt 變體。
+    """
     plan: list[dict] = []
-    last = -CONFIG["broll_min_gap"]
+    last = float("-inf")
     for s in segs:
+        if s["start"] < CONFIG["broll_skip_head_sec"]:
+            continue
         if s["start"] - last < max(CONFIG["broll_every_sec"], CONFIG["broll_min_gap"]):
             continue
         if not s["text"]:
             continue
         last = s["start"]
-        plan.append({
+        item = {
             "start": round(s["start"], 2),
             "end": round(s["start"] + CONFIG["broll_len"], 2),
             "based_on": s["text"],
-            "prompt": f"B-roll cinematic footage illustrating: {s['text']}",
-            "clip": "",   # ← 生成後把 B-roll 影片路徑填這裡
-        })
+            "intent": s["text"],       # ← 待精修成「這段畫面要表達什麼」
+            "tags": [],                # ← 可手填,填了比對會更準
+            "style": CONFIG["broll_style"],
+            "prompt": "",              # ← 最終送生成的那一版
+            "prompt_variants": [],     # ← 建議放 3 個變體(A/B 測)
+            "clip": "",                # ← 生成或沿用後的影片路徑
+            "asset_id": "",            # ← 沿用素材庫時自動填,overlay 會回寫使用紀錄
+            "reuse": None,             # ← 命中素材庫時的比對資訊
+        }
+        try_reuse(item)
+        plan.append(item)
     return plan
+
+
+def try_reuse(item: dict) -> bool:
+    """查素材庫,夠像就把 clip / asset_id 填進這段計畫。回傳有沒有命中。
+
+    比對用 intent + tags:中文 intent 只抓得到字面重疊(見 CONFIG 註解),
+    tags 填了才是可靠的命中來源。
+    """
+    if item.get("clip"):
+        return False
+    query = item.get("intent") or item.get("based_on") or ""
+    hit = lib.best_match(
+        query, tags=item.get("tags") or None,
+        orientation=CONFIG["broll_orientation"],
+        min_score=CONFIG["reuse_min_score"])
+    if not hit:
+        return False
+    item["clip"] = hit["file_path"]
+    item["asset_id"] = hit["id"]
+    item["prompt"] = hit.get("prompt", "")
+    item["reuse"] = {
+        "score": round(float(hit.get("score", 0)), 3),
+        "matched_intent": hit.get("intent") or hit.get("prompt", ""),
+        "use_count": hit.get("use_count", 0),
+    }
+    print(f"   ♻ {item['start']:.1f}s 沿用既有素材 "
+          f"(分數 {item['reuse']['score']}): {Path(hit['file_path']).name}")
+    return True
+
+
+def stage_match(plan_path: str) -> None:
+    """補完 intent/tags 之後重跑比對 —— 這才是重用真正會命中的時機。"""
+    p = Path(plan_path)
+    plan = json.loads(p.read_text(encoding="utf-8"))
+    pending = [it for it in plan if not it.get("clip")]
+    if not pending:
+        print("每段都已有 clip,沒東西要比對。")
+        return
+    no_tags = sum(1 for it in pending if not it.get("tags"))
+    print(f"待比對 {len(pending)} 段,其中 {no_tags} 段沒填 tags(命中率會低很多)。")
+    hits = sum(1 for it in pending if try_reuse(it))
+    p.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+    saved = hits * CONFIG["reuse_cost_est"]
+    print(f"\n✅ 命中 {hits} 段(約省 ${saved:.2f}),仍需生成 {len(pending) - hits} 段。")
+    print(f"   已更新: {p}")
 
 
 # ─────────────────────────── STAGE 3: overlay ───────────────────────────
@@ -213,6 +313,15 @@ def stage_overlay(cut_mp4: str, plan_path: str, output: str) -> None:
     run(cmd)
     print(f"\n✅ 成品輸出: {output}")
 
+    # 回寫使用紀錄:哪支影片在第幾秒用了哪段素材(觸發器會累加 use_count)
+    slug = Path(output).stem
+    logged = sum(
+        1 for it in items
+        if it.get("asset_id")
+        and lib.record_usage(it["asset_id"], slug, float(it["start"]), float(it["end"])))
+    if logged:
+        print(f"   已記錄 {logged} 段素材使用紀錄(video_slug={slug})")
+
 
 # ─────────────────────────── STAGE: enhance ───────────────────────────
 def stage_enhance(video: str, output: str) -> None:
@@ -228,6 +337,48 @@ def stage_enhance(video: str, output: str) -> None:
          "-c:v", "libx264", "-crf", "19", "-preset", "medium",
          "-c:a", "copy", output])
     print(f"\n✅ 優化輸出: {output}")
+
+
+# ─────────────────────────── STAGE: library ───────────────────────────
+def probe_clip(path: str) -> dict:
+    """取素材的長度與尺寸,登記時一併寫進庫。"""
+    out = subprocess.run(
+        [FFPROBE, "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height:format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", path],
+        capture_output=True, text=True, check=True).stdout.split()
+    info: dict = {}
+    if len(out) >= 2:
+        info["width"], info["height"] = int(out[0]), int(out[1])
+    if len(out) >= 3:
+        info["duration_sec"] = round(float(out[2]), 2)
+    return info
+
+
+def stage_library_add(args) -> None:
+    if not lib.available():
+        sys.exit("[ERROR] 未設定 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY,無法登記素材。")
+    tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
+    row = lib.register(
+        args.clip, prompt=args.prompt, intent=args.intent, tags=tags,
+        style=args.style, source=args.source, provider=args.provider,
+        model=args.model, cost_usd=args.cost, notes=args.notes,
+        **probe_clip(args.clip))
+    if not row:
+        sys.exit("[ERROR] 登記失敗。")
+    print(f"✅ 已登記: {row['id']}  {Path(args.clip).name}")
+
+
+def stage_library_search(args) -> None:
+    tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
+    hits = lib.search(args.query, tags=tags or None,
+                      orientation=args.orientation, limit=args.limit)
+    if not hits:
+        print("找不到可重用的素材。")
+        return
+    for h in hits:
+        print(f"[{float(h['score']):.3f}] {Path(h['file_path']).name}  "
+              f"用過 {h['use_count']} 次  {h.get('intent') or h['prompt']}")
 
 
 # ─────────────────────────────── CLI ───────────────────────────────
@@ -248,6 +399,32 @@ def main() -> None:
     e.add_argument("video")
     e.add_argument("-o", "--output", default="enhanced.mp4")
 
+    lb = sub.add_parser("library", help="B-roll 素材庫 (Supabase)")
+    lbs = lb.add_subparsers(dest="libcmd", required=True)
+
+    la = lbs.add_parser("add", help="把一段素材登記進庫")
+    la.add_argument("clip")
+    la.add_argument("--prompt", required=True, help="生成用的英文 prompt")
+    la.add_argument("--intent", default="", help="中文:這段畫面表達什麼")
+    la.add_argument("--tags", default="", help="逗號分隔")
+    la.add_argument("--style", default=CONFIG["broll_style"])
+    la.add_argument("--source", default="higgsfield",
+                    choices=["higgsfield", "stock", "self", "other"])
+    la.add_argument("--provider", default="")
+    la.add_argument("--model", default="")
+    la.add_argument("--cost", type=float, default=0.0, help="這段花了多少美元")
+    la.add_argument("--notes", default="")
+
+    ls = lbs.add_parser("search", help="查有沒有可重用的素材")
+    ls.add_argument("query")
+    ls.add_argument("--tags", default="", help="逗號分隔;中文查詢一定要帶 tags 才準")
+    ls.add_argument("--orientation", default=CONFIG["broll_orientation"],
+                    choices=["vertical", "horizontal"])
+    ls.add_argument("--limit", type=int, default=5)
+
+    mt = sub.add_parser("match", help="補完 intent/tags 後重新比對素材庫")
+    mt.add_argument("plan")
+
     args = ap.parse_args()
     if args.cmd == "cut":
         stage_cut(args.video, Path(args.outdir))
@@ -255,6 +432,10 @@ def main() -> None:
         stage_overlay(args.cut_mp4, args.plan, args.output)
     elif args.cmd == "enhance":
         stage_enhance(args.video, args.output)
+    elif args.cmd == "match":
+        stage_match(args.plan)
+    elif args.cmd == "library":
+        (stage_library_add if args.libcmd == "add" else stage_library_search)(args)
 
 
 if __name__ == "__main__":
