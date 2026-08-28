@@ -4,6 +4,13 @@ function formatDate(d = new Date()) {
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 }
 
+/* AI 回傳的文字直接進 innerHTML，先做基本轉義 */
+function escapeHtml(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+
 function relativeTime(isoStr) {
   const diff = Date.now() - new Date(isoStr).getTime();
   const m = Math.floor(diff/60000);

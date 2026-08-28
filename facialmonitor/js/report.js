@@ -34,6 +34,20 @@ const TONGUE_KEYS = [
   { key:'state',   label:'舌態' },
 ];
 
+/* ── 顯老細節：嚴重度對照（1-5） ── */
+const AGING_SEVERITY = [
+  { max:1, label:'幾乎不明顯', badge:'badge-ok'    },
+  { max:2, label:'輕微',       badge:'badge-ok'    },
+  { max:3, label:'中等',       badge:'badge-warn'  },
+  { max:4, label:'明顯',       badge:'badge-alert' },
+  { max:5, label:'非常明顯',   badge:'badge-alert' },
+];
+
+function severityInfo(v) {
+  const n = Math.min(5, Math.max(1, Math.round(Number(v) || 3)));
+  return { n, ...AGING_SEVERITY.find(s => n <= s.max) };
+}
+
 /* ── 主渲染函式 ── */
 function renderReport(r) {
   const el = document.getElementById('report-content');
@@ -49,6 +63,7 @@ function renderReport(r) {
     ${nutrientsSection(r.nutrients)}
     ${disorderSection(r.disorders)}
     ${faceZoneSection(r.faceZones)}
+    ${agingSection(r.agingSigns)}
     ${tongueSection(r.tongue)}
     ${constitutionSection(r.constitution)}
     ${dietSection(r.diet)}
@@ -153,6 +168,42 @@ function faceZoneSection(zones) {
       </div>
       ${z.detail ? `<div style="font-size:13px;color:var(--text-soft);padding:2px 0 8px 48px;line-height:1.7">${z.detail}</div>` : ''}`;
     }).join('')}
+  </div>`;
+}
+
+/* ── 最顯老的三個臉部細節 ──
+   後端 agingSigns 可能是 { summary, signs:[...] } 或直接是陣列，兩種都吃。
+   舊報告沒有這個欄位 → 整段不渲染，不影響既有紀錄。 */
+function agingSection(aging) {
+  const signs = (Array.isArray(aging) ? aging : aging?.signs) ?? [];
+  if (!signs.length) return '';
+
+  const top3 = signs
+    .slice()
+    .sort((a, b) => (Number(b?.severity) || 0) - (Number(a?.severity) || 0))
+    .slice(0, 3);
+
+  return `
+  <div class="sec-card">
+    <div class="sec-title">⏳ 最顯老的三個臉部細節</div>
+    ${aging?.summary ? `<div class="aging-summary">${escapeHtml(aging.summary)}</div>` : ''}
+    ${top3.map((s, i) => {
+      const sev = severityInfo(s?.severity);
+      return `
+      <div class="aging-item">
+        <div class="aging-head">
+          <span class="aging-rank">${i + 1}</span>
+          <div class="aging-name">${escapeHtml(s?.name ?? '未命名細節')}</div>
+          ${s?.zone ? `<span class="aging-zone">${escapeHtml(s.zone)}</span>` : ''}
+          <span class="badge ${sev.badge}">${sev.label}</span>
+        </div>
+        <div class="aging-meter"><div class="aging-meter-fill" style="width:${sev.n * 20}%"></div></div>
+        ${s?.evidence ? `<div class="aging-line">📷 ${escapeHtml(s.evidence)}</div>` : ''}
+        ${s?.tcm      ? `<div class="aging-line">☯ 中醫對應：${escapeHtml(s.tcm)}</div>` : ''}
+        ${s?.care     ? `<div class="aging-care">💡 ${escapeHtml(s.care)}</div>` : ''}
+      </div>`;
+    }).join('')}
+    <div class="aging-disc">※ 以上為照片外觀的老化特徵判讀，會受光線、角度與妝容影響，非醫學診斷。</div>
   </div>`;
 }
 
