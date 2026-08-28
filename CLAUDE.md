@@ -63,6 +63,7 @@
 | 設計/分析個人 IP 概念定位 | `/ip-design` |
 | 上線前風險盤點 | `/pre-mortem` |
 | 確認改動真的能動 | `/verify` |
+| 每天要三條直擊人心的建議 | `daily-roast` |
 
 ## 平台注意(Windows PowerShell)
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`
