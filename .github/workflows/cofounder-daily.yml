@@ -1,13 +1,18 @@
 name: AI 合夥人 — 早會 / 覆盤 / 同步
 
-# 台北時間 → UTC(UTC+8):
-#   07:30 早會   → 23:30 UTC(前一天)
-#   21:30 覆盤   → 13:30 UTC
-#   23:50 同步   → 15:50 UTC
+# 台北時間 → UTC(UTC+8)
+#
+# ⚠️ 2026-08-26 起,自動推播已停用(使用者要求)。
+#    早會(台北 07:30 / '30 23 * * *')與覆盤(台北 21:30 / '30 13 * * *')兩班 cron 已註解掉,
+#    所以不會再有任何自動發到 LINE 的訊息。
+#    要恢復,把下面兩行 cron 取消註解即可。
+#
+#   - cron: '30 23 * * *'   # 早會推播(停用中)
+#   - cron: '30 13 * * *'   # 覆盤推播(停用中)
+#
+# 保留每晚 23:50 的同步 —— 它只把資料寫回 repo 與更新系統提示,不發任何訊息。
 on:
   schedule:
-    - cron: '30 23 * * *'
-    - cron: '30 13 * * *'
     - cron: '50 15 * * *'
   workflow_dispatch:
     inputs:
@@ -44,7 +49,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.schedule }}" = "30 23 * * *" ]; then
-            echo "mode=morning" >> "$GITHUB_OUTPUT"
+            echo "mode=morning" >> "$GITHUB_OUTPUT"   # 這兩班目前已停用,保留以便日後恢復
           elif [ "${{ github.event.schedule }}" = "30 13 * * *" ]; then
             echo "mode=review" >> "$GITHUB_OUTPUT"
           else
