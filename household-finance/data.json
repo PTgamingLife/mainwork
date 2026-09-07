@@ -166,7 +166,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 76,
-      "owner": "共同",
+      "owner": "先生",
       "note": "CHARGESPOT 行動電源租借｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -175,7 +175,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 1800,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -184,7 +184,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 1700,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -193,7 +193,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 1200,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -202,7 +202,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 925,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -211,7 +211,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 1840,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -220,7 +220,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 1890,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -229,17 +229,8 @@
       "type": "expense",
       "category": "其他",
       "amount": 1650,
-      "owner": "共同",
+      "owner": "先生",
       "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-01",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 165,
-      "owner": "共同",
-      "note": "星巴克 艋舺門市｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -247,7 +238,7 @@
       "type": "expense",
       "category": "交通",
       "amount": 500,
-      "owner": "共同",
+      "owner": "先生",
       "note": "悠遊卡加值－台北客運｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -256,8 +247,17 @@
       "type": "expense",
       "category": "交通",
       "amount": 1000,
-      "owner": "共同",
+      "owner": "先生",
       "note": "悠遊卡加值－台北捷運｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-01",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 165,
+      "owner": "先生",
+      "note": "星巴克 艋舺門市｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -265,7 +265,7 @@
       "type": "expense",
       "category": "飲食",
       "amount": 89,
-      "owner": "共同",
+      "owner": "先生",
       "note": "台灣麥當勞｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -274,7 +274,7 @@
       "type": "expense",
       "category": "飲食",
       "amount": 151,
-      "owner": "共同",
+      "owner": "先生",
       "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -283,7 +283,7 @@
       "type": "expense",
       "category": "飲食",
       "amount": 74,
-      "owner": "共同",
+      "owner": "先生",
       "note": "全家便利商店－萬華車站｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -292,7 +292,7 @@
       "type": "expense",
       "category": "飲食",
       "amount": 1004,
-      "owner": "共同",
+      "owner": "先生",
       "note": "全聯－三峽北大｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -301,17 +301,8 @@
       "type": "expense",
       "category": "其他",
       "amount": 3466,
-      "owner": "共同",
+      "owner": "先生",
       "note": "卡多摩嬰童館－樹林北大｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-04",
-      "type": "expense",
-      "category": "交通",
-      "amount": 1420,
-      "owner": "共同",
-      "note": "車容坊加油站－佳園站｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -319,7 +310,7 @@
       "type": "expense",
       "category": "其他",
       "amount": 870,
-      "owner": "共同",
+      "owner": "先生",
       "note": "康達盛通生活量販北大店｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -328,8 +319,17 @@
       "type": "expense",
       "category": "交通",
       "amount": 100,
-      "owner": "共同",
+      "owner": "先生",
       "note": "悠遊付－好停停車場｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-04",
+      "type": "expense",
+      "category": "交通",
+      "amount": 1420,
+      "owner": "先生",
+      "note": "車容坊加油站－佳園站｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -351,63 +351,9 @@
     {
       "date": "2026-07-05",
       "type": "expense",
-      "category": "其他",
-      "amount": 1170,
-      "owner": "共同",
-      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 313,
-      "owner": "共同",
-      "note": "統一商場—清水 八月堂｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 80,
-      "owner": "共同",
-      "note": "統一商場—清水 東港漁鄉｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 70,
-      "owner": "共同",
-      "note": "統一商場—清水 烤玉米｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 157,
-      "owner": "共同",
-      "note": "統一超商－清水綻｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
-      "category": "飲食",
-      "amount": 129,
-      "owner": "共同",
-      "note": "統一超商－德光｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-05",
-      "type": "expense",
       "category": "通訊",
       "amount": 250,
-      "owner": "共同",
+      "owner": "先生",
       "note": "APPLE.COM/BILL 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -416,8 +362,62 @@
       "type": "expense",
       "category": "其他",
       "amount": 4,
-      "owner": "共同",
+      "owner": "先生",
       "note": "國外交易手續費(APPLE)｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "其他",
+      "amount": 1170,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 313,
+      "owner": "先生",
+      "note": "統一商場—清水 八月堂｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 80,
+      "owner": "先生",
+      "note": "統一商場—清水 東港漁鄉｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 70,
+      "owner": "先生",
+      "note": "統一商場—清水 烤玉米｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 129,
+      "owner": "先生",
+      "note": "統一超商－德光｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-05",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 157,
+      "owner": "先生",
+      "note": "統一超商－清水綻｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -431,9 +431,18 @@
     {
       "date": "2026-07-06",
       "type": "expense",
+      "category": "通訊",
+      "amount": 33,
+      "owner": "先生",
+      "note": "CAPAFY AI 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-06",
+      "type": "expense",
       "category": "交通",
       "amount": 1095,
-      "owner": "共同",
+      "owner": "先生",
       "note": "中油－新營服務區北上站｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
@@ -442,17 +451,26 @@
       "type": "expense",
       "category": "飲食",
       "amount": 233,
-      "owner": "共同",
+      "owner": "先生",
       "note": "全家便利商店－新營國道｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
-      "date": "2026-07-06",
+      "date": "2026-07-07",
       "type": "expense",
-      "category": "通訊",
-      "amount": 33,
-      "owner": "共同",
-      "note": "CAPAFY AI 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "category": "飲食",
+      "amount": 29,
+      "owner": "先生",
+      "note": "統一超商－信興｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-08",
+      "type": "expense",
+      "category": "其他",
+      "amount": 76,
+      "owner": "先生",
+      "note": "CHARGESPOT 行動電源租借｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -464,30 +482,75 @@
       "note": "全聯採買"
     },
     {
-      "date": "2026-07-12",
+      "date": "2026-07-08",
+      "type": "expense",
+      "category": "其他",
+      "amount": 5000,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-08",
       "type": "expense",
       "category": "飲食",
-      "amount": 172,
-      "owner": "共同",
+      "amount": 49,
+      "owner": "先生",
+      "note": "統一超商－凱富｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-10",
+      "type": "expense",
+      "category": "其他",
+      "amount": 1514,
+      "owner": "先生",
+      "note": "康達盛通生活量販北大店｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-10",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 154,
+      "owner": "先生",
       "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
-      "date": "2026-07-12",
+      "date": "2026-07-11",
       "type": "expense",
-      "category": "交通",
-      "amount": 60,
-      "owner": "共同",
-      "note": "嘟嘟房建南高架站｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "category": "通訊",
+      "amount": 820,
+      "owner": "先生",
+      "note": "APPLE.COM/BILL 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
-      "date": "2026-07-12",
+      "date": "2026-07-11",
       "type": "expense",
-      "category": "交通",
+      "category": "飲食",
+      "amount": 74,
+      "owner": "先生",
+      "note": "全家便利商店－樹林大雅｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-11",
+      "type": "expense",
+      "category": "其他",
+      "amount": 12,
+      "owner": "先生",
+      "note": "國外交易手續費(APPLE)｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-11",
+      "type": "expense",
+      "category": "飲食",
       "amount": 250,
-      "owner": "共同",
-      "note": "藍新－USPACE 停車｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -495,17 +558,8 @@
       "type": "expense",
       "category": "通訊",
       "amount": 835,
-      "owner": "共同",
+      "owner": "先生",
       "note": "HIGGSFIELD INC. 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
-      "source": "card-6673"
-    },
-    {
-      "date": "2026-07-12",
-      "type": "expense",
-      "category": "其他",
-      "amount": 13,
-      "owner": "共同",
-      "note": "國外交易手續費(HIGGSFIELD)｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -513,8 +567,53 @@
       "type": "expense",
       "category": "通訊",
       "amount": 385,
-      "owner": "共同",
+      "owner": "先生",
       "note": "HIGGSFIELD INC. 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 100,
+      "owner": "先生",
+      "note": "伯朗咖啡｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 95,
+      "owner": "先生",
+      "note": "全家便利商店－新建南店｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 114,
+      "owner": "先生",
+      "note": "台灣麥當勞｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "交通",
+      "amount": 60,
+      "owner": "先生",
+      "note": "嘟嘟房建南高架站｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "其他",
+      "amount": 13,
+      "owner": "先生",
+      "note": "國外交易手續費(HIGGSFIELD)｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     },
     {
@@ -522,8 +621,233 @@
       "type": "expense",
       "category": "其他",
       "amount": 6,
-      "owner": "共同",
+      "owner": "先生",
       "note": "國外交易手續費(HIGGSFIELD)｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "其他",
+      "amount": 4860,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "其他",
+      "amount": 1200,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 172,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-12",
+      "type": "expense",
+      "category": "交通",
+      "amount": 250,
+      "owner": "先生",
+      "note": "藍新－USPACE 停車｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-13",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 129,
+      "owner": "先生",
+      "note": "統一超商－凱富｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-13",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 132,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-13",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 256,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-13",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 727,
+      "owner": "先生",
+      "note": "統康生活超市三峽光明店｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-14",
+      "type": "expense",
+      "category": "通訊",
+      "amount": 32,
+      "owner": "先生",
+      "note": "VSA_NEBULAAP_OG｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-14",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 187,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-14",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 35,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-14",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 66,
+      "owner": "先生",
+      "note": "統一超商－建南｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-15",
+      "type": "expense",
+      "category": "交通",
+      "amount": 1405,
+      "owner": "先生",
+      "note": "中油－基隆路站(D21)｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 264,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 97,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-16",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 60,
+      "owner": "先生",
+      "note": "全家便利商店－樹林大雅｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-16",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 197,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-18",
+      "type": "expense",
+      "category": "其他",
+      "amount": 7028,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-18",
+      "type": "expense",
+      "category": "其他",
+      "amount": 2380,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-18",
+      "type": "expense",
+      "category": "其他",
+      "amount": 1653,
+      "owner": "先生",
+      "note": "康達盛通生活量販北大店｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-18",
+      "type": "expense",
+      "category": "交通",
+      "amount": 200,
+      "owner": "先生",
+      "note": "悠遊付－好停停車場｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-18",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 169,
+      "owner": "先生",
+      "note": "統一超商－凱富｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-20",
+      "type": "expense",
+      "category": "通訊",
+      "amount": 690,
+      "owner": "先生",
+      "note": "APPLE.COM/BILL 訂閱｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-20",
+      "type": "expense",
+      "category": "交通",
+      "amount": 60,
+      "owner": "先生",
+      "note": "悠遊付－好停停車場｜國泰世華 6673 中華航空聯名卡(附卡)",
+      "source": "card-6673"
+    },
+    {
+      "date": "2026-07-20",
+      "type": "expense",
+      "category": "其他",
+      "amount": 745,
+      "owner": "先生",
+      "note": "盛立藥師藥妝藥局｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
     }
   ]
