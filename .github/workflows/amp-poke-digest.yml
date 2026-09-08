@@ -1,0 +1,41 @@
+name: 安麗蛋白素挑戰 — 戳一下彙總推播
+
+# 台北 17:00 = UTC 09:00。
+# 戳的當下不推播,這班排程把前 24 小時的戳彙總成一張卡片發給被戳的人。
+# amp-poke-digest 內部用 (digest_date, member_id) 當 primary key,重跑不會重送。
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 只計算不推播
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+concurrency:
+  group: amp-poke-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 呼叫 amp-poke-digest
+        env:
+          FN_URL: ${{ secrets.AMP_POKE_DIGEST_URL }}
+          DIGEST_KEY: ${{ secrets.AMP_DIGEST_KEY }}
+          DRY: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ -z "$FN_URL" ] || [ -z "$DIGEST_KEY" ]; then
+            echo "缺 AMP_POKE_DIGEST_URL 或 AMP_DIGEST_KEY secret"; exit 1
+          fi
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST "$FN_URL" \
+            -H "content-type: application/json" \
+            -H "x-amp-key: $DIGEST_KEY" \
+            -d "{\"dryRun\": $DRY}")
+          cat resp.json; echo
+          [ "$code" = "200" ] || { echo "HTTP $code"; exit 1; }

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>安麗蛋白素 7 天挑戰</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- 載入中 -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">連線中…</p>
+  </div>
+
+  <!-- 錯誤 -->
+  <div class="loading hidden" id="errorScreen">
+    <div class="err-emblem">⚠️</div>
+    <p class="err-msg" id="errorMsg"></p>
+    <button class="btn btn-primary" id="retryBtn">重新載入</button>
+  </div>
+
+  <div class="app hidden" id="app">
+    <header class="topbar">
+      <div>
+        <div class="brand">🥤 蛋白素 7 天挑戰</div>
+        <div class="round-range" id="roundRange"></div>
+      </div>
+      <div class="me-chip">
+        <img id="meAvatar" alt="" />
+        <span id="meName">夥伴</span>
+      </div>
+    </header>
+
+    <main class="views">
+      <!-- ===== 首頁 ===== -->
+      <section class="view" id="view-home">
+        <div class="score-card">
+          <div class="score-label">我的總分</div>
+          <div class="score-value" id="homePoints">0</div>
+          <div class="score-sub">
+            <span class="pill pill-gold">第 <b id="homeRank">-</b> 名</span>
+            <span class="pill">連續 <b id="homeStreak">0</b> 天</span>
+            <span class="pill">剩 <b id="homeLeft">-</b> 天</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">今天做了什麼</h2>
+          <div class="today-grid" id="todayGrid"></div>
+          <p class="honesty" id="homeHonesty"></p>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">最近紀錄</h2>
+          <ul class="log-list" id="logList"><li class="log-empty">還沒有紀錄,去加第一分吧!</li></ul>
+        </div>
+      </section>
+
+      <!-- ===== 加分 ===== -->
+      <section class="view hidden" id="view-score">
+        <div class="card">
+          <h2 class="card-title">記錄我的行動</h2>
+          <button class="act act-eat" data-type="eat">
+            <span class="act-emoji">🥄</span>
+            <span class="act-text"><b>自己吃一湯匙</b><i>每天都吃,基本功</i></span>
+            <span class="act-pt">+1</span>
+          </button>
+          <button class="act act-share" data-type="share">
+            <span class="act-emoji">📣</span>
+            <span class="act-text"><b>分享一次</b><i>要填分享給誰</i></span>
+            <span class="act-pt">+3</span>
+          </button>
+          <button class="act act-refer" data-type="refer">
+            <span class="act-emoji">🏆</span>
+            <span class="act-text"><b>推薦別人一罐</b><i>要填被推薦人</i></span>
+            <span class="act-pt">+5</span>
+          </button>
+          <p class="honesty" id="scoreHonesty"></p>
+        </div>
+      </section>
+
+      <!-- ===== 排行榜 ===== -->
+      <section class="view hidden" id="view-board">
+        <div class="card">
+          <h2 class="card-title">團隊排行榜</h2>
+          <ul class="board-list" id="boardList"></ul>
+          <p class="honesty" id="boardHonesty"></p>
+        </div>
+      </section>
+
+      <!-- ===== 每日問答 ===== -->
+      <section class="view hidden" id="view-quiz">
+        <div class="card">
+          <h2 class="card-title">今日一題 · 答對 +1</h2>
+          <p class="quiz-q" id="quizQ">載入中…</p>
+          <div class="quiz-options" id="quizOptions"></div>
+          <div class="quiz-result hidden" id="quizResult"></div>
+          <p class="honesty" id="quizHonesty"></p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab is-on" data-view="home"><span>🏠</span>首頁</button>
+      <button class="tab" data-view="score"><span>➕</span>加分</button>
+      <button class="tab" data-view="board"><span>🏅</span>排行</button>
+      <button class="tab" data-view="quiz"><span>❓</span>問答</button>
+    </nav>
+  </div>
+
+  <!-- 加分時填對方名字 -->
+  <div class="overlay hidden" id="targetOverlay">
+    <div class="sheet">
+      <h3 id="targetTitle">分享給誰?</h3>
+      <label for="targetName">對方名字(必填)</label>
+      <input id="targetName" type="text" maxlength="20" placeholder="例如:王大明" autocomplete="off" />
+      <label for="targetNote">備註(可不填)</label>
+      <input id="targetNote" type="text" maxlength="40" placeholder="例如:同事,想改善外食" autocomplete="off" />
+      <p class="sheet-msg" id="targetMsg"></p>
+      <div class="sheet-btns">
+        <button class="btn btn-ghost" id="targetCancel">取消</button>
+        <button class="btn btn-primary" id="targetOk">確認加分</button>
+      </div>
+      <p class="honesty" id="sheetHonesty"></p>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/mock.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/score.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/quiz.js"></script>
+</body>
+</html>
