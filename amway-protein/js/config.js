@@ -9,8 +9,8 @@
 //   https://ptgaminglife.github.io/mainwork/amway-protein/
 // 全頁那個要加 ?full=1 —— app.js 靠這個參數決定用 LIFF_ID_FULL 而不是 COMPACT。
 window.AMP_CONFIG = {
-  LIFF_ID_COMPACT: '',
-  LIFF_ID_FULL: '',
+  LIFF_ID_COMPACT: '2011511140-iU64mwtd',
+  LIFF_ID_FULL: '2011511140-5AixRgyd',
   API_URL: 'https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-api',
   ROUND_DAYS: 7,
   MOCK: new URLSearchParams(location.search).has('mock'),
