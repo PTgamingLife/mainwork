@@ -45,6 +45,7 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 | `supabase/functions/amp-line/` | LINE webhook |
 | `supabase/functions/amp-api/` | LIFF 後端 API |
 | `supabase/functions/amp-poke-digest/` | 戳一下彙總推播 |
+| `amway-protein/richmenu.html` / `richmenu.png` | 圖文選單底圖(HTML 原稿 + 2500×1686 成品) |
 | `scripts/amp_richmenu.py` | 4 格圖文選單(預設 dry run) |
 | `.github/workflows/amp-poke-digest.yml` | 每天 17:00 的排程 |
 
@@ -65,7 +66,9 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
    (7 天,結束後先 `update amp_rounds set is_active=false` 再開新的)
 5. **前端**:GitHub Pages 發佈後,把 LIFF App 的 Endpoint URL 指到 `.../amway-protein/`,
    再把兩個 LIFF ID 填進 `js/config.js`。
-6. **圖文選單**:`python scripts/amp_richmenu.py` 看 dry run,確認後 `--apply --image <底圖>`。
+6. **圖文選單**:`python scripts/amp_richmenu.py` 看 dry run,確認後加 `--apply`
+   (底圖預設用 `amway-protein/richmenu.png`;要改字改色就改 `richmenu.html`,
+   用瀏覽器以 2500×1686 視窗截圖覆蓋 PNG)。
 7. **Webhook**:LINE Developers → Messaging API → Webhook URL 填 amp-line 的網址,
    Verify 後開啟 Use webhook;關閉 Auto-reply 與 Greeting messages。
 8. **GitHub Secrets**:`AMP_POKE_DIGEST_URL`、`AMP_DIGEST_KEY`。

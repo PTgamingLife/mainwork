@@ -5,7 +5,7 @@
 
 用法(PowerShell):
     python scripts/amp_richmenu.py                      # dry run,看內容
-    python scripts/amp_richmenu.py --apply --image amway-protein/richmenu.png
+    python scripts/amp_richmenu.py --apply                # 用 repo 附的底圖真的上傳
 
 需要的環境變數(放 .env,不要進 repo):
     AMP_LINE_CHANNEL_ACCESS_TOKEN   Messaging API 長效 token
@@ -13,6 +13,8 @@
     AMP_LIFF_URL_FULL               全頁 LIFF
 
 底圖規格:2500 x 1686 PNG/JPEG,2x2 四格。
+repo 已附 amway-protein/richmenu.png;要改字改色就改 amway-protein/richmenu.html
+(用瀏覽器以 2500x1686 視窗截圖覆蓋 PNG)。
 """
 
 import argparse
@@ -63,7 +65,8 @@ def main() -> int:
     load_dotenv()
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="真的送到 LINE(預設只 dry run)")
-    ap.add_argument("--image", help="底圖路徑,2500x1686")
+    ap.add_argument("--image", default="amway-protein/richmenu.png",
+                    help="底圖路徑,2500x1686(預設用 repo 附的那張)")
     args = ap.parse_args()
 
     token = os.getenv("AMP_LINE_CHANNEL_ACCESS_TOKEN", "")
@@ -81,7 +84,7 @@ def main() -> int:
               f'{area["action"]["label"]} → {area["action"]["uri"]}')
 
     if not args.apply:
-        print("\n(dry run。確認以上四格無誤後,再加 --apply --image <底圖> 執行。)")
+        print("\n(dry run。確認以上四格無誤後,再加 --apply 執行(底圖預設 amway-protein/richmenu.png)。)")
         return 0
 
     if not token:
