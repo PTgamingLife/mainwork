@@ -52,10 +52,7 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 ## 上線步驟
 
 1. **資料庫**:套用兩支 migration。
-2. **Edge Secrets**(Supabase → Edge Functions → Secrets):
-   `AMP_LINE_CHANNEL_SECRET`、`AMP_LINE_CHANNEL_ACCESS_TOKEN`、`AMP_LIFF_CHANNEL_ID`、
-   `AMP_LIFF_URL_COMPACT`、`AMP_LIFF_URL_FULL`、`AMP_DIGEST_KEY`
-   (值就是 zip 裡 `PROJECT_513FIGHT_*` 那組)。
+2. **Edge Secrets**:填下面「Secrets 對照表」的 A 區六個。
 3. **部署函式**(LINE 與 LIFF 都不帶 Supabase JWT):
    ```
    supabase functions deploy amp-line --no-verify-jwt
@@ -64,14 +61,61 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
    ```
 4. **開第一輪賽季**:`insert into amp_rounds (start_date, end_date) values ('YYYY-MM-DD', 'YYYY-MM-DD');`
    (7 天,結束後先 `update amp_rounds set is_active=false` 再開新的)
-5. **前端**:GitHub Pages 發佈後,把 LIFF App 的 Endpoint URL 指到 `.../amway-protein/`,
-   再把兩個 LIFF ID 填進 `js/config.js`。
+5. **前端上 Pages**:mainwork → Settings → Pages → Deploy from a branch → `main` → `/(root)`。
+   網址固定是 **https://ptgaminglife.github.io/mainwork/amway-protein/**
+   (要 merge 進 main 才會活)。這串就是兩個 LIFF App 的 Endpoint URL —— 全頁那個
+   加 `?full=1`(`app.js` 靠這個參數決定用 `LIFF_ID_FULL`)。
+   拿到兩個 LIFF ID 後填進 `js/config.js`。
 6. **圖文選單**:`python scripts/amp_richmenu.py` 看 dry run,確認後加 `--apply`
    (底圖預設用 `amway-protein/richmenu.png`;要改字改色就改 `richmenu.html`,
    用瀏覽器以 2500×1686 視窗截圖覆蓋 PNG)。
 7. **Webhook**:LINE Developers → Messaging API → Webhook URL 填 amp-line 的網址,
    Verify 後開啟 Use webhook;關閉 Auto-reply 與 Greeting messages。
-8. **GitHub Secrets**:`AMP_POKE_DIGEST_URL`、`AMP_DIGEST_KEY`。
+8. **GitHub Secrets**:填對照表的 B 區兩個。
+
+## Secrets 對照表
+
+金鑰只存在下面 A / B / C 三處,**絕不進 repo**。D 區是公開值,可以放進程式碼。
+
+### A. Supabase Edge Secrets
+位置:Supabase Dashboard → 專案 `hhcubvixldieuwdeqnwc` → Edge Functions → Secrets
+
+| 名稱 | 值從哪來 | 誰在用 |
+|---|---|---|
+| `AMP_LINE_CHANNEL_SECRET` | LINE Developers → 513 channel → Basic settings → Channel secret | amp-line(驗簽) |
+| `AMP_LINE_CHANNEL_ACCESS_TOKEN` | 同 channel → Messaging API → Channel access token (long-lived) | amp-line、amp-poke-digest |
+| `AMP_LIFF_CHANNEL_ID` | **LINE Login channel** 的 Channel ID(不是 Messaging API 那個 2011510570) | amp-api(驗 LIFF ID token) |
+| `AMP_LIFF_URL_COMPACT` | `https://liff.line.me/<compact LIFF ID>` | amp-line(卡片按鈕) |
+| `AMP_LIFF_URL_FULL` | `https://liff.line.me/<full LIFF ID>` | amp-line、amp-poke-digest |
+| `AMP_DIGEST_KEY` | 自己產的亂數,見下方說明 | amp-poke-digest(擋非法呼叫) |
+
+`SUPABASE_URL` 與 `SUPABASE_SERVICE_ROLE_KEY` 由平台自動注入,**不用自己填**。
+
+### B. GitHub Secrets
+位置:mainwork → Settings → Secrets and variables → **Actions** → New repository secret
+
+| 名稱 | 值 |
+|---|---|
+| `AMP_POKE_DIGEST_URL` | `https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-poke-digest` |
+| `AMP_DIGEST_KEY` | **與 A 區那份完全相同** |
+
+### C. 本機 `.env`(跑 `scripts/amp_richmenu.py` 用,已在 .gitignore)
+
+`AMP_LINE_CHANNEL_ACCESS_TOKEN`、`AMP_LIFF_URL_COMPACT`、`AMP_LIFF_URL_FULL`
+
+### D. 不是 secret(公開值,寫在 `js/config.js`)
+
+`LIFF_ID_COMPACT`、`LIFF_ID_FULL`、`API_URL`
+
+### 關於 `AMP_DIGEST_KEY`
+
+它不是 LINE 或 Supabase 發的,是這個專案自己定的共享密碼。`amp-poke-digest` 部署後是個公開網址,
+任何人打它就會觸發推播,所以函式要求呼叫端帶 `x-amp-key`,值不對就回 401。
+GitHub Actions 帶著這把鑰匙呼叫,別人打不動。隨便產一串長字串,A、B 兩區填同一個值:
+
+```powershell
+-join ((48..57)+(65..90)+(97..122) | Get-Random -Count 40 | % {[char]$_})
+```
 
 ## 本機測試
 
