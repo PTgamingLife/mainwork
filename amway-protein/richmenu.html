@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>圖文選單底圖 2500x1686</title>
+<!--
+  安麗蛋白素 7 天挑戰 — LINE 圖文選單底圖。
+  用瀏覽器截圖成 2500x1686 PNG(見 README),要改字改色就改這裡再重截一次。
+  四格順序必須與 scripts/amp_richmenu.py 的 CELLS 一致:
+    左上 任務加分 / 右上 排行榜 / 左下 每日問答 / 右下 戳夥伴
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 2500px; height: 1686px; overflow: hidden;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: #F7F5EE;
+  }
+  .grid {
+    width: 2500px; height: 1686px;
+    /* 用 1fr 而不是固定 1250px:固定值加上 gap 會溢出 6px,右側與底部會被裁掉。
+       1fr 讓分隔線正好落在 x=1250 / y=843,與 amp_richmenu.py 算出的點擊區邊界一致。 */
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 6px; background: #F7F5EE;
+  }
+  .cell {
+    position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 34px;
+    color: #fff; overflow: hidden;
+  }
+  .dark { background: #00703C; }
+  .leaf { background: #7AB800; }
+  /* 右下角的大型淡色圓,讓每一格有層次又不干擾文字 */
+  .cell::after {
+    content: ""; position: absolute; right: -150px; bottom: -190px;
+    width: 620px; height: 620px; border-radius: 50%;
+    background: rgba(255, 255, 255, .07);
+  }
+  .icon { width: 250px; height: 250px; }
+  .icon svg { width: 100%; height: 100%; display: block; }
+  .title { font-size: 108px; font-weight: 900; letter-spacing: 6px; }
+  .sub { font-size: 46px; font-weight: 500; opacity: .92; letter-spacing: 2px; }
+  .honesty {
+    position: absolute; left: 0; right: 0; bottom: 42px; text-align: center;
+    font-size: 34px; letter-spacing: 5px; font-weight: 700; color: rgba(255,255,255,.62);
+  }
+</style>
+</head>
+<body>
+<div class="grid">
+
+  <!-- 左上:任務加分 -->
+  <div class="cell dark">
+    <div class="icon"><svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="6"
+      stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="38" cy="27" rx="19" ry="24"/>
+      <path d="M38 51 L38 88"/>
+      <path d="M70 60 L70 88 M56 74 L84 74"/>
+    </svg></div>
+    <div class="title">任務加分</div>
+    <div class="sub">吃一匙 +1 · 分享 +3 · 推薦 +5</div>
+  </div>
+
+  <!-- 右上:排行榜 -->
+  <div class="cell leaf">
+    <div class="icon"><svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="6"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M30 14 H70 V40 A20 20 0 0 1 30 40 Z"/>
+      <path d="M30 20 H16 v8 a14 14 0 0 0 14 14"/>
+      <path d="M70 20 H84 v8 a14 14 0 0 1 -14 14"/>
+      <path d="M50 60 V74 M34 86 H66 M40 74 H60"/>
+    </svg></div>
+    <div class="title">排行榜</div>
+    <div class="sub">看看自己第幾名</div>
+  </div>
+
+  <!-- 左下:每日問答 -->
+  <div class="cell leaf">
+    <div class="icon"><svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="6"
+      stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="50" cy="50" r="36"/>
+      <path d="M39 40 a11 11 0 1 1 13 13 v7"/>
+      <path d="M52 71 v1" stroke-width="9"/>
+    </svg></div>
+    <div class="title">每日問答</div>
+    <div class="sub">答對 +1 · 每天一題</div>
+    <div class="honesty">自律且誠實,騙人胖十斤</div>
+  </div>
+
+  <!-- 右下:戳夥伴 -->
+  <div class="cell dark">
+    <div class="icon"><svg viewBox="0 0 100 100" fill="none" stroke="#fff" stroke-width="6"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M46 52 V24 a8 8 0 0 1 16 0 v28"/>
+      <path d="M62 40 a8 8 0 0 1 16 0 v26 a24 24 0 0 1 -24 24 h-6 a20 20 0 0 1 -16 -8 L20 66 a8 8 0 0 1 12 -10 l14 12"/>
+      <path d="M14 30 l10 4 M20 16 l6 9 M34 10 l1 11" stroke-width="5"/>
+    </svg></div>
+    <div class="title">戳夥伴</div>
+    <div class="sub">傍晚 17:00 送到</div>
+    <div class="honesty">自律且誠實,騙人胖十斤</div>
+  </div>
+
+</div>
+</body>
+</html>
