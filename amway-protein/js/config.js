@@ -5,9 +5,11 @@
 //
 // LIFF_ID_* 建好 LIFF App 後填入;在網址加 ?mock=1 可離線試玩(資料存在瀏覽器)。
 //
-// 兩個 LIFF App 的 Endpoint URL 都指到同一個網址:
+// LIFF App 的 Endpoint URL:
 //   https://ptgaminglife.github.io/mainwork/amway-protein/
-// 全頁那個要加 ?full=1 —— app.js 靠這個參數決定用 LIFF_ID_FULL 而不是 COMPACT。
+// 四個分頁(首頁/加分/排行/問答)都在 LIFF_ID_COMPACT 這一個半頁 App 裡切換,
+// 該 LIFF 在 LINE Developers 的 size 要設 Tall(約 3/4 螢幕),Compact 太矮會截到內容。
+// LIFF_ID_FULL 目前沒有用到,保留給日後想開全頁時用。
 window.AMP_CONFIG = {
   LIFF_ID_COMPACT: '2011511140-iU64mwtd',
   LIFF_ID_FULL: '2011511140-5AixRgyd',

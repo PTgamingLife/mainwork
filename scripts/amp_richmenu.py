@@ -30,18 +30,19 @@ DATA_API = "https://api-data.line.me/v2/bot"
 W, H = 2500, 1686
 
 # 格子順序照 zip 的 richmenu-config.json,標籤改成這場比賽的用語。
+# 四格一律開半頁 LIFF(該 LIFF 的 size 在 LINE Developers 設為 Tall)。
 CELLS = [
-    ("任務加分", "score", False),
-    ("排行榜", "board", True),
-    ("每日問答", "quiz", True),
-    ("戳夥伴", "board", True),
+    ("任務加分", "score"),
+    ("排行榜", "board"),
+    ("每日問答", "quiz"),
+    ("戳夥伴", "board"),
 ]
 
 
 def build(compact: str, full: str) -> dict:
     areas = []
-    for i, (label, view, use_full) in enumerate(CELLS):
-        base = full if use_full else compact
+    for i, (label, view) in enumerate(CELLS):
+        base = compact
         sep = "&" if "?" in base else "?"
         areas.append({
             "bounds": {

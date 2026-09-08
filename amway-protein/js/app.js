@@ -124,8 +124,8 @@
     $('retryBtn').addEventListener('click', () => location.reload());
 
     if (!CFG.MOCK) {
-      const liffId = new URLSearchParams(location.search).get('full')
-        ? CFG.LIFF_ID_FULL : (CFG.LIFF_ID_COMPACT || CFG.LIFF_ID_FULL);
+      // 四個分頁都在同一個半頁 LIFF 裡切換,不再開全頁。
+      const liffId = CFG.LIFF_ID_COMPACT || CFG.LIFF_ID_FULL;
       if (!liffId) return AMP.fail('尚未設定 LIFF ID(js/config.js)。要離線試玩請在網址加 ?mock=1');
       try {
         $('loadingMsg').textContent = '連線 LINE…';

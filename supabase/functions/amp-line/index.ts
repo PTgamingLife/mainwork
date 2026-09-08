@@ -10,8 +10,8 @@
 //   supabase functions deploy amp-line --no-verify-jwt
 //
 // 額外 secrets:
-//   AMP_LIFF_URL_COMPACT  半頁 LIFF,例:https://liff.line.me/xxxxxxxx-xxxxxxxx
-//   AMP_LIFF_URL_FULL     全頁 LIFF
+//   AMP_LIFF_URL_COMPACT  半頁 LIFF(四個入口都用這個),例:https://liff.line.me/xxxx-yyyy
+//   AMP_LIFF_URL_FULL     全頁 LIFF(目前沒用到,保留給日後)
 
 import {
   C, HONESTY, lineReply, textMsg, upsertMember, verifySignature,
@@ -24,18 +24,21 @@ const url = (base: string, view: string) => `${base}${base.includes("?") ? "&" :
 
 // 固定回覆(對應 zip 的 fixed-replies.json,改成這場比賽的用語)。
 // 命中就直接回,不做任何其他處理。
-const MENU: Record<string, { view: string; full: boolean; label: string }> = {
-  任務: { view: "score", full: false, label: "任務加分" },
-  加分: { view: "score", full: false, label: "任務加分" },
-  分數: { view: "board", full: true, label: "排行榜" },
-  排行: { view: "board", full: true, label: "排行榜" },
-  挑戰: { view: "quiz", full: true, label: "每日問答" },
-  問答: { view: "quiz", full: true, label: "每日問答" },
-  戳: { view: "board", full: true, label: "戳夥伴" },
+//
+// 四個入口一律開半頁 LIFF(AMP_LIFF_URL_COMPACT);該 LIFF 在 LINE Developers
+// 的 size 設為 Tall(約 3/4 螢幕)—— Compact 太矮,排行榜與問答會被截。
+const MENU: Record<string, { view: string; label: string }> = {
+  任務: { view: "score", label: "任務加分" },
+  加分: { view: "score", label: "任務加分" },
+  分數: { view: "board", label: "排行榜" },
+  排行: { view: "board", label: "排行榜" },
+  挑戰: { view: "quiz", label: "每日問答" },
+  問答: { view: "quiz", label: "每日問答" },
+  戳: { view: "board", label: "戳夥伴" },
 };
 
-function entryCard(label: string, view: string, full: boolean) {
-  const base = (full ? LIFF_FULL : LIFF_COMPACT) || LIFF_COMPACT || LIFF_FULL;
+function entryCard(label: string, view: string) {
+  const base = LIFF_COMPACT || LIFF_FULL;
   return {
     type: "flex",
     altText: `打開${label}`,
@@ -102,7 +105,7 @@ Deno.serve(async (req: Request) => {
         await upsertMember(userId, "", "");
         await lineReply(ev.replyToken, [
           textMsg(`歡迎加入挑戰!\n\n${HELP}`),
-          entryCard("任務加分", "score", false),
+          entryCard("任務加分", "score"),
         ]);
         continue;
       }
@@ -114,7 +117,7 @@ Deno.serve(async (req: Request) => {
 
       if (hit) {
         const m = MENU[hit];
-        await lineReply(ev.replyToken, [entryCard(m.label, m.view, m.full)]);
+        await lineReply(ev.replyToken, [entryCard(m.label, m.view)]);
       } else {
         await lineReply(ev.replyToken, [textMsg(HELP)]);
       }

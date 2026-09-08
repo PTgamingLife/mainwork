@@ -15,6 +15,7 @@
 計分區下方常駐標語:**自律且誠實,騙人胖十斤**
 
 賽季 7 天一輪,`amp_rounds` 同時間只允許一輪 `is_active`。
+圖文選單四格都開**同一個半頁 LIFF**(size 設 Tall),在 App 內用底部分頁切換。
 排行榜可以「戳」夥伴 —— 戳的當下不推播,每天台北 **17:00** 由排程彙總成一張卡片:
 「你被 OO 戳了 N 下,他說一起加油」。
 
@@ -46,7 +47,9 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 | `supabase/functions/amp-api/` | LIFF 後端 API |
 | `supabase/functions/amp-poke-digest/` | 戳一下彙總推播 |
 | `amway-protein/richmenu.html` / `richmenu.png` | 圖文選單底圖(HTML 原稿 + 2500×1686 成品) |
-| `scripts/amp_richmenu.py` | 4 格圖文選單(預設 dry run) |
+| `scripts/amp_richmenu.py` | 4 格圖文選單的座標與連結(預設 dry run) |
+| `scripts/amp_line_setup.py` | 上線設定:上傳圖文選單 + 設 webhook(預設 dry run) |
+| `.github/workflows/amp-line-setup.yml` | 上面那支的手動觸發入口(在網頁上按 Run) |
 | `.github/workflows/amp-poke-digest.yml` | 每天 17:00 的排程 |
 
 ## 上線步驟
@@ -63,15 +66,16 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
    (7 天,結束後先 `update amp_rounds set is_active=false` 再開新的)
 5. **前端上 Pages**:mainwork → Settings → Pages → Deploy from a branch → `main` → `/(root)`。
    網址固定是 **https://ptgaminglife.github.io/mainwork/amway-protein/**
-   (要 merge 進 main 才會活)。這串就是兩個 LIFF App 的 Endpoint URL —— 全頁那個
-   加 `?full=1`(`app.js` 靠這個參數決定用 `LIFF_ID_FULL`)。
-   拿到兩個 LIFF ID 後填進 `js/config.js`。
-6. **圖文選單**:`python scripts/amp_richmenu.py` 看 dry run,確認後加 `--apply`
-   (底圖預設用 `amway-protein/richmenu.png`;要改字改色就改 `richmenu.html`,
-   用瀏覽器以 2500×1686 視窗截圖覆蓋 PNG)。
-7. **Webhook**:LINE Developers → Messaging API → Webhook URL 填 amp-line 的網址,
-   Verify 後開啟 Use webhook;關閉 Auto-reply 與 Greeting messages。
-8. **GitHub Secrets**:填對照表的 B 區兩個。
+   (要 merge 進 main 才會活),這串就是 LIFF App 的 Endpoint URL。
+   四個分頁都在同一個**半頁 LIFF**裡切換,該 LIFF 在 LINE Developers 的
+   **size 要設 Tall**(約 3/4 螢幕);Compact 只有一半高,排行榜與問答會被截。
+6. **GitHub Secrets**:填對照表的 B 區四個。
+7. **圖文選單 + Webhook(自動)**:GitHub → Actions →「安麗蛋白素挑戰 — LINE 上線設定」
+   → Run workflow。先用 `dry_run: true` 看一次輸出,確認四格連結沒問題,
+   再用 `dry_run: false` 真的送出。不需要在自己電腦下任何指令。
+   (本機也可以跑:`python scripts/amp_line_setup.py --action both`,加 `--apply` 才會送)
+8. **在 LINE 網頁補最後一步**:Messaging API → 開啟 **Use webhook**,
+   並關閉 Auto-reply 與 Greeting messages(這兩個開關沒有 API,只能在網頁上按)。
 
 ## Secrets 對照表
 
@@ -98,14 +102,18 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 |---|---|
 | `AMP_POKE_DIGEST_URL` | `https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-poke-digest` |
 | `AMP_DIGEST_KEY` | **與 A 區那份完全相同** |
+| `AMP_LINE_CHANNEL_ACCESS_TOKEN` | 與 A 區那份相同(給上線設定 workflow 用) |
+| `AMP_LIFF_URL_COMPACT` | 與 A 區那份相同(給上線設定 workflow 用) |
 
-### C. 本機 `.env`(跑 `scripts/amp_richmenu.py` 用,已在 .gitignore)
+### C. 本機 `.env`(只有想在自己電腦跑腳本時才需要,已在 .gitignore)
 
-`AMP_LINE_CHANNEL_ACCESS_TOKEN`、`AMP_LIFF_URL_COMPACT`、`AMP_LIFF_URL_FULL`
+`AMP_LINE_CHANNEL_ACCESS_TOKEN`、`AMP_LIFF_URL_COMPACT`、`AMP_WEBHOOK_URL`
+
+走 GitHub Actions 的話這份可以不建。
 
 ### D. 不是 secret(公開值,寫在 `js/config.js`)
 
-`LIFF_ID_COMPACT`、`LIFF_ID_FULL`、`API_URL`
+`LIFF_ID_COMPACT`(四個分頁都用它)、`LIFF_ID_FULL`(目前沒用到,保留)、`API_URL`
 
 ### 關於 `AMP_DIGEST_KEY`
 
