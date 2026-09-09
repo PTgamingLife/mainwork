@@ -14,8 +14,7 @@
       el.innerHTML = '你就是累計第一名 🏆 <b>守住它</b>';
       return;
     }
-    el.innerHTML = '你與第一名的距離只差 <b>' + season.days + '</b> 天的全力衝刺'
-      + '<span class="gap-sub">累計落後 ' + season.gap + ' 分,一天全力衝刺約 10 分</span>';
+    el.innerHTML = '你與第一名的距離只差 <b>' + season.days + '</b> 天的全力衝刺';
   };
 
   window.AMP.loadBoard = async function () {
