@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reels 教練 — 個人流量模型</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1>🎬 Reels 教練</h1>
+    <p class="sub">你的個人短影音流量模型 — 越用越懂你的帳號</p>
+    <nav id="nav" class="nav hidden">
+      <button data-view="model" class="nav-btn active">我的模型</button>
+      <button data-view="generate" class="nav-btn">生成腳本</button>
+      <button data-view="analyze" class="nav-btn">分析 Reels</button>
+      <button id="logout-btn" class="nav-btn ghost">登出</button>
+    </nav>
+  </header>
+
+  <!-- 登入 -->
+  <section id="view-login" class="view">
+    <div class="card">
+      <h2>登入 / 註冊</h2>
+      <p class="muted">第一次註冊後,系統會為你建立一份個人模型(v1.0 種子版),之後每次分析都會讓它更懂你的帳號。</p>
+      <label>Email <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email"></label>
+      <label>密碼 <input type="password" id="auth-password" placeholder="至少 6 碼" autocomplete="current-password"></label>
+      <div class="row">
+        <button id="signin-btn" class="btn primary">登入</button>
+        <button id="signup-btn" class="btn">註冊</button>
+      </div>
+      <p id="auth-msg" class="msg"></p>
+    </div>
+  </section>
+
+  <!-- 我的模型 -->
+  <section id="view-model" class="view hidden">
+    <div class="card">
+      <div class="row space-between">
+        <h2>我的模型 <span id="model-version" class="badge"></span></h2>
+        <button id="model-refresh" class="btn small">重新整理</button>
+      </div>
+      <p class="muted">權重順序:你自己的已驗證模式(第八章)最高 → 客群輪廓 → 通用規則。每次分析後自動更新。</p>
+      <div id="model-content" class="md-body">載入中…</div>
+    </div>
+    <div class="card">
+      <h3>版本紀錄</h3>
+      <div id="model-history" class="list">載入中…</div>
+    </div>
+    <div class="card">
+      <h3>案例庫</h3>
+      <div id="case-list" class="list">載入中…</div>
+    </div>
+  </section>
+
+  <!-- 生成腳本 -->
+  <section id="view-generate" class="view hidden">
+    <div class="card">
+      <h2>生成 Reels 腳本</h2>
+      <p class="muted">依你目前的個人模型生成:選題定位 + 3 版 Hook(口白/畫面/字卡)+ 逐段主體 + 收尾 CTA + Caption。</p>
+      <label>標題 / 主題(必填)
+        <input type="text" id="gen-topic" placeholder="例:3 個讓你多睡一小時的 AI 工具">
+      </label>
+      <label>素材資料(選填:重點、數據、連結、你想講的內容)
+        <textarea id="gen-material" rows="5" placeholder="沒有素材就留空,系統會直接就標題發揮"></textarea>
+      </label>
+      <button id="gen-btn" class="btn primary">生成腳本</button>
+      <p id="gen-msg" class="msg"></p>
+      <div id="gen-result" class="md-body result hidden"></div>
+    </div>
+    <div class="card">
+      <h3>歷史腳本</h3>
+      <div id="script-list" class="list">載入中…</div>
+    </div>
+  </section>
+
+  <!-- 分析 Reels -->
+  <section id="view-analyze" class="view hidden">
+    <div class="card">
+      <h2>分析一支 Reels</h2>
+      <p class="muted">上傳影片檔(自己的或別人的都可以),系統會抽幀分析畫面節奏、轉逐字稿分析口播、做流量歸因,然後更新你的個人模型。</p>
+      <label>影片檔(必填,mp4/mov;超過 25MB 會跳過口播逐字稿)
+        <input type="file" id="ana-video" accept="video/*">
+      </label>
+      <label>後台數據截圖(選填,可多張:觀看/讚/留言/收藏/分享/略過率/平均觀看時間)
+        <input type="file" id="ana-shots" accept="image/*" multiple>
+      </label>
+      <label>這支影片是
+        <select id="ana-own">
+          <option value="true">我自己的(有後台數據)</option>
+          <option value="false">別人的(參考案例)</option>
+        </select>
+      </label>
+      <label>Reels 連結(選填,記錄出處用)
+        <input type="url" id="ana-url" placeholder="https://www.instagram.com/reel/...">
+      </label>
+      <label>補充數據 / 背景(選填:數字、留言區狀況、發布時間…)
+        <textarea id="ana-metrics" rows="3" placeholder="例:觀看 1,750、讚 24、留言 0、略過率 42.5%、平均觀看 7 秒"></textarea>
+      </label>
+      <button id="ana-btn" class="btn primary">開始分析</button>
+      <div id="ana-progress" class="progress hidden"><div id="ana-bar" class="bar"></div><span id="ana-step"></span></div>
+      <p id="ana-msg" class="msg"></p>
+      <div id="ana-result" class="md-body result hidden"></div>
+    </div>
+  </section>
+
+  <footer class="footer muted">個人模型只屬於你的帳號;影片僅用於分析,可隨時於 Supabase Storage 刪除。</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
