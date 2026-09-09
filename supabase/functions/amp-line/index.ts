@@ -14,7 +14,7 @@
 //   AMP_LIFF_URL_FULL     全頁 LIFF(目前沒用到,保留給日後)
 
 import {
-  C, HONESTY, lineReply, textMsg, upsertMember, verifySignature,
+  C, HONESTY, lineProfile, lineReply, textMsg, upsertMember, verifySignature,
 } from "../_shared/amp.ts";
 
 const LIFF_COMPACT = Deno.env.get("AMP_LIFF_URL_COMPACT") ?? "";
@@ -106,7 +106,9 @@ Deno.serve(async (req: Request) => {
       const userId = ev?.source?.userId ?? "";
 
       if (ev.type === "follow" && userId) {
-        await upsertMember(userId, "", "");
+        // 名字與頭像要另外跟 LINE 要,否則排行榜會是一整排「夥伴」。
+        const prof = await lineProfile(userId);
+        await upsertMember(userId, prof.name, prof.picture);
         await lineReply(ev.replyToken, [
           textMsg(`歡迎加入挑戰!\n\n${HELP}`),
           entryCard("任務加分", "score"),

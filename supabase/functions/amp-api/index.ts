@@ -291,8 +291,17 @@ Deno.serve(async (req: Request) => {
   try {
     const round = await activeRound();
     if (!round) return json({ ok: false, error: "NO_ACTIVE_ROUND" }, 503);
-    const member = (await findMember(profile.sub)) ??
-      await upsertMember(profile.sub, profile.name, profile.picture);
+    // 加好友時建立的那筆只有 line_user_id,沒有名字與頭像(webhook 拿不到 profile 就先建帳號),
+    // 所以每次進 App 都拿 ID token 上的名字補上去 —— 不然排行榜會整排「夥伴」。
+    // 名字沒變就不寫,避免每次請求都多一次 upsert。
+    let member = await findMember(profile.sub);
+    if (
+      !member ||
+      (profile.name &&
+        (member.display_name !== profile.name || member.avatar_url !== profile.picture))
+    ) {
+      member = await upsertMember(profile.sub, profile.name, profile.picture);
+    }
     return await handle(String(body.action ?? ""), body, member, round);
   } catch (e) {
     console.error("amp-api", (e as Error).message);

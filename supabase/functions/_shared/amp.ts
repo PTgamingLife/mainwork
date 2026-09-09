@@ -115,6 +115,27 @@ export async function linePush(to: string, messages: unknown[]): Promise<boolean
   return true;
 }
 
+// 加好友事件只給 userId,名字與頭像要另外跟 LINE 要。
+// 拿不到就回空字串 —— 之後使用者一開 App,amp-api 會用 ID token 上的名字補上。
+export async function lineProfile(
+  userId: string,
+): Promise<{ name: string; picture: string }> {
+  try {
+    const res = await fetch(`https://api.line.me/v2/bot/profile/${encodeURIComponent(userId)}`, {
+      headers: { Authorization: `Bearer ${LINE_TOKEN}` },
+    });
+    if (!res.ok) {
+      console.error("lineProfile", res.status);
+      return { name: "", picture: "" };
+    }
+    const p = await res.json();
+    return { name: p?.displayName ?? "", picture: p?.pictureUrl ?? "" };
+  } catch (e) {
+    console.error("lineProfile", (e as Error).message);
+    return { name: "", picture: "" };
+  }
+}
+
 export function textMsg(text: string) {
   return { type: "text", text: text.slice(0, 4900) };
 }
@@ -137,10 +158,12 @@ export async function findMember(lineUserId: string): Promise<any | null> {
 export async function upsertMember(
   lineUserId: string, displayName: string, avatarUrl: string,
 ): Promise<any> {
+  const existing = await findMember(lineUserId);
+  // 空字串不覆蓋既有的值 —— webhook 有時拿不到 profile,不能因此把名字洗掉。
   await sbUpsert("amp_members", {
     line_user_id: lineUserId,
-    display_name: displayName.slice(0, 40),
-    avatar_url: avatarUrl.slice(0, 500),
+    display_name: (displayName || existing?.display_name || "").slice(0, 40),
+    avatar_url: (avatarUrl || existing?.avatar_url || "").slice(0, 500),
     updated_at: new Date().toISOString(),
   }, "line_user_id");
   const m = await findMember(lineUserId);
