@@ -66,6 +66,50 @@ async function myBoardRow(roundId: string, memberId: string) {
   return rows[0] ?? { total_points: 0, rank: 0, active_days: 0 };
 }
 
+// ---- 當日排行(台北日,每天 00:00 歸零) ----
+// 排行榜與首頁名次都看這個;賽季累計只在「還差幾天」的提示裡用。
+// 團隊規模小(數十人),直接把當天的 amp_actions 撈回來在這裡彙總,
+// 不另外開 view —— 少一支 migration,邏輯也留在同一個檔案裡。
+async function dailyBoard(round: any, today: string) {
+  const members = await sbSelect(
+    "amp_members",
+    "is_active=eq.true&select=id,display_name,avatar_url&limit=500",
+  );
+  const acts = await sbSelect(
+    "amp_actions",
+    `round_id=eq.${round.id}&action_date=eq.${today}&select=member_id,points,created_at&limit=5000`,
+  );
+
+  const agg = new Map<string, { points: number; first: string }>();
+  for (const a of acts as any[]) {
+    const cur = agg.get(a.member_id);
+    if (cur) {
+      cur.points += Number(a.points);
+      if (a.created_at < cur.first) cur.first = a.created_at;
+    } else {
+      agg.set(a.member_id, { points: Number(a.points), first: a.created_at });
+    }
+  }
+
+  const rows = members.map((m: any) => {
+    const g = agg.get(m.id);
+    return {
+      memberId: m.id,
+      name: m.display_name || "夥伴",
+      avatar: m.avatar_url,
+      points: g ? g.points : 0,
+      first: g ? g.first : "",
+    };
+  });
+
+  // 分數高的在前;同分時今天先開始累積的人在前(沒行動的人 first 是空字串,排最後)。
+  rows.sort((a, b) =>
+    b.points - a.points ||
+    (a.first === "" ? 1 : b.first === "" ? -1 : (a.first < b.first ? -1 : 1))
+  );
+  return rows.map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
 async function loadMe(round: any, member: any) {
   const today = todayTaipei();
   const actions = await sbSelect(
@@ -73,6 +117,9 @@ async function loadMe(round: any, member: any) {
     `round_id=eq.${round.id}&member_id=eq.${member.id}&select=action_date,action_type,points,target_name,created_at&order=created_at.desc&limit=200`,
   );
   const board = await myBoardRow(round.id, member.id);
+  // 名次只給「今日名次」(使用者確認:總分看得到,總名次不露)
+  const daily = await dailyBoard(round, today);
+  const mineToday = daily.find((r: any) => r.memberId === member.id);
   const answered = await sbSelect(
     "amp_quiz_answers",
     `member_id=eq.${member.id}&quiz_date=eq.${today}&select=id&limit=1`,
@@ -83,7 +130,8 @@ async function loadMe(round: any, member: any) {
     round: { id: round.id, name: round.name, start: round.start_date, end: round.end_date },
     today,
     totalPoints: Number(board.total_points ?? 0),
-    rank: Number(board.rank ?? 0),
+    todayPoints: mineToday ? mineToday.points : 0,
+    rank: mineToday ? mineToday.rank : 0,
     activeDays: Number(board.active_days ?? 0),
     streak: streakFrom(actions.map((a: any) => a.action_date), today),
     todayCounts: {
@@ -115,21 +163,29 @@ async function handle(action: string, body: any, member: any, round: any): Promi
   if (action === "me") return json({ ok: true, ...(await loadMe(round, member)) });
 
   if (action === "leaderboard") {
-    const rows = await sbSelect(
+    const rows = await dailyBoard(round, today);
+
+    // 「還差幾天全力衝刺」用的是賽季累計差距 —— 只看今天的差距最多十幾分,
+    // 算出來永遠是 1 天,那句話就沒有意義了。一天全力衝刺以 10 分計。
+    const season = await sbSelect(
       "amp_leaderboard",
-      `round_id=eq.${round.id}&select=member_id,display_name,avatar_url,total_points,active_days,rank&order=rank.asc&limit=100`,
+      `round_id=eq.${round.id}&select=member_id,total_points&order=total_points.desc&limit=500`,
     );
+    const seasonTop = season.length > 0 ? Number(season[0].total_points ?? 0) : 0;
+    const seasonMine = Number(
+      (season.find((r: any) => r.member_id === member.id)?.total_points) ?? 0,
+    );
+    const gap = Math.max(0, seasonTop - seasonMine);
+
     return json({
       ok: true,
       me: member.id,
+      today,
       rows: rows.map((r: any) => ({
-        memberId: r.member_id,
-        name: r.display_name || "夥伴",
-        avatar: r.avatar_url,
-        points: Number(r.total_points ?? 0),
-        activeDays: Number(r.active_days ?? 0),
-        rank: Number(r.rank ?? 0),
+        memberId: r.memberId, name: r.name, avatar: r.avatar,
+        points: r.points, rank: r.rank,
       })),
+      season: { mine: seasonMine, top: seasonTop, gap, days: Math.ceil(gap / 10) },
     });
   }
 

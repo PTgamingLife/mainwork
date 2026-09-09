@@ -36,7 +36,7 @@
             { type: 'text', text: '安麗蛋白素 7 天挑戰', size: 'xs', color: '#6B7A70' },
             {
               type: 'text', wrap: true, size: 'sm', color: '#1F3D2A',
-              text: '自己吃一湯匙 +1 · 分享一次 +3 · 推薦一罐 +5 · 問答答對 +1',
+              text: '7 天挑戰,一起把蛋白素吃好吃滿',
             },
             { type: 'text', text: '自律且誠實,騙人胖十斤', size: 'xs', color: '#7AB800', align: 'center' },
           ],
@@ -93,7 +93,7 @@
         const res = await liff.shareTargetPicker([inviteFlex()]);
         // 使用者按取消時 res 是 null,不是錯誤。
         if (res) {
-          $('shareMsg').textContent = '已送出!記得到「加分」登記分享對象 +3。';
+          $('shareMsg').textContent = '已送出!等他加好友就完成邀請。';
           window.AMP.toast('已送出邀請卡');
         } else {
           $('shareMsg').textContent = '已取消,沒有送出。';

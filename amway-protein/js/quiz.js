@@ -42,7 +42,7 @@
     }
     window.AMP.applyState(data);
     paint(current, { chosen: i, answer: data.answer, correct: data.correct, explanation: data.explanation });
-    if (data.correct) window.AMP.toast(`答對 +1 分!目前 ${data.totalPoints} 分`);
+    if (data.correct) window.AMP.toast(`答對 +1 分!今天 ${data.todayPoints} 分`);
   }
 
   window.AMP.loadQuiz = async function () {

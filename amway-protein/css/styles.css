@@ -252,3 +252,12 @@ body {
   font-family: inherit; font-size: 13px; background: var(--amp-cream); color: var(--amp-ink);
   resize: none; margin-bottom: 10px;
 }
+
+/* ---------- 今日排行榜的說明與差距提示 ---------- */
+.board-sub { margin: -6px 0 10px; font-size: 12px; color: var(--amp-grey); }
+.board-gap {
+  margin: 14px 0 0; padding: 12px; border-radius: 10px; background: #EAF4EE;
+  text-align: center; font-size: 14px; color: var(--amp-ink); line-height: 1.6;
+}
+.board-gap b { color: var(--amp-green); font-size: 20px; }
+.board-gap .gap-sub { display: block; margin-top: 4px; font-size: 11px; color: var(--amp-grey); }

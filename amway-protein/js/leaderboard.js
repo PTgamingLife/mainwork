@@ -5,6 +5,19 @@
   const $ = (id) => document.getElementById(id);
   const poked = new Set();
 
+  // 「還差幾天全力衝刺」—— 用賽季累計差距算,一天全力衝刺以 10 分計。
+  // (只用今天的差距的話最多十幾分,永遠是 1 天,那句話就沒意義了)
+  window.AMP.renderGap = function (season) {
+    const el = $('boardGap');
+    if (!season) { el.textContent = ''; return; }
+    if (season.gap <= 0) {
+      el.innerHTML = '你就是累計第一名 🏆 <b>守住它</b>';
+      return;
+    }
+    el.innerHTML = '你與第一名的距離只差 <b>' + season.days + '</b> 天的全力衝刺'
+      + '<span class="gap-sub">累計落後 ' + season.gap + ' 分,一天全力衝刺約 10 分</span>';
+  };
+
   window.AMP.loadBoard = async function () {
     const list = $('boardList');
     list.innerHTML = '<li class="board-row"><span class="board-meta">載入中…</span></li>';
@@ -17,6 +30,7 @@
 
     const esc = window.AMP.esc;
     const top = data.rows.length ? data.rows[0].points : 0;
+    window.AMP.renderGap(data.season);
 
     list.innerHTML = data.rows.map((r) => {
       const isMe = r.memberId === data.me;
@@ -25,8 +39,8 @@
         ? `<img class="board-avatar" src="${esc(r.avatar)}" alt="" />`
         : '<div class="board-avatar"></div>';
       const meta = isMe
-        ? (gap > 0 ? `距離第一名 ${gap} 分` : '目前領先,守住!')
-        : `${r.activeDays} 天有行動`;
+        ? (gap > 0 ? `今天落後第一名 ${gap} 分` : '今天暫居第一,守住!')
+        : (r.points > 0 ? `今天 ${r.points} 分` : '今天還沒開張');
       const action = isMe
         ? '<span class="board-meta">就是你</span>'
         : `<button class="poke-btn" data-poke="${esc(r.memberId)}" data-name="${esc(r.name)}">戳一下 👉</button>`;

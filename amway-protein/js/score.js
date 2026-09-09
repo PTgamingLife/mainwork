@@ -15,7 +15,7 @@
       return { err: '加分失敗:' + (data.error || '未知錯誤') };
     }
     window.AMP.applyState(data);
-    window.AMP.toast(`+${data.gained} 分!目前 ${data.totalPoints} 分,第 ${data.rank} 名`);
+    window.AMP.toast(`+${data.gained} 分!今天 ${data.todayPoints} 分,今日第 ${data.rank} 名`);
     return {};
   }
 

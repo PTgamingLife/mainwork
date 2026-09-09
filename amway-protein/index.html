@@ -36,10 +36,10 @@
       <!-- ===== 首頁 ===== -->
       <section class="view" id="view-home">
         <div class="score-card">
-          <div class="score-label">我的總分</div>
+          <div class="score-label">我的總分（累計）</div>
           <div class="score-value" id="homePoints">0</div>
           <div class="score-sub">
-            <span class="pill pill-gold">第 <b id="homeRank">-</b> 名</span>
+            <span class="pill pill-gold">今日第 <b id="homeRank">-</b> 名</span>
             <span class="pill">連續 <b id="homeStreak">0</b> 天</span>
             <span class="pill">剩 <b id="homeLeft">-</b> 天</span>
           </div>
@@ -72,7 +72,7 @@
           </button>
           <button class="act act-share" data-type="share">
             <span class="act-emoji">📣</span>
-            <span class="act-text"><b>分享一次</b><i>要填分享給誰</i></span>
+            <span class="act-text"><b>分享一次</b><i>要填分享給誰,群組不算</i></span>
             <span class="act-pt">+3</span>
           </button>
           <button class="act act-refer" data-type="refer">
@@ -87,8 +87,10 @@
       <!-- ===== 排行榜 ===== -->
       <section class="view hidden" id="view-board">
         <div class="card">
-          <h2 class="card-title">團隊排行榜</h2>
+          <h2 class="card-title">今日排行榜</h2>
+          <p class="board-sub">只算今天的分數,每天 00:00 重新開始</p>
           <ul class="board-list" id="boardList"></ul>
+          <p class="board-gap" id="boardGap"></p>
           <p class="honesty" id="boardHonesty"></p>
         </div>
       </section>
@@ -107,13 +109,13 @@
       <section class="view hidden" id="view-share">
         <div class="card">
           <h2 class="card-title">邀朋友一起挑戰</h2>
-          <p class="share-lead">按下按鈕會叫出 LINE 的「傳送給…」，挑好友或群組直接送出這張卡片。</p>
+          <p class="share-lead">按下按鈕會叫出 LINE 的「傳送給…」，挑好友或群組直接送出這張卡片。傳給群組也可以，一樣不加分。</p>
 
           <div class="share-preview">
             <div class="share-preview-hd" id="sharePreviewTitle"></div>
             <div class="share-preview-bd">
               <div class="share-preview-sub" id="sharePreviewSub"></div>
-              <div class="share-preview-rule">吃一湯匙 +1 · 分享 +3 · 推薦一罐 +5 · 答對 +1</div>
+              <div class="share-preview-rule">7 天挑戰,一起把蛋白素吃好吃滿</div>
               <div class="share-preview-btn">加入挑戰</div>
             </div>
           </div>
@@ -129,7 +131,7 @@
           </div>
 
           <p class="honesty" id="shareHonesty"></p>
-          <p class="share-note">送出後記得到「加分」登記分享對象,才算 +3。</p>
+          <p class="share-note">邀請不加分,跟比賽分數無關;分數只算你在「加分」登記的項目。</p>
         </div>
       </section>
 

@@ -53,10 +53,18 @@
     return n;
   }
 
+  // 今日排行(mock 的 mates 分數就當成今天的)
   function board(s) {
-    const rows = s.mates.concat([{ memberId: 'me', name: '我', avatar: '', points: myPoints(s) }]);
+    const t = today();
+    const myToday = s.actions.filter((a) => a.date === t).reduce((n, a) => n + a.points, 0);
+    const rows = s.mates.concat([{ memberId: 'me', name: '我', avatar: '', points: myToday }]);
     rows.sort((a, b) => b.points - a.points);
-    return rows.map((r, i) => Object.assign({ rank: i + 1, activeDays: 0 }, r));
+    return rows.map((r, i) => Object.assign({ rank: i + 1 }, r));
+  }
+
+  function todayPoints(s) {
+    const t = today();
+    return s.actions.filter((a) => a.date === t).reduce((n, a) => n + a.points, 0);
   }
 
   function me(s) {
@@ -71,6 +79,7 @@
       round: { id: 'r1', name: '安麗蛋白素 7 天挑戰', start: s.start, end: end.toISOString().slice(0, 10) },
       today: t,
       totalPoints: myPoints(s),
+      todayPoints: todayPoints(s),
       rank: rows.find((r) => r.memberId === 'me').rank,
       activeDays: new Set(s.actions.map((a) => a.date)).size,
       streak: streak(s),
@@ -99,7 +108,15 @@
 
     if (action === 'me') return me(s);
 
-    if (action === 'leaderboard') return { ok: true, me: 'me', rows: board(s) };
+    if (action === 'leaderboard') {
+      // 賽季累計差距(mock 的 mates 分數同時當累計用)
+      const seasonTop = Math.max(myPoints(s), ...s.mates.map((m) => m.points));
+      const gap = Math.max(0, seasonTop - myPoints(s));
+      return {
+        ok: true, me: 'me', today: today(), rows: board(s),
+        season: { mine: myPoints(s), top: seasonTop, gap: gap, days: Math.ceil(gap / 10) },
+      };
+    }
 
     if (action === 'add-action') {
       const type = payload.type;
