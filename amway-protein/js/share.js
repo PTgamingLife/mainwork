@@ -33,10 +33,10 @@
           type: 'box', layout: 'vertical', spacing: 'md',
           backgroundColor: '#F7F5EE', paddingAll: '18px',
           contents: [
-            { type: 'text', text: '安麗蛋白素 7 天挑戰', size: 'xs', color: '#6B7A70' },
+            { type: 'text', text: '安麗蛋白素挑戰', size: 'xs', color: '#6B7A70' },
             {
               type: 'text', wrap: true, size: 'sm', color: '#1F3D2A',
-              text: '7 天挑戰,一起把蛋白素吃好吃滿',
+              text: '一起把蛋白素吃好吃滿',
             },
             { type: 'text', text: '自律且誠實,騙人胖十斤', size: 'xs', color: '#7AB800', align: 'center' },
           ],

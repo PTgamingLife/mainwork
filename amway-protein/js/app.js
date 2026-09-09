@@ -1,4 +1,4 @@
-// 安麗蛋白素 7 天挑戰 — 主控:LIFF 初始化、API 呼叫、分頁切換、首頁渲染。
+// 安麗蛋白素挑戰 — 主控:LIFF 初始化、API 呼叫、分頁切換、首頁渲染。
 (function () {
   const CFG = window.AMP_CONFIG;
   const HONESTY = '自律且誠實,騙人胖十斤';

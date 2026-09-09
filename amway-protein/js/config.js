@@ -1,4 +1,4 @@
-// 安麗蛋白素 7 天挑戰 — 前端設定
+// 安麗蛋白素挑戰 — 前端設定
 //
 // 這裡只放公開值。前端不持有任何 Supabase 金鑰:所有讀寫都帶 LINE ID token
 // 打 amp-api,由 Edge Function 用 service role 存取資料庫。
@@ -14,7 +14,6 @@ window.AMP_CONFIG = {
   LIFF_ID_COMPACT: '2011511140-iU64mwtd',
   LIFF_ID_FULL: '2011511140-5AixRgyd',
   API_URL: 'https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-api',
-  ROUND_DAYS: 7,
 
   // 分享用:OA 的加好友連結(公開值)。對方要先加好友才計得了分、上得了排行榜。
   // basic ID 若有換,改這一行即可。

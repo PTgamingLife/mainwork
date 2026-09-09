@@ -51,7 +51,7 @@ function entryCard(label: string, view: string) {
         type: "box", layout: "vertical", spacing: "md",
         backgroundColor: C.cream, paddingAll: "20px",
         contents: [
-          { type: "text", text: "安麗蛋白素 7 天挑戰", size: "xs", color: C.grey },
+          { type: "text", text: "安麗蛋白素挑戰", size: "xs", color: C.grey },
           { type: "text", text: label, size: "xl", weight: "bold", color: C.green },
           {
             type: "text", wrap: true, size: "sm", color: C.ink,
@@ -72,7 +72,7 @@ function entryCard(label: string, view: string) {
 }
 
 const HELP = [
-  "安麗蛋白素 7 天挑戰 🥤",
+  "安麗蛋白素挑戰 🥤",
   "",
   "打「加分」→ 記錄今天的行動",
   "打「排行」→ 看排行榜、戳夥伴",

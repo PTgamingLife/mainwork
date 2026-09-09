@@ -72,11 +72,11 @@
     const mine = s.actions.filter((a) => a.date === t);
     const rows = board(s);
     const end = new Date(s.start + 'T00:00:00Z');
-    end.setUTCDate(end.getUTCDate() + 6);
+    end.setUTCDate(end.getUTCDate() + 20);
     return {
       ok: true,
       member: { id: 'me', name: '測試夥伴', avatar: '' },
-      round: { id: 'r1', name: '安麗蛋白素 7 天挑戰', start: s.start, end: end.toISOString().slice(0, 10) },
+      round: { id: 'r1', name: '安麗蛋白素挑戰', start: s.start, end: end.toISOString().slice(0, 10) },
       today: t,
       totalPoints: myPoints(s),
       todayPoints: todayPoints(s),

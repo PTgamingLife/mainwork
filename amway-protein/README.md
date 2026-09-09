@@ -1,4 +1,4 @@
-# 安麗蛋白素 7 天挑戰 — LINE OA
+# 安麗蛋白素挑戰 — LINE OA
 
 團隊比賽用的 LINE 官方帳號 + 半頁式 LIFF App。沿用既有的
 「我要上513挑戰」channel(Channel ID 2011510570)。
@@ -18,7 +18,8 @@
 
 計分區下方常駐標語:**自律且誠實,騙人胖十斤**
 
-賽季 7 天一輪,`amp_rounds` 同時間只允許一輪 `is_active`。
+一輪的長度由 `amp_rounds.start_date`/`end_date` 決定(目前這輪 2026-09-10 ~ 2026-09-30),
+`amp_rounds` 同時間只允許一輪 `is_active`。
 圖文選單四格都開**同一個半頁 LIFF**(size 設 Tall),在 App 內用底部分頁切換。
 排行榜可以「戳」夥伴 —— 戳的當下不推播,每天台北 **17:00** 由排程彙總成一張卡片:
 「你被 OO 戳了 N 下,他說一起加油」。
@@ -67,7 +68,7 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
    supabase functions deploy amp-poke-digest --no-verify-jwt
    ```
 4. **開第一輪賽季**:`insert into amp_rounds (start_date, end_date) values ('YYYY-MM-DD', 'YYYY-MM-DD');`
-   (7 天,結束後先 `update amp_rounds set is_active=false` 再開新的)
+   (結束後先 `update amp_rounds set is_active=false` 再開新的)
 5. **前端上 Pages**:mainwork → Settings → Pages → Deploy from a branch → `main` → `/(root)`。
    網址固定是 **https://ptgaminglife.github.io/mainwork/amway-protein/**
    (要 merge 進 main 才會活),這串就是 LIFF App 的 Endpoint URL。
