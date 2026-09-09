@@ -44,9 +44,12 @@
   };
 
   // ---------- 分頁 ----------
+  // share 沒有自己的底部分頁(四格已滿),從首頁按鈕或 OA 打「分享」進來。
+  const VIEWS = ['home', 'score', 'board', 'quiz', 'share'];
+
   AMP.go = function (view) {
     AMP.view = view;
-    ['home', 'score', 'board', 'quiz'].forEach((v) => {
+    VIEWS.forEach((v) => {
       $('view-' + v).classList.toggle('hidden', v !== view);
     });
     document.querySelectorAll('.tab').forEach((t) => {
@@ -54,6 +57,7 @@
     });
     if (view === 'board') AMP.loadBoard();
     if (view === 'quiz') AMP.loadQuiz();
+    if (view === 'share') AMP.loadShare();
   };
 
   // ---------- 首頁 ----------
@@ -115,7 +119,7 @@
 
   // ---------- 啟動 ----------
   async function boot() {
-    ['homeHonesty', 'scoreHonesty', 'boardHonesty', 'quizHonesty', 'sheetHonesty']
+    ['homeHonesty', 'scoreHonesty', 'boardHonesty', 'quizHonesty', 'sheetHonesty', 'shareHonesty']
       .forEach((id) => { const el = $(id); if (el) el.textContent = HONESTY; });
 
     document.querySelectorAll('.tab').forEach((t) => {
@@ -151,7 +155,7 @@
     $('app').classList.remove('hidden');
 
     const wanted = new URLSearchParams(location.search).get('view');
-    AMP.go(['home', 'score', 'board', 'quiz'].includes(wanted) ? wanted : 'home');
+    AMP.go(VIEWS.includes(wanted) ? wanted : 'home');
   }
 
   document.addEventListener('DOMContentLoaded', boot);

@@ -214,3 +214,41 @@ body {
   background: var(--amp-ink); color: #fff; padding: 10px 18px; border-radius: 999px;
   font-size: 14px; z-index: 60; max-width: 88vw; text-align: center;
 }
+
+/* ---------- 邀朋友（分享） ---------- */
+.invite-btn {
+  width: 100%; padding: 14px; border: 0; border-radius: var(--amp-radius);
+  background: var(--amp-leaf); color: #fff; font-size: 15px; font-weight: 700;
+  font-family: inherit; cursor: pointer; box-shadow: var(--amp-shadow);
+}
+.invite-btn:active { transform: scale(.99); }
+.invite-btn span { margin-right: 6px; }
+
+.share-lead { margin: 0 0 14px; font-size: 13px; color: var(--amp-grey); line-height: 1.6; }
+
+/* 送出去的卡片長什麼樣，先讓使用者看到 */
+.share-preview {
+  border-radius: 12px; overflow: hidden; box-shadow: var(--amp-shadow); margin-bottom: 16px;
+}
+.share-preview-hd { background: var(--amp-green); color: #fff; padding: 14px; font-weight: 700; }
+.share-preview-bd {
+  background: var(--amp-cream); padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.share-preview-sub { font-size: 13px; color: var(--amp-ink); }
+.share-preview-rule { font-size: 12px; color: var(--amp-grey); line-height: 1.5; }
+.share-preview-btn {
+  background: var(--amp-green); color: #fff; text-align: center; border-radius: 8px;
+  padding: 8px; font-size: 14px; font-weight: 700;
+}
+
+.btn-block { width: 100%; }
+.share-msg { min-height: 18px; margin: 10px 0 0; font-size: 13px; color: var(--amp-green); }
+.share-note { margin: 10px 0 0; font-size: 12px; color: var(--amp-grey); text-align: center; }
+
+.share-fallback { margin-top: 14px; }
+.share-fallback label { display: block; font-size: 12px; color: var(--amp-grey); margin-bottom: 6px; }
+.share-fallback textarea {
+  width: 100%; padding: 10px; border: 1.5px solid var(--amp-line); border-radius: 10px;
+  font-family: inherit; font-size: 13px; background: var(--amp-cream); color: var(--amp-ink);
+  resize: none; margin-bottom: 10px;
+}

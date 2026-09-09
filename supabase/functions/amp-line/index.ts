@@ -35,6 +35,9 @@ const MENU: Record<string, { view: string; label: string }> = {
   挑戰: { view: "quiz", label: "每日問答" },
   問答: { view: "quiz", label: "每日問答" },
   戳: { view: "board", label: "戳夥伴" },
+  分享: { view: "share", label: "邀朋友一起挑戰" },
+  邀請: { view: "share", label: "邀朋友一起挑戰" },
+  拉人: { view: "share", label: "邀朋友一起挑戰" },
 };
 
 function entryCard(label: string, view: string) {
@@ -74,6 +77,7 @@ const HELP = [
   "打「加分」→ 記錄今天的行動",
   "打「排行」→ 看排行榜、戳夥伴",
   "打「問答」→ 今日一題,答對 +1",
+  "打「分享」→ 把邀請卡轉傳給朋友",
   "",
   `計分:吃一湯匙 +1 / 分享 +3 / 推薦一罐 +5 / 答對 +1`,
   `推薦與分享要填對方名字 —— ${HONESTY}`,

@@ -12,6 +12,10 @@
 | 推薦別人一罐蛋白素 | +5 | **必填被推薦人名字** |
 | 每日問答答對 | +1 | 全隊每天同一題,每人一次 |
 
+打「分享」還會回一張**邀請卡**,按下去可以叫出 LINE 的「傳送給…」,
+把邀請訊息直接轉傳給朋友(送出後仍要自己到「加分」登記對象才 +3 —— 
+`shareTargetPicker` 拿不到對象是誰,不自動加分)。
+
 計分區下方常駐標語:**自律且誠實,騙人胖十斤**
 
 賽季 7 天一輪,`amp_rounds` 同時間只允許一輪 `is_active`。
@@ -39,7 +43,7 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 
 | 路徑 | 用途 |
 |---|---|
-| `amway-protein/` | LIFF 前端(首頁 / 加分 / 排行 / 問答) |
+| `amway-protein/` | LIFF 前端(首頁 / 加分 / 排行 / 問答 / 邀朋友) |
 | `supabase/migrations/20260908000100_amway_protein.sql` | 資料表與排行榜 view |
 | `supabase/migrations/20260908000200_amway_protein_quiz_seed.sql` | 30 題題庫 |
 | `supabase/functions/_shared/amp.ts` | 驗簽 / REST / Flex 卡片 |
@@ -74,8 +78,11 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
    → Run workflow。先用 `dry_run: true` 看一次輸出,確認四格連結沒問題,
    再用 `dry_run: false` 真的送出。不需要在自己電腦下任何指令。
    (本機也可以跑:`python scripts/amp_line_setup.py --action both`,加 `--apply` 才會送)
-8. **在 LINE 網頁補最後一步**:Messaging API → 開啟 **Use webhook**,
-   並關閉 Auto-reply 與 Greeting messages(這兩個開關沒有 API,只能在網頁上按)。
+8. **在 LINE 網頁補最後一步**:
+   - Messaging API → 開啟 **Use webhook**,並關閉 Auto-reply 與 Greeting messages
+     (這兩個開關沒有 API,只能在網頁上按)
+   - LINE Login → 那個半頁 LIFF → 開啟 **Share target picker**
+     (分享頁的「傳送給朋友」要靠它;沒開會退回「複製文字」的備援路徑)
 
 ## Secrets 對照表
 
@@ -113,7 +120,8 @@ GitHub Actions 每天 09:00 UTC ──► amp-poke-digest (彙總推播)
 
 ### D. 不是 secret(公開值,寫在 `js/config.js`)
 
-`LIFF_ID_COMPACT`(四個分頁都用它)、`LIFF_ID_FULL`(目前沒用到,保留)、`API_URL`
+`LIFF_ID_COMPACT`(所有分頁都用它)、`LIFF_ID_FULL`(目前沒用到,保留)、`API_URL`、
+`OA_ADD_FRIEND_URL`(邀請卡按鈕要開的加好友連結)、`SHARE_TITLE` / `SHARE_SUBTITLE`(邀請文案)
 
 ### 關於 `AMP_DIGEST_KEY`
 
