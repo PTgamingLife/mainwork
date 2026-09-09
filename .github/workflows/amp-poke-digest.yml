@@ -26,12 +26,14 @@ jobs:
     steps:
       - name: 呼叫 amp-poke-digest
         env:
-          FN_URL: ${{ secrets.AMP_POKE_DIGEST_URL }}
+          # 函式網址是公開值,secret 沒設就用這個預設 —— 2026-09-09 那班就是因為
+          # AMP_POKE_DIGEST_URL 沒設而整個 job 失敗,彙總沒送出去。
+          FN_URL: ${{ secrets.AMP_POKE_DIGEST_URL || 'https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-poke-digest' }}
           DIGEST_KEY: ${{ secrets.AMP_DIGEST_KEY }}
           DRY: ${{ inputs.dry_run || 'false' }}
         run: |
           if [ -z "$FN_URL" ] || [ -z "$DIGEST_KEY" ]; then
-            echo "缺 AMP_POKE_DIGEST_URL 或 AMP_DIGEST_KEY secret"; exit 1
+            echo "缺 AMP_DIGEST_KEY secret(Settings → Secrets and variables → Actions)"; exit 1
           fi
           code=$(curl -sS -o resp.json -w '%{http_code}' -X POST "$FN_URL" \
             -H "content-type: application/json" \
