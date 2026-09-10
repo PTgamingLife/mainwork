@@ -1,0 +1,33 @@
+{
+  "video": "/home/user/mainwork/scripts/autoedit/work_broll/src.mp4",
+  "no_cut": true,
+  "enhance": true,
+  "burn_subtitles": true,
+  "segments": [
+    {
+      "id": 1, "start": 0, "end": 30.3, "text": "",
+      "cards": [
+        { "start": 0.5,  "end": 1.0,  "text": "有沒有覺得要上班" },
+        { "start": 1.2,  "end": 2.2,  "text": "要精進工作技能" },
+        { "start": 2.7,  "end": 4.0,  "text": "還要自我成長跟學身心靈" },
+        { "start": 4.2,  "end": 5.0,  "text": "甚至還要學AI" },
+        { "start": 22.2, "end": 23.4, "text": "Agent就是你的AI員工" },
+        { "start": 23.7, "end": 24.9, "text": "學AI不應該讓我們覺得焦慮" }
+      ]
+    }
+  ],
+  "overlays": [
+    { "type": "broll", "clip": "broll_a.mp4", "start": 0.5, "end": 5.0 },
+    { "type": "broll", "clip": "broll_c.mp4", "start": 22.2, "end": 24.9 },
+    { "type": "loop", "count": 4, "label": "學不完", "start": 0.4, "end": 5.6, "y": 120 },
+    { "type": "text", "text": "5 大概念", "start": 6.6, "end": 8.1, "y": 120 },
+    { "type": "text", "text": "Token = 錢", "start": 8.2, "end": 10.0, "y": 120 },
+    { "type": "counter", "from": 100, "to": 9000, "label": "Token 消耗", "start": 10.2, "end": 13.4, "y": 120 },
+    { "type": "text", "text": "Model = 大腦", "start": 13.7, "end": 15.4, "y": 120 },
+    { "type": "clone", "clones": 3, "label": "Skill 技能", "start": 15.7, "end": 17.1, "y": 120 },
+    { "type": "flow", "items": 5, "label": "API 串接", "start": 17.3, "end": 22.0, "y": 120 },
+    { "type": "ring", "pct": 100, "label": "Agent 代勞", "start": 22.2, "end": 23.5, "y": 120 },
+    { "type": "loop", "count": 5, "label": "5 個都懂了", "start": 23.7, "end": 26.9, "y": 120 },
+    { "type": "text", "text": "留言你的解釋", "start": 27.2, "end": 30.2, "y": 120 }
+  ]
+}
