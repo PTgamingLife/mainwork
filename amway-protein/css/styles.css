@@ -260,3 +260,31 @@ body {
   text-align: center; font-size: 14px; color: var(--amp-ink); line-height: 1.6;
 }
 .board-gap b { color: var(--amp-green); font-size: 20px; }
+
+/* ---------- 限時任務：你希望誰變健康 ---------- */
+.wish-badge {
+  display: inline-block; margin-bottom: 12px; padding: 6px 14px;
+  border-radius: 999px; background: var(--amp-gold); color: var(--amp-ink);
+  font-size: 12px; font-weight: 700;
+}
+/* 動畫底稿是 1000×1000，用 iframe 內嵌並等比縮到卡片寬度 */
+.wish-anim { position: relative; width: 100%; padding-top: 100%; margin-bottom: 16px;
+  border-radius: 14px; overflow: hidden; background: var(--amp-green); }
+.wish-anim iframe {
+  position: absolute; top: 0; left: 0; width: 1000px; height: 1000px;
+  border: 0; transform-origin: top left;
+  /* 縮放比例由 js/wish.js 依實際卡片寬度算,CSS 的 calc() 算不出 100%/1000px */
+  transform: scale(var(--wish-scale, 0.32));
+}
+.wish-q { line-height: 1.5; }
+.wish-label { display: block; margin: 14px 0 6px; font-size: 13px; color: var(--amp-grey); }
+.wish-input {
+  width: 100%; padding: 12px 14px; margin-bottom: 12px; font-size: 16px;
+  border: 1px solid #D8DED9; border-radius: 10px; background: #fff; color: var(--amp-ink);
+}
+.wish-input:focus { outline: none; border-color: var(--amp-green); }
+.wish-msg { margin-top: 10px; font-size: 13px; color: #B3261E; text-align: center; }
+.wish-done { padding: 18px; border-radius: 14px; background: #EAF5E6; text-align: center; }
+.wish-done-hd { font-size: 20px; font-weight: 700; color: var(--amp-green); }
+.wish-done-name { margin-top: 8px; font-size: 16px; color: var(--amp-ink); }
+.wish-done-sub { margin-top: 6px; font-size: 12px; color: var(--amp-grey); }

@@ -1,0 +1,39 @@
+name: 安麗蛋白素挑戰 — 限時任務卡推播
+
+# 這是一次性的任務卡,正式的 12:00 發送由 Supabase 的 pg_cron 觸發
+# (GitHub 的 schedule 會延遲，9/9 那班 17:00 的排程實際 21:32 才跑)。
+# 這個 workflow 只當手動補發的按鈕,預設 dry run。
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 只看卡片長相不發送
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+concurrency:
+  group: amp-wish-push
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 呼叫 amp-wish-push
+        env:
+          FN_URL: https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-wish-push
+          DIGEST_KEY: ${{ secrets.AMP_DIGEST_KEY }}
+          DRY: ${{ inputs.dry_run || 'true' }}
+        run: |
+          if [ -z "$DIGEST_KEY" ]; then
+            echo "缺 AMP_DIGEST_KEY secret(Settings → Secrets and variables → Actions)"; exit 1
+          fi
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X POST "$FN_URL" \
+            -H "content-type: application/json" \
+            -H "x-amp-key: $DIGEST_KEY" \
+            -d "{\"dryRun\": $DRY}")
+          cat resp.json; echo
+          [ "$code" = "200" ] || { echo "HTTP $code"; exit 1; }

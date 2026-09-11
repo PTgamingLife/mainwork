@@ -5,7 +5,7 @@
 // 正式環境不會走到這個檔案(AMP_CONFIG.MOCK 為 false)。
 (function () {
   const KEY = 'amp_mock_v1';
-  const POINTS = { eat: 1, share: 3, refer: 5, quiz: 1 };
+  const POINTS = { eat: 1, share: 3, refer: 5, quiz: 1, wish: 3 };
   const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
   const QUESTIONS = [
@@ -90,6 +90,10 @@
         quiz: mine.filter((a) => a.type === 'quiz').length,
       },
       quizAnsweredToday: Boolean(s.answers[t]),
+      wish: (() => {
+        const w = s.actions.find((a) => a.type === 'wish');
+        return { done: !!w, target: w ? w.target : '' };
+      })(),
       recent: s.actions.slice().reverse().slice(0, 20)
         .map((a) => ({ date: a.date, type: a.type, points: a.points, target: a.target })),
     };
@@ -121,7 +125,11 @@
     if (action === 'add-action') {
       const type = payload.type;
       const target = (payload.targetName || '').trim();
-      if (['refer', 'share'].includes(type) && !target) return { ok: false, error: 'TARGET_REQUIRED' };
+      if (['refer', 'share', 'wish'].includes(type) && !target) return { ok: false, error: 'TARGET_REQUIRED' };
+      // 限時任務整輪只能一次,真的那一支是靠資料庫的 unique index 擋
+      if (type === 'wish' && s.actions.some((a) => a.type === 'wish')) {
+        return { ok: false, error: 'ALREADY_WISHED' };
+      }
       s.actions.push({ date: t, type, points: POINTS[type], target });
       save(s);
       return Object.assign({ gained: POINTS[type] }, me(s));

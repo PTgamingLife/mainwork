@@ -141,6 +141,11 @@ async function loadMe(round: any, member: any) {
       quiz: todayActions.filter((a: any) => a.action_type === "quiz").length,
     },
     quizAnsweredToday: answered.length > 0,
+    // 限時任務整輪一次,所以看的是整輪有沒有那一筆,不是今天
+    wish: (() => {
+      const w = actions.find((a: any) => a.action_type === "wish");
+      return { done: !!w, target: w ? w.target_name : "" };
+    })(),
     recent: actions.slice(0, 20).map((a: any) => ({
       date: a.action_date, type: a.action_type, points: a.points, target: a.target_name,
     })),
@@ -191,17 +196,25 @@ async function handle(action: string, body: any, member: any, round: any): Promi
 
   if (action === "add-action") {
     const type = String(body.type ?? "");
-    if (!["eat", "refer", "share"].includes(type)) return json({ ok: false, error: "BAD_TYPE" }, 400);
+    if (!["eat", "refer", "share", "wish"].includes(type)) return json({ ok: false, error: "BAD_TYPE" }, 400);
     const targetName = String(body.targetName ?? "").trim().slice(0, 40);
     // 規則:推薦與分享必填對方名字。資料庫也有 check,這裡先擋是為了回一句人話。
     if (NEEDS_TARGET.includes(type) && !targetName) {
       return json({ ok: false, error: "TARGET_REQUIRED" }, 400);
     }
-    await sbInsert("amp_actions", {
-      round_id: round.id, member_id: member.id, action_date: today,
-      action_type: type, points: POINTS[type],
-      target_name: targetName, note: String(body.note ?? "").trim().slice(0, 200),
-    }, "return=minimal");
+    try {
+      await sbInsert("amp_actions", {
+        round_id: round.id, member_id: member.id, action_date: today,
+        action_type: type, points: POINTS[type],
+        target_name: targetName, note: String(body.note ?? "").trim().slice(0, 200),
+      }, "return=minimal");
+    } catch (e) {
+      // wish 有 partial unique index(round_id, member_id):整輪只能領一次。
+      if ((e as Error).message === "DUPLICATE") {
+        return json({ ok: false, error: "ALREADY_WISHED" }, 409);
+      }
+      throw e;
+    }
     const me = await loadMe(round, member);
     return json({ ok: true, gained: POINTS[type], ...me });
   }

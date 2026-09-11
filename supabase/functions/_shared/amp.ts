@@ -26,8 +26,9 @@ export const C = {
 };
 
 // 計分規則(使用者確認:不設每日上限,refer/share 必填對方名字)
-export const POINTS: Record<string, number> = { eat: 1, share: 3, refer: 5, quiz: 1 };
-export const NEEDS_TARGET = ["refer", "share"];
+// wish = 一次性的限時任務「你希望誰變健康?」,整輪一次,由資料庫的 partial unique index 擋重複
+export const POINTS: Record<string, number> = { eat: 1, share: 3, refer: 5, quiz: 1, wish: 3 };
+export const NEEDS_TARGET = ["refer", "share", "wish"];
 export const HONESTY = "自律且誠實,騙人胖十斤";
 
 const enc = new TextEncoder();
@@ -134,6 +135,20 @@ export async function lineProfile(
     console.error("lineProfile", (e as Error).message);
     return { name: "", picture: "" };
   }
+}
+
+// 一次打給所有好友。15 個人也可以逐一 push,但 broadcast 只算一則訊息額度,便宜很多。
+export async function lineBroadcast(messages: unknown[]): Promise<boolean> {
+  const res = await fetch("https://api.line.me/v2/bot/message/broadcast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LINE_TOKEN}` },
+    body: JSON.stringify({ messages }),
+  });
+  if (!res.ok) {
+    console.error("lineBroadcast", res.status, (await res.text()).slice(0, 300));
+    return false;
+  }
+  return true;
 }
 
 export function textMsg(text: string) {
@@ -244,6 +259,52 @@ export function pokeDigestCard(opts: { names: string[]; count: number; appUrl: s
         contents: [{
           type: "button", style: "primary", color: C.green, height: "sm",
           action: { type: "uri", label: "回敬一下 / 看排行榜", uri: opts.appUrl },
+        }],
+      },
+    },
+  };
+}
+
+// 限時任務卡。hero 放動畫 —— LINE Flex 的 video 只吃 mp4,
+// 且舊版 LINE(12.6 以下)不支援,所以 altContent 一定要給一張靜態圖當退路。
+// 沒有 videoUrl 時整個 hero 退成靜態圖,卡片不會壞掉。
+export function wishCard(opts: {
+  videoUrl: string; altImageUrl: string; appUrl: string;
+}) {
+  const hero = opts.videoUrl
+    ? {
+      type: "video",
+      url: opts.videoUrl,
+      previewUrl: opts.altImageUrl,
+      altContent: { type: "image", size: "full", aspectRatio: "1:1", aspectMode: "cover", url: opts.altImageUrl },
+      aspectRatio: "1:1",
+    }
+    : { type: "image", url: opts.altImageUrl, size: "full", aspectRatio: "1:1", aspectMode: "cover" };
+
+  return {
+    type: "flex",
+    altText: "限時任務:如果可以幫別人變健康,你希望那個人是誰? 完成 +3 分",
+    contents: {
+      type: "bubble",
+      hero,
+      body: {
+        type: "box", layout: "vertical", spacing: "md",
+        backgroundColor: C.cream, paddingAll: "20px",
+        contents: [
+          { type: "text", text: "限時任務 · 只能做一次", size: "xs", color: C.gold, weight: "bold" },
+          {
+            type: "text", wrap: true, size: "lg", weight: "bold", color: C.green,
+            text: "如果可以幫別人變健康,你希望那個人是誰?",
+          },
+          { type: "text", wrap: true, size: "sm", color: C.ink, text: "寫下那個人的名字,+3 分。" },
+          { type: "text", text: HONESTY, size: "xs", color: C.leaf, align: "center" },
+        ],
+      },
+      footer: {
+        type: "box", layout: "vertical", paddingAll: "12px",
+        contents: [{
+          type: "button", style: "primary", color: C.green, height: "sm",
+          action: { type: "uri", label: "寫下那個名字", uri: opts.appUrl },
         }],
       },
     },
