@@ -310,3 +310,38 @@ export function wishCard(opts: {
     },
   };
 }
+
+// 刮刮樂卡。純娛樂不加分,所以卡片上不提分數,只講「刮開看今天運勢」。
+export function luckCard(opts: { imageUrl: string; appUrl: string }) {
+  return {
+    type: "flex",
+    altText: "刮看看你今天的健康運勢",
+    contents: {
+      type: "bubble",
+      hero: {
+        type: "image", url: opts.imageUrl,
+        size: "full", aspectRatio: "1:1", aspectMode: "cover",
+      },
+      body: {
+        type: "box", layout: "vertical", spacing: "md",
+        backgroundColor: C.cream, paddingAll: "20px",
+        contents: [
+          { type: "text", text: "每日一刮 · 純娛樂不加分", size: "xs", color: C.gold, weight: "bold" },
+          {
+            type: "text", wrap: true, size: "lg", weight: "bold", color: C.green,
+            text: "刮看看你今天的健康運勢",
+          },
+          { type: "text", wrap: true, size: "sm", color: C.ink, text: "用手指刮開塗層,一天一次。" },
+          { type: "text", text: HONESTY, size: "xs", color: C.leaf, align: "center" },
+        ],
+      },
+      footer: {
+        type: "box", layout: "vertical", paddingAll: "12px",
+        contents: [{
+          type: "button", style: "primary", color: C.green, height: "sm",
+          action: { type: "uri", label: "開始刮", uri: opts.appUrl },
+        }],
+      },
+    },
+  };
+}

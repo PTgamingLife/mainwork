@@ -45,7 +45,7 @@
 
   // ---------- 分頁 ----------
   // share 沒有自己的底部分頁(四格已滿),從首頁按鈕或 OA 打「分享」進來。
-  const VIEWS = ['home', 'score', 'board', 'quiz', 'share', 'wish'];
+  const VIEWS = ['home', 'score', 'board', 'quiz', 'share', 'wish', 'luck'];
 
   AMP.go = function (view) {
     AMP.view = view;
@@ -59,6 +59,7 @@
     if (view === 'quiz') AMP.loadQuiz();
     if (view === 'share') AMP.loadShare();
     if (view === 'wish') AMP.loadWish();
+    if (view === 'luck') AMP.loadLuck();
   };
 
   // ---------- 首頁 ----------
@@ -120,7 +121,7 @@
 
   // ---------- 啟動 ----------
   async function boot() {
-    ['homeHonesty', 'scoreHonesty', 'boardHonesty', 'quizHonesty', 'sheetHonesty', 'shareHonesty', 'wishHonesty']
+    ['homeHonesty', 'scoreHonesty', 'boardHonesty', 'quizHonesty', 'sheetHonesty', 'shareHonesty', 'wishHonesty', 'luckHonesty']
       .forEach((id) => { const el = $(id); if (el) el.textContent = HONESTY; });
 
     document.querySelectorAll('.tab').forEach((t) => {

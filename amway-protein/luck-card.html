@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>刮刮樂卡片底圖 — 安麗蛋白素挑戰</title>
+<!--
+  LINE 卡片的 hero 靜態圖(1000x1000,1:1)。
+  畫的是「還沒刮」的樣子 —— 讓人想點進去刮。
+  要改字改色改這個檔重跑產圖腳本就好,不用重畫。
+-->
+<style>
+  :root{ --green:#00703C; --leaf:#7AB800; --cream:#F7F5EE; --gold:#C8A24A; --ink:#1F3D2A; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  /* 這台機器只有 WenQuanYi Zen Hei 一顆正黑,沒有粗體字面,
+     用 font-weight:800 會被合成假粗體、中文筆畫糊在一起。要粗就靠字級與字距。 */
+  body{width:1000px;height:1000px;overflow:hidden;
+       font-family:"WenQuanYi Zen Hei","Noto Sans CJK TC","PingFang TC",sans-serif}
+
+  .stage{position:relative;width:1000px;height:1000px;
+         background:
+           url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 120 120'><g transform='rotate(-12 60 60)'><path d='M18 84 q4-22 42-22 t42 22 q-18 12-42 12 t-42-12 z' fill='%23C8A24A' fill-opacity='0.16' stroke='%23C8A24A' stroke-opacity='0.45' stroke-width='3'/><path d='M40 63 q8-17 20-17 t20 17 q-10 5-20 5 t-20-5 z' fill='%23C8A24A' fill-opacity='0.16' stroke='%23C8A24A' stroke-opacity='0.45' stroke-width='3'/></g></svg>") repeat,
+           radial-gradient(circle at 50% 38%, #0a8a4c 0%, var(--green) 58%, #00522c 100%);
+         background-size:200px 200px, auto;
+         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px}
+
+  .badge{font-size:30px;letter-spacing:4px;text-indent:4px;color:var(--ink);
+         background:var(--gold);padding:14px 36px;border-radius:999px}
+
+  .title{font-size:62px;letter-spacing:8px;text-indent:8px;color:#fff;
+         text-shadow:0 4px 16px rgba(0,0,0,.35);text-align:center;line-height:1.35}
+
+  /* 沒刮開的銀灰塗層,右下角刮開一角露出金色,暗示「刮這個」 */
+  .panel{position:relative;width:660px;height:330px;border-radius:28px;overflow:hidden;
+         border:6px solid var(--gold);
+         background:linear-gradient(135deg,#E4E7E2 0%,#B9C2BA 50%,#8F9C92 100%);
+         display:flex;align-items:center;justify-content:center}
+  .panel span{font-size:66px;letter-spacing:10px;text-indent:10px;color:rgba(255,255,255,.8)}
+  .peel{position:absolute;right:0;bottom:0;width:230px;height:170px;
+        background:linear-gradient(135deg,#0a8a4c,#00522c);
+        clip-path:polygon(100% 0,100% 100%,0 100%);}
+  .peel-hint{position:absolute;right:24px;bottom:26px;font-size:30px;
+             letter-spacing:3px;text-indent:3px;color:var(--gold)}
+
+  .foot{font-size:28px;letter-spacing:4px;text-indent:4px;color:#D6F0C8}
+</style>
+
+<div class="stage">
+  <div class="badge">每日一刮 · 純娛樂</div>
+  <div class="title">刮看看<br>你今天的健康運勢</div>
+
+  <div class="panel">
+    <span>刮我</span>
+    <div class="peel"></div>
+    <div class="peel-hint">大吉?</div>
+  </div>
+
+  <div class="foot">用手指刮開,看今天的運勢</div>
+</div>

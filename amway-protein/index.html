@@ -165,6 +165,27 @@
         </div>
       </section>
 
+      <!-- ===== 刮刮樂：今天的健康運勢 ===== -->
+      <section class="view hidden" id="view-luck">
+        <div class="card">
+          <div class="luck-badge">每日一刮 · 純娛樂不加分</div>
+          <h2 class="card-title">刮看看你今天的健康運勢</h2>
+
+          <!-- 兩層疊加：下層是結果，上層 canvas 塗層被刮掉才露出來 -->
+          <div class="scratch-cell" id="scratchCell">
+            <div class="prize-inner" id="prizeInner">
+              <span class="prize-title" id="prizeTitle">—</span>
+              <span class="prize-text" id="prizeText"></span>
+            </div>
+            <canvas class="scratch-canvas" id="scratchCanvas"></canvas>
+          </div>
+
+          <p class="luck-hint" id="luckHint">用手指刮開塗層</p>
+          <button class="btn btn-ghost btn-block hidden" id="luckAgain">看看別人刮到什麼?去排行榜</button>
+          <p class="honesty" id="luckHonesty"></p>
+        </div>
+      </section>
+
     </main>
 
     <nav class="tabbar">
@@ -203,5 +224,6 @@
   <script src="js/quiz.js"></script>
   <script src="js/share.js"></script>
   <script src="js/wish.js"></script>
+  <script src="js/luck.js"></script>
 </body>
 </html>

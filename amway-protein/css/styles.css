@@ -288,3 +288,49 @@ body {
 .wish-done-hd { font-size: 20px; font-weight: 700; color: var(--amp-green); }
 .wish-done-name { margin-top: 8px; font-size: 16px; color: var(--amp-ink); }
 .wish-done-sub { margin-top: 6px; font-size: 12px; color: var(--amp-grey); }
+
+/* ---------- 刮刮樂：今天的健康運勢 ---------- */
+.luck-badge {
+  display: inline-block; margin-bottom: 12px; padding: 6px 14px;
+  border-radius: 999px; background: var(--amp-gold); color: var(--amp-ink);
+  font-size: 12px; font-weight: 700;
+}
+.scratch-cell {
+  position: relative; width: 100%; aspect-ratio: 4 / 3;
+  margin: 14px 0 10px; border-radius: 16px; overflow: hidden;
+  border: 2px solid var(--amp-gold);
+  /* 金元寶浮水印：四個結果共用同一張底，刮開才知道是哪一個 */
+  background:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'>\
+<g transform='rotate(-12 60 60)'>\
+<path d='M18 84 q4-22 42-22 t42 22 q-18 12-42 12 t-42-12 z' \
+ fill='%23C8A24A' fill-opacity='0.16' stroke='%23C8A24A' stroke-opacity='0.5' stroke-width='3'/>\
+<path d='M40 63 q8-17 20-17 t20 17 q-10 5-20 5 t-20-5 z' \
+ fill='%23C8A24A' fill-opacity='0.16' stroke='%23C8A24A' stroke-opacity='0.5' stroke-width='3'/>\
+</g></svg>") repeat,
+    linear-gradient(160deg, #0a8a4c 0%, var(--amp-green) 60%, #00522c 100%);
+  background-size: 120px 120px, auto;
+}
+/* 防閃爍：canvas 是非同步畫的，先用偽元素蓋住，畫好才拿掉 */
+.scratch-cell::before {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(145deg, #E4E7E2, #8F9C92);
+}
+.scratch-cell.canvas-ready::before { display: none; }
+
+.prize-inner {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center;
+}
+.prize-title {
+  font-size: 34px; font-weight: 800; color: #FFFFFF; letter-spacing: 2px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, .35);
+}
+.prize-text { font-size: 15px; line-height: 1.6; color: #EAF5E6; }
+
+.scratch-canvas {
+  position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%;
+  touch-action: none; cursor: crosshair; transition: opacity .45s ease;
+}
+.luck-hint { margin-bottom: 10px; font-size: 13px; color: var(--amp-grey); text-align: center; }
