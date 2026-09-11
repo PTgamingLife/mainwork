@@ -12,7 +12,8 @@
 // 額外 secrets:
 //   AMP_DIGEST_KEY        跟戳彙總共用的手動觸發金鑰
 //   AMP_LIFF_URL_COMPACT  半頁 LIFF 網址
-//   AMP_WISH_VIDEO_URL    動畫 mp4(留空則卡片退成靜態圖)
+//   AMP_WISH_VIDEO_URL    動畫 mp4(沒設就用 Pages 上的 media/wish.mp4;
+//                         那個檔不存在時卡片會顯示不出影片,所以要先確定檔案上去了再部署)
 //   AMP_WISH_IMAGE_URL    靜態圖(舊版 LINE 與 previewUrl 用,一定要有)
 // 後兩個是公開網址不是機密,沒設就用 GitHub Pages 上那份,少兩個要手動設定的東西。
 
@@ -21,7 +22,7 @@ import { lineBroadcast, sbSelect, wishCard } from "../_shared/amp.ts";
 const DIGEST_KEY = Deno.env.get("AMP_DIGEST_KEY") ?? "";
 const LIFF_COMPACT = Deno.env.get("AMP_LIFF_URL_COMPACT") ?? "";
 const PAGES = "https://ptgaminglife.github.io/mainwork/amway-protein";
-const VIDEO_URL = Deno.env.get("AMP_WISH_VIDEO_URL") ?? "";
+const VIDEO_URL = Deno.env.get("AMP_WISH_VIDEO_URL") || `${PAGES}/media/wish.mp4`;
 const IMAGE_URL = Deno.env.get("AMP_WISH_IMAGE_URL") || `${PAGES}/media/wish.png`;
 
 function json(body: unknown, status = 200): Response {
