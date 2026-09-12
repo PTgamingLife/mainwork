@@ -14,10 +14,13 @@ declare
 begin
   select token into k from public.amp_push_auth where id = 1;
 
+  -- pg_net 預設 5 秒就斷線,冷啟動 + broadcast 常常不夠。
+  -- 斷線不代表函式沒跑完,但回應拿不到就看不出成敗,所以拉長到 30 秒。
   perform net.http_post(
     url := 'https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/amp-luck-push',
     headers := jsonb_build_object('content-type', 'application/json', 'x-amp-key', k),
-    body := '{}'::jsonb
+    body := '{}'::jsonb,
+    timeout_milliseconds := 30000
   );
 
   if exists (select 1 from cron.job where jobname = 'amp-luck-push') then

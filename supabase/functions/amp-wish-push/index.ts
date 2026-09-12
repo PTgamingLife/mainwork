@@ -17,7 +17,7 @@
 //   AMP_WISH_IMAGE_URL    靜態圖(舊版 LINE 與 previewUrl 用,一定要有)
 // 後兩個是公開網址不是機密,沒設就用 GitHub Pages 上那份,少兩個要手動設定的東西。
 
-import { lineBroadcast, sbSelect, wishCard } from "../_shared/amp.ts";
+import { lineBroadcast, sbSelectRetry, wishCard } from "../_shared/amp.ts";
 
 const DIGEST_KEY = Deno.env.get("AMP_DIGEST_KEY") ?? "";
 const LIFF_COMPACT = Deno.env.get("AMP_LIFF_URL_COMPACT") ?? "";
@@ -40,23 +40,26 @@ function sameKey(a: string, b: string): boolean {
   return diff === 0;
 }
 
+// 回傳 true/false 是「金鑰對不對」;查不到金鑰是另一回事(伺服器問題),
+// 用丟例外區分 —— 不然一次 504 會被誤判成「金鑰不對」而靜靜地不發送。
 async function authorized(key: string): Promise<boolean> {
   if (DIGEST_KEY && sameKey(key, DIGEST_KEY)) return true;
-  try {
-    const rows = await sbSelect("amp_push_auth", "id=eq.1&select=token&limit=1");
-    const token = rows[0]?.token ?? "";
-    return !!token && sameKey(key, token);
-  } catch (e) {
-    console.error("authorized", (e as Error).message);
-    return false;
-  }
+  const rows = await sbSelectRetry("amp_push_auth", "id=eq.1&select=token&limit=1");
+  const token = rows[0]?.token ?? "";
+  return !!token && sameKey(key, token);
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ ok: false, error: "METHOD" }, 405);
 
-  if (!(await authorized(req.headers.get("x-amp-key") ?? ""))) {
-    return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+  try {
+    if (!(await authorized(req.headers.get("x-amp-key") ?? ""))) {
+      return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+    }
+  } catch (e) {
+    // 查不到金鑰 ≠ 金鑰不對。回 503 讓呼叫端知道這次沒發出去、值得重試。
+    console.error("auth lookup failed", (e as Error).message);
+    return json({ ok: false, error: "AUTH_LOOKUP_FAILED" }, 503);
   }
 
   let body: any = {};

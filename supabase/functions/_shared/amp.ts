@@ -71,6 +71,24 @@ export async function sbSelect(table: string, query: string): Promise<any[]> {
   return await res.json();
 }
 
+// 查詢失敗就重試。整點很多排程一起跑的時候 PostgREST 會短暫回 504
+// (2026-09-12 12:00 的刮刮樂推播就是這樣掛的:查金鑰吃到 504,
+//  被當成「金鑰不對」回 401,卡片整批沒送出)。
+export async function sbSelectRetry(
+  table: string, query: string, tries = 3,
+): Promise<any[]> {
+  let last: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await sbSelect(table, query);
+    } catch (e) {
+      last = e;
+      if (i < tries - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
 export async function sbInsert(table: string, row: unknown, prefer = "return=representation"): Promise<any[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: "POST", headers: sbHeaders(prefer), body: JSON.stringify(row),
