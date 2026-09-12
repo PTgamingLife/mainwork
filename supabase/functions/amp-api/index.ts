@@ -268,6 +268,43 @@ async function handle(action: string, body: any, member: any, round: any): Promi
     });
   }
 
+  // ---- 小遊戲(不加分,只記錄) ----
+  // 一天一次由 amp_plays 的 unique(member_id, game, play_date) 保證。
+  // 前端先問 game-open:玩過了就直接把結果還給它(可以再看,不能重玩)。
+  if (action === "game-open" || action === "game-record") {
+    const game = String(body.game ?? "");
+    if (game !== "ladder") return json({ ok: false, error: "BAD_GAME" }, 400);
+
+    const done = await sbSelect(
+      "amp_plays",
+      `member_id=eq.${member.id}&game=eq.${game}&play_date=eq.${today}&select=result&limit=1`,
+    );
+    if (done.length > 0) {
+      return json({ ok: true, done: true, result: done[0].result });
+    }
+    if (action === "game-open") return json({ ok: true, done: false, result: "" });
+
+    const result = String(body.result ?? "").trim().slice(0, 40);
+    if (!result) return json({ ok: false, error: "RESULT_REQUIRED" }, 400);
+    try {
+      await sbInsert("amp_plays", {
+        round_id: round.id, member_id: member.id,
+        game, play_date: today, result,
+      }, "return=minimal");
+    } catch (e) {
+      // 同一秒連按兩次會撞 unique,那就把已經存下的那筆還給他
+      if ((e as Error).message === "DUPLICATE") {
+        const again = await sbSelect(
+          "amp_plays",
+          `member_id=eq.${member.id}&game=eq.${game}&play_date=eq.${today}&select=result&limit=1`,
+        );
+        return json({ ok: true, done: true, result: again[0]?.result ?? result });
+      }
+      throw e;
+    }
+    return json({ ok: true, done: true, result });
+  }
+
   if (action === "poke") {
     const to = String(body.toMemberId ?? "");
     if (!to || to === member.id) return json({ ok: false, error: "BAD_TARGET" }, 400);

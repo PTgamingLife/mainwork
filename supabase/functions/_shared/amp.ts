@@ -363,3 +363,38 @@ export function luckCard(opts: { imageUrl: string; appUrl: string }) {
     },
   };
 }
+
+// 爬梯子卡。跟刮刮樂一樣純娛樂不加分,卡片上不提分數。
+export function ladderCard(opts: { imageUrl: string; appUrl: string }) {
+  return {
+    type: "flex",
+    altText: "玩過這個,代表你⋯⋯ 你的命定優質蛋白素口味",
+    contents: {
+      type: "bubble",
+      hero: {
+        type: "image", url: opts.imageUrl,
+        size: "full", aspectRatio: "1:1", aspectMode: "cover",
+      },
+      body: {
+        type: "box", layout: "vertical", spacing: "md",
+        backgroundColor: C.cream, paddingAll: "20px",
+        contents: [
+          { type: "text", text: "每日一次 · 純娛樂不加分", size: "xs", color: C.gold, weight: "bold" },
+          {
+            type: "text", wrap: true, size: "lg", weight: "bold", color: C.green,
+            text: "玩過這個,代表你⋯⋯",
+          },
+          { type: "text", wrap: true, size: "sm", color: C.ink, text: "你的命定優質蛋白素口味。選一條路走下去。" },
+          { type: "text", text: HONESTY, size: "xs", color: C.leaf, align: "center" },
+        ],
+      },
+      footer: {
+        type: "box", layout: "vertical", paddingAll: "12px",
+        contents: [{
+          type: "button", style: "primary", color: C.green, height: "sm",
+          action: { type: "uri", label: "開始走", uri: opts.appUrl },
+        }],
+      },
+    },
+  };
+}

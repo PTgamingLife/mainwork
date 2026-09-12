@@ -135,6 +135,16 @@
       return Object.assign({ gained: POINTS[type] }, me(s));
     }
 
+    if (action === 'game-open' || action === 'game-record') {
+      s.plays = s.plays || {};
+      const key = payload.game + '|' + t;
+      if (s.plays[key]) return { ok: true, done: true, result: s.plays[key] };
+      if (action === 'game-open') return { ok: true, done: false, result: '' };
+      s.plays[key] = String(payload.result || '').trim();
+      save(s);
+      return { ok: true, done: true, result: s.plays[key] };
+    }
+
     if (action === 'quiz-today') {
       const q = questionOfToday(s);
       const done = s.answers[t];

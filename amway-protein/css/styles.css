@@ -334,3 +334,23 @@ body {
   touch-action: none; cursor: crosshair; transition: opacity .45s ease;
 }
 .luck-hint { margin-bottom: 10px; font-size: 13px; color: var(--amp-grey); text-align: center; }
+
+/* ---------- 爬梯子：命定蛋白素口味 ---------- */
+.ladder-sub { margin: 4px 0 10px; font-size: 14px; color: var(--amp-grey); }
+.ladder-wrap {
+  margin: 8px 0 12px; padding: 10px 4px; border-radius: 16px;
+  background: linear-gradient(160deg, #0a8a4c 0%, var(--amp-green) 60%, #00522c 100%);
+}
+.ladder-wrap svg { display: block; width: 100%; height: auto; }
+.ladder-start { cursor: pointer; }
+.ladder-start:hover circle { fill: var(--amp-leaf); }
+.ladder-start.is-off { cursor: default; opacity: .45; pointer-events: none; }
+.ladder-label { transition: fill .3s ease; }
+.ladder-label.is-win { fill: var(--amp-gold); font-weight: 700; }
+.ladder-label { font-weight: 500; }
+.ladder-hint { margin-bottom: 10px; font-size: 13px; color: var(--amp-grey); text-align: center; }
+.ladder-result { padding: 18px; border-radius: 14px; background: #EAF5E6; text-align: center; }
+.ladder-result-hd { font-size: 13px; color: var(--amp-grey); }
+.ladder-result-name {
+  margin-top: 6px; font-size: 28px; font-weight: 800; color: var(--amp-green); letter-spacing: 2px;
+}
