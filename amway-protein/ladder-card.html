@@ -18,6 +18,19 @@
   .sub{font-size:30px;letter-spacing:4px;text-indent:4px;color:#D6F0C8}
   svg{margin-top:6px}
   .lbl{font-size:26px;fill:var(--cream)}
+
+  /* 下半部糊掉:口味看不清楚才有「想點進去看」的動機。
+     用 backdrop-filter + 遮罩做漸進模糊,上緣是清楚的、越往下越糊,
+     不是硬生生切一刀。 */
+  .veil{position:absolute;left:0;right:0;bottom:0;height:42%;
+        backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+        mask-image:linear-gradient(to bottom, transparent 0%, #000 38%, #000 100%);
+        -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 38%, #000 100%);
+        pointer-events:none}
+  /* 再壓一層極淡的暗色,讓糊掉那半看起來像刻意的,不像沒對到焦 */
+  .veil-tint{position:absolute;left:0;right:0;bottom:0;height:42%;
+             background:linear-gradient(to bottom, rgba(0,50,26,0) 0%, rgba(0,50,26,.35) 100%);
+             pointer-events:none}
 </style>
 <div class="stage">
   <div class="badge">每日一次 · 純娛樂</div>
@@ -64,4 +77,7 @@
       <text x="810" y="516">抹茶口味</text>
     </g>
   </svg>
+
+  <div class="veil"></div>
+  <div class="veil-tint"></div>
 </div>
