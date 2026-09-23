@@ -5,7 +5,7 @@
       "先生",
       "太太"
     ],
-    "updated": "2026-09-07",
+    "updated": "2026-09-23",
     "note": "以下皆為【範例數字】,請換成你們的真實資料。可以直接對 Claude 說『把月薪改成 X』『房貸餘額是 Y』來更新。"
   },
   "accounts": [
@@ -849,6 +849,348 @@
       "owner": "先生",
       "note": "盛立藥師藥妝藥局｜國泰世華 6673 中華航空聯名卡(附卡)",
       "source": "card-6673"
+    },
+    {
+      "date": "2026-08-14",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 90,
+      "owner": "先生",
+      "note": "全聯－三峽北大｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-14",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 579,
+      "owner": "先生",
+      "note": "全聯－三峽北大｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 35,
+      "owner": "先生",
+      "note": "全家便利商店－萬華車站｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-15",
+      "type": "expense",
+      "category": "其他",
+      "amount": 4570,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 30,
+      "owner": "先生",
+      "note": "統一超商－凱富｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 238,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-15",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 208,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-16",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 84,
+      "owner": "先生",
+      "note": "統一超商－城庚｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-21",
+      "type": "expense",
+      "category": "交通",
+      "amount": 1100,
+      "owner": "先生",
+      "note": "監理費 ASF-3106 / A01T7K1A5｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-21",
+      "type": "expense",
+      "category": "交通",
+      "amount": 20,
+      "owner": "先生",
+      "note": "監理費用語音轉帳手續費｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-21",
+      "type": "expense",
+      "category": "保險",
+      "amount": 675,
+      "owner": "先生",
+      "note": "衛生福利部中央健康保險｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-22",
+      "type": "expense",
+      "category": "其他",
+      "amount": 1220,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-22",
+      "type": "expense",
+      "category": "其他",
+      "amount": 3600,
+      "owner": "先生",
+      "note": "安麗日用品｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-22",
+      "type": "expense",
+      "category": "交通",
+      "amount": 200,
+      "owner": "先生",
+      "note": "悠遊付－好停停車場｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-22",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 59,
+      "owner": "先生",
+      "note": "統一超商－凱富｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-25",
+      "type": "expense",
+      "category": "通訊",
+      "amount": 300,
+      "owner": "先生",
+      "note": "APPLE.COM/BILL 訂閱｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-25",
+      "type": "expense",
+      "category": "其他",
+      "amount": 5,
+      "owner": "先生",
+      "note": "國外交易手續費(APPLE)｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-25",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 125,
+      "owner": "先生",
+      "note": "義美吉盛－桃園機場二期｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-27",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 94,
+      "owner": "先生",
+      "note": "統一超商－學林｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-28",
+      "type": "expense",
+      "category": "娛樂",
+      "amount": 6929,
+      "owner": "先生",
+      "note": "TRIP.COM 旅遊訂購｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-28",
+      "type": "expense",
+      "category": "交通",
+      "amount": 1450,
+      "owner": "先生",
+      "note": "中油－環河南路站｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-28",
+      "type": "expense",
+      "category": "其他",
+      "amount": 104,
+      "owner": "先生",
+      "note": "國外交易手續費(TRIP.COM)｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-28",
+      "type": "expense",
+      "category": "其他",
+      "amount": -320,
+      "owner": "先生",
+      "note": "蝦皮退款(ic6exem8)｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-29",
+      "type": "expense",
+      "category": "交通",
+      "amount": 135,
+      "owner": "先生",
+      "note": "悠遊付－歐特儀停車場｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-29",
+      "type": "expense",
+      "category": "其他",
+      "amount": 100,
+      "owner": "先生",
+      "note": "香港商英特拉股份有限公司｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-30",
+      "type": "expense",
+      "category": "交通",
+      "amount": 500,
+      "owner": "先生",
+      "note": "悠遊卡加值－宏達幸福停｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-30",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 39,
+      "owner": "先生",
+      "note": "統一超商－學勤｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-31",
+      "type": "expense",
+      "category": "通訊",
+      "amount": 300,
+      "owner": "先生",
+      "note": "APPLE.COM/BILL 訂閱｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-31",
+      "type": "expense",
+      "category": "其他",
+      "amount": 5,
+      "owner": "先生",
+      "note": "國外交易手續費(APPLE)｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-31",
+      "type": "expense",
+      "category": "交通",
+      "amount": 45,
+      "owner": "先生",
+      "note": "悠遊付－好停停車場｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-08-31",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 206,
+      "owner": "先生",
+      "note": "統一超商－學林｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-01",
+      "type": "expense",
+      "category": "通訊",
+      "amount": 690,
+      "owner": "先生",
+      "note": "APPLE.COM/BILL 訂閱｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-01",
+      "type": "expense",
+      "category": "其他",
+      "amount": 10,
+      "owner": "先生",
+      "note": "國外交易手續費(APPLE)｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-01",
+      "type": "expense",
+      "category": "其他",
+      "amount": 2037,
+      "owner": "先生",
+      "note": "康達盛通生活量販北大店｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-02",
+      "type": "expense",
+      "category": "其他",
+      "amount": 160,
+      "owner": "先生",
+      "note": "IKEA 宜家家居－新莊｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-02",
+      "type": "expense",
+      "category": "娛樂",
+      "amount": 213,
+      "owner": "先生",
+      "note": "Klook 客路｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-02",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 110,
+      "owner": "先生",
+      "note": "全家便利商店－大園二航｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
+    },
+    {
+      "date": "2026-09-02",
+      "type": "expense",
+      "category": "飲食",
+      "amount": 40,
+      "owner": "先生",
+      "note": "全家便利商店－大園二航｜國泰世華 0936 中華航空聯名卡(附卡)",
+      "source": "card-0936"
     }
   ]
 }
