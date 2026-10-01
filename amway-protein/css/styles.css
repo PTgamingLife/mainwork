@@ -354,3 +354,18 @@ body {
 .ladder-result-name {
   margin-top: 6px; font-size: 28px; font-weight: 800; color: var(--amp-green); letter-spacing: 2px;
 }
+
+/* ===== 賽季結算：發出掌聲給前五名 ===== */
+.clap-badge{display:inline-block;background:var(--amp-gold);color:var(--amp-ink);
+            font-size:12px;padding:4px 12px;border-radius:999px;margin-bottom:10px}
+.clap-lead{color:var(--amp-ink);font-size:14px;line-height:1.7;margin-bottom:14px}
+.clap-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px}
+.clap-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+          background:#F2F5EF;border:1px solid #E2E8DE}
+.clap-medal{font-size:18px;flex:none}
+.clap-name{flex:1;font-size:15px;color:var(--amp-ink)}
+.clap-pts{font-size:14px;color:var(--amp-green)}
+.clap-done{text-align:center;padding:16px;border-radius:12px;background:#F2F5EF}
+.clap-done-hd{font-size:17px;color:var(--amp-green);margin-bottom:6px}
+.clap-done-sub{font-size:14px;color:var(--amp-ink)}
+.clap-msg{margin-top:10px;font-size:13px;color:#B0453C;min-height:18px;text-align:center}
