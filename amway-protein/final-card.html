@@ -60,9 +60,24 @@
 
   .honesty{margin-top:16px;font-size:22px;letter-spacing:3px;text-indent:3px;
            color:rgba(247,245,238,.72)}
+
+  /* ── 彩花 ── 繽紛的紙花灑在背景。用種子亂數生成,所以每次重跑產圖長得一模一樣,
+     不會「這次跟上次不一樣」。全部壓在 z-index:0,文字另外抬到 1,不會蓋到字。 */
+  .confetti{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+  .confetti i{position:absolute;display:block}
+  .confetti i.rect{border-radius:3px}
+  .confetti i.dot{border-radius:50%}
+  /* 緞帶:細長的弧形紙條,用兩個不同圓角做出捲曲感 */
+  .confetti i.ribbon{border-radius:60% 60% 20% 20% / 90% 90% 10% 10%}
+  /* 離鏡頭近的那幾片糊掉,畫面才有前後景深,不是一張貼紙 */
+  .confetti i.near{filter:blur(2.5px)}
+
+  /* 文字與頒獎台抬到彩花之上 */
+  .badge,.title,.sub,.rest,.honesty{position:relative;z-index:1}
 </style>
 <div class="stage">
   <div class="beam"></div>
+  <div class="confetti" id="confetti"></div>
 
   <div class="badge">賽季結算 · 2026.09.10 – 09.30</div>
   <div class="title">最終排名</div>
@@ -112,3 +127,50 @@
 
   <div class="honesty">自律且誠實,騙人胖十斤</div>
 </div>
+
+<script>
+// 三組配色,用 ?p=a|b|c 切換;預設 a。要定案就把 PICK 寫死。
+const PALETTES = {
+  a: ['#C8A24A','#F0D98C','#7AB800','#B7E36B','#F7F5EE','#F2A65A'],            // 紐崔萊自然
+  b: ['#FF5E8A','#FFC93C','#49C6E5','#FF8A3D','#A06CD5','#F7F5EE'],            // 嘉年華跳色
+  c: ['#F2789F','#8FD14F','#8B5E3C','#C8A24A','#F7F5EE','#C8E6A0']             // 莓果/抹茶/巧克力
+};
+const PICK = new URLSearchParams(location.search).get('p') || 'a';
+const COLORS = PALETTES[PICK];
+
+// 固定種子的亂數(mulberry32)。不用 Math.random,否則每次產圖都不一樣。
+function rng(seed){ return function(){
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}; }
+const rand = rng(20260930);
+const pick = (a) => a[Math.floor(rand() * a.length)];
+const between = (lo, hi) => lo + rand() * (hi - lo);
+
+const box = document.getElementById('confetti');
+const SHAPES = ['rect','rect','dot','ribbon'];
+let html = '';
+for (let i = 0; i < 110; i++) {
+  const shape = pick(SHAPES);
+  const near  = rand() < 0.18;
+  // 上半部密、下半部疏 —— 像剛從頭頂灑下來,底下那排名次也才不會太花
+  const top   = Math.pow(rand(), 0.75) * 100;
+  const left  = between(-2, 100);
+  const w = shape === 'dot' ? between(7, 15)
+          : shape === 'ribbon' ? between(9, 15)
+          : between(10, 24);
+  const h = shape === 'dot' ? w
+          : shape === 'ribbon' ? between(26, 46)
+          : between(7, 15);
+  // 越下面越透明,視覺重心才留在頒獎台
+  const op = between(0.45, 0.95) * (top > 62 ? 0.55 : 1);
+  html += `<i class="${shape}${near ? ' near' : ''}" style="`
+        + `top:${top.toFixed(2)}%;left:${left.toFixed(2)}%;`
+        + `width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;`
+        + `background:${pick(COLORS)};opacity:${op.toFixed(2)};`
+        + `transform:rotate(${between(-180, 180).toFixed(1)}deg)"></i>`;
+}
+box.innerHTML = html;
+</script>
