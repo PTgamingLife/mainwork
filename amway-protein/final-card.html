@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>賽季結算卡 — 安麗蛋白素挑戰</title>
+<!-- LINE 卡片用的結算圖(1000x1000)。前三名站頒獎台,第一名戴黃冠,四五名排在台下。
+     要改名次就改下面的 .podium / .row 文字,重跑產圖腳本即可。 -->
+<style>
+  :root{ --green:#00703C; --lime:#7AB800; --gold:#C8A24A; --cream:#F7F5EE; --ink:#1F3D2A; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  /* 這台機器只有 WenQuanYi Zen Hei,沒有粗體字面;用 font-weight 會合成假粗體把中文糊掉。
+     要「看起來粗」就加字級與字距,不要加 font-weight。 */
+  body{width:1000px;height:1000px;overflow:hidden;
+       font-family:"WenQuanYi Zen Hei","Noto Sans CJK TC","PingFang TC",sans-serif}
+  .stage{position:relative;width:1000px;height:1000px;
+         background:radial-gradient(circle at 50% 30%, #0a8a4c 0%, var(--green) 58%, #00522c 100%);
+         display:flex;flex-direction:column;align-items:center;padding:36px 44px 30px}
+
+  /* 背景的淡色光束,讓頒獎台看起來有打燈 */
+  .beam{position:absolute;left:50%;top:0;width:620px;height:720px;transform:translateX(-50%);
+        background:radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 70%);
+        pointer-events:none}
+
+  .badge{font-size:24px;letter-spacing:4px;text-indent:4px;color:var(--ink);
+         background:var(--gold);padding:10px 28px;border-radius:999px}
+  .title{margin-top:14px;font-size:58px;letter-spacing:10px;text-indent:10px;color:#fff;
+         text-shadow:0 4px 18px rgba(0,0,0,.35)}
+  .sub{margin-top:8px;font-size:24px;letter-spacing:3px;text-indent:3px;color:#D6F0C8}
+
+  /* ── 頒獎台 ── 2 / 1 / 3 由左到右,台座高度不同 */
+  .podium{position:relative;margin-top:24px;display:flex;align-items:flex-end;gap:14px;z-index:1}
+  .slot{display:flex;flex-direction:column;align-items:center;width:272px}
+  .crown{margin-bottom:6px}
+  .avatar{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.14);
+          border:4px solid var(--cream);display:flex;align-items:center;justify-content:center;
+          font-size:40px;color:var(--cream);letter-spacing:0}
+  .slot.first .avatar{width:116px;height:116px;border-color:var(--gold);font-size:48px;
+                      box-shadow:0 0 0 8px rgba(200,162,74,.22)}
+  .name{margin-top:11px;font-size:30px;letter-spacing:2px;text-indent:2px;color:#fff;
+        white-space:nowrap}
+  .slot.first .name{font-size:35px;color:#FFEFC2}
+  .pts{margin-top:3px;font-size:27px;color:var(--gold);letter-spacing:1px}
+  .slot.first .pts{font-size:34px}
+
+  .block{margin-top:13px;width:100%;border-radius:16px 16px 0 0;
+         background:linear-gradient(180deg,#F7F5EE 0%,#DCD8C6 100%);
+         display:flex;align-items:flex-start;justify-content:center;padding-top:14px;
+         box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+  .slot.first .block{height:176px;background:linear-gradient(180deg,#F0D98C 0%,var(--gold) 100%)}
+  .slot.second .block{height:126px}
+  .slot.third .block{height:96px}
+  .no{font-size:64px;color:var(--ink);letter-spacing:0;line-height:1}
+  .slot.first .no{font-size:78px;color:#5A4208}
+
+  /* ── 台下的四、五名 ── */
+  .rest{margin-top:18px;width:100%;display:flex;flex-direction:column;gap:9px}
+  .row{display:flex;align-items:center;gap:16px;padding:10px 22px;border-radius:14px;
+       background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16)}
+  .row .rk{width:52px;font-size:27px;color:var(--gold);text-align:center}
+  .row .nm{flex:1;font-size:29px;letter-spacing:2px;text-indent:2px;color:#fff}
+  .row .sc{font-size:27px;color:#D6F0C8}
+
+  .honesty{margin-top:16px;font-size:22px;letter-spacing:3px;text-indent:3px;
+           color:rgba(247,245,238,.72)}
+</style>
+<div class="stage">
+  <div class="beam"></div>
+
+  <div class="badge">賽季結算 · 2026.09.10 – 09.30</div>
+  <div class="title">最終排名</div>
+  <div class="sub">安麗蛋白素挑戰 · 前五名</div>
+
+  <div class="podium">
+    <!-- 第二名 -->
+    <div class="slot second">
+      <div class="avatar">賢</div>
+      <div class="name">王博賢</div>
+      <div class="pts">79 分</div>
+      <div class="block"><span class="no">2</span></div>
+    </div>
+
+    <!-- 第一名:黃冠 -->
+    <div class="slot first">
+      <svg class="crown" width="112" height="76" viewBox="0 0 128 86">
+        <!-- 皇冠本體:三個尖角 + 底座 -->
+        <path d="M10 70 L4 18 L34 42 L64 8 L94 42 L124 18 L118 70 Z"
+              fill="#F2CF6B" stroke="#A8841F" stroke-width="4" stroke-linejoin="round"/>
+        <rect x="10" y="70" width="108" height="14" rx="6"
+              fill="#E0B83F" stroke="#A8841F" stroke-width="4"/>
+        <circle cx="64" cy="58" r="8" fill="#C8102E" stroke="#A8841F" stroke-width="3"/>
+        <circle cx="4" cy="18" r="7" fill="#FFF0BE" stroke="#A8841F" stroke-width="3"/>
+        <circle cx="64" cy="8"  r="8" fill="#FFF0BE" stroke="#A8841F" stroke-width="3"/>
+        <circle cx="124" cy="18" r="7" fill="#FFF0BE" stroke="#A8841F" stroke-width="3"/>
+      </svg>
+      <div class="avatar">宜</div>
+      <div class="name">洪聖宜Jeffa</div>
+      <div class="pts">85 分</div>
+      <div class="block"><span class="no">1</span></div>
+    </div>
+
+    <!-- 第三名 -->
+    <div class="slot third">
+      <div class="avatar">樹</div>
+      <div class="name">吳柏樹</div>
+      <div class="pts">74 分</div>
+      <div class="block"><span class="no">3</span></div>
+    </div>
+  </div>
+
+  <div class="rest">
+    <div class="row"><span class="rk">4</span><span class="nm">LuYing</span><span class="sc">71 分</span></div>
+    <div class="row"><span class="rk">5</span><span class="nm">余世華</span><span class="sc">52 分</span></div>
+  </div>
+
+  <div class="honesty">自律且誠實,騙人胖十斤</div>
+</div>
