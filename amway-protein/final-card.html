@@ -135,7 +135,7 @@ const PALETTES = {
   b: ['#FF5E8A','#FFC93C','#49C6E5','#FF8A3D','#A06CD5','#F7F5EE'],            // 嘉年華跳色
   c: ['#F2789F','#8FD14F','#8B5E3C','#C8A24A','#F7F5EE','#C8E6A0']             // 莓果/抹茶/巧克力
 };
-const PICK = new URLSearchParams(location.search).get('p') || 'a';
+const PICK = new URLSearchParams(location.search).get('p') || 'b';   // 定案:b 嘉年華跳色
 const COLORS = PALETTES[PICK];
 
 // 固定種子的亂數(mulberry32)。不用 Math.random,否則每次產圖都不一樣。
