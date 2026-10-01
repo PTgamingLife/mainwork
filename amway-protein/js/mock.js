@@ -145,6 +145,15 @@
       return { ok: true, done: true, result: s.plays[key] };
     }
 
+    // 賽季結算的掌聲:一鍵送給全部五位、整輪一次。真的那一支靠資料庫 unique 擋。
+    if (action === 'clap-status' || action === 'clap') {
+      if (action === 'clap' && !s.clapped) { s.clapped = true; s.clapTotal = (s.clapTotal || 7) + 1; save(s); }
+      const top = board(s).slice(0, 5).map((r, i) => ({
+        rank: i + 1, name: r.name, points: r.points,
+      }));
+      return { ok: true, done: !!s.clapped, total: s.clapTotal || 7, top: top };
+    }
+
     if (action === 'quiz-today') {
       const q = questionOfToday(s);
       const done = s.answers[t];

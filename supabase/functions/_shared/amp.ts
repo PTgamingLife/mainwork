@@ -398,3 +398,70 @@ export function ladderCard(opts: { imageUrl: string; appUrl: string }) {
     },
   };
 }
+
+// 賽季結算卡。hero 是 amway-protein/media/final.png(頒獎台前五名),
+// 按鈕開 ?view=clap 的掌聲頁。這張不加分,純粹收尾。
+export function finalCard(opts: {
+  imageUrl: string;
+  appUrl: string;
+  rangeText: string;
+  summary: string;
+}) {
+  return {
+    type: "flex",
+    altText: "最終排名出爐!恭喜前三名,也謝謝每一位有行動的你。",
+    contents: {
+      type: "bubble",
+      hero: {
+        type: "image", url: opts.imageUrl,
+        size: "full", aspectRatio: "1:1", aspectMode: "cover",
+      },
+      body: {
+        type: "box", layout: "vertical", spacing: "md",
+        backgroundColor: C.cream, paddingAll: "20px",
+        contents: [
+          { type: "text", text: opts.rangeText, size: "xs", color: C.gold, weight: "bold" },
+          { type: "text", wrap: true, size: "lg", weight: "bold", color: C.green, text: "最終排名出爐!" },
+          { type: "text", wrap: true, size: "sm", color: C.ink, text: opts.summary },
+          { type: "text", text: HONESTY, size: "xs", color: C.leaf, align: "center" },
+        ],
+      },
+      footer: {
+        type: "box", layout: "vertical", paddingAll: "12px",
+        contents: [{
+          type: "button", style: "primary", color: C.green, height: "sm",
+          action: { type: "uri", label: "發出掌聲給前五名", uri: opts.appUrl },
+        }],
+      },
+    },
+  };
+}
+
+// 21:00 推給前五名的掌聲結算。沒有按鈕 —— 收到這張就是收尾了,不用再點進去。
+export function clapResultCard(opts: { rank: number; count: number; points: number }) {
+  const medal = opts.rank === 1 ? "🥇" : opts.rank === 2 ? "🥈" : opts.rank === 3 ? "🥉" : "🏅";
+  return {
+    type: "flex",
+    altText: `你收到 ${opts.count} 個掌聲 👏`,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box", layout: "vertical", spacing: "md",
+        backgroundColor: C.cream, paddingAll: "24px",
+        contents: [
+          { type: "text", text: `${medal} 第 ${opts.rank} 名 · ${opts.points} 分`, size: "xs", color: C.gold, weight: "bold" },
+          { type: "text", text: "👏".repeat(Math.min(opts.count, 10)), size: "xl", align: "center", wrap: true },
+          {
+            type: "text", wrap: true, size: "xxl", weight: "bold", color: C.green, align: "center",
+            text: `${opts.count} 個掌聲`,
+          },
+          {
+            type: "text", wrap: true, size: "sm", color: C.ink, align: "center",
+            text: "這一輪有這麼多夥伴,為你的自律鼓掌。",
+          },
+          { type: "text", text: HONESTY, size: "xs", color: C.leaf, align: "center" },
+        ],
+      },
+    },
+  };
+}

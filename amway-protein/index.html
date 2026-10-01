@@ -165,6 +165,27 @@
         </div>
       </section>
 
+      <!-- ===== 賽季結算：發出掌聲給前五名 ===== -->
+      <section class="view hidden" id="view-clap">
+        <div class="card">
+          <div class="clap-badge">賽季結算 · 整輪只能送一次</div>
+          <h2 class="card-title">發出掌聲給前五名</h2>
+          <p class="clap-lead">按一下，五位都收得到。<br>今晚 21:00 他們會收到總共幾個掌聲。</p>
+
+          <ol class="clap-list" id="clapList"></ol>
+
+          <button class="btn btn-primary btn-block" id="clapBtn">👏 送出掌聲</button>
+
+          <div class="clap-done hidden" id="clapDone">
+            <div class="clap-done-hd">掌聲已送出 ✓</div>
+            <p class="clap-done-sub">目前已經有 <b id="clapTotal">—</b> 個人鼓掌了。</p>
+          </div>
+
+          <p class="clap-msg" id="clapMsg"></p>
+          <p class="honesty" id="clapHonesty"></p>
+        </div>
+      </section>
+
       <!-- ===== 刮刮樂：今天的健康運勢 ===== -->
       <section class="view hidden" id="view-luck">
         <div class="card">
@@ -249,5 +270,6 @@
   <script src="js/wish.js"></script>
   <script src="js/luck.js"></script>
   <script src="js/ladder.js"></script>
+  <script src="js/clap.js"></script>
 </body>
 </html>

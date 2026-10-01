@@ -8,6 +8,7 @@
 //   supabase functions deploy amp-api --no-verify-jwt
 //
 // 動作:me / add-action / leaderboard / quiz-today / quiz-answer / poke
+//      game-open / game-record / clap-status / clap
 
 import {
   LIFF_CHANNEL_ID, NEEDS_TARGET, POINTS,
@@ -303,6 +304,44 @@ async function handle(action: string, body: any, member: any, round: any): Promi
       throw e;
     }
     return json({ ok: true, done: true, result });
+  }
+
+  // ---- 賽季結算:發出掌聲給前五名 ----
+  // 一鍵送給全部五位、整輪一次、不加分。所以不碰 amp_actions,另外一張 amp_claps。
+  if (action === "clap-status" || action === "clap") {
+    const top = await sbSelect(
+      "amp_leaderboard",
+      `round_id=eq.${round.id}&select=rank,display_name,total_points&order=rank.asc&limit=5`,
+    );
+
+    if (action === "clap") {
+      try {
+        await sbInsert("amp_claps", {
+          round_id: round.id, from_member_id: member.id,
+        }, "return=minimal");
+      } catch (e) {
+        // 連按兩次或已經送過都撞同一個 unique,兩者結果一樣:就是已經送過了
+        if ((e as Error).message !== "DUPLICATE") throw e;
+      }
+    }
+
+    const mine = await sbSelect(
+      "amp_claps",
+      `round_id=eq.${round.id}&from_member_id=eq.${member.id}&select=id&limit=1`,
+    );
+    // 總數只為了讓畫面有個「目前幾個人鼓掌了」,真正的結算在 21:00 那支函式
+    const all = await sbSelect("amp_claps", `round_id=eq.${round.id}&select=id&limit=2000`);
+
+    return json({
+      ok: true,
+      done: mine.length > 0,
+      total: all.length,
+      top: top.map((r: any) => ({
+        rank: Number(r.rank ?? 0),
+        name: r.display_name || "夥伴",
+        points: Number(r.total_points ?? 0),
+      })),
+    });
   }
 
   if (action === "poke") {
