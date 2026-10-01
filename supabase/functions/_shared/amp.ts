@@ -450,7 +450,8 @@ export function clapResultCard(opts: { rank: number; count: number; points: numb
         backgroundColor: C.cream, paddingAll: "24px",
         contents: [
           { type: "text", text: `${medal} 第 ${opts.rank} 名 · ${opts.points} 分`, size: "xs", color: C.gold, weight: "bold" },
-          { type: "text", text: "👏".repeat(Math.min(opts.count, 10)), size: "xl", align: "center", wrap: true },
+          // 至少印一個 —— Flex 的 text 不能是空字串,count=0 時 repeat(0) 會讓整則訊息被 LINE 退掉
+          { type: "text", text: "👏".repeat(Math.max(1, Math.min(opts.count, 10))), size: "xl", align: "center", wrap: true },
           {
             type: "text", wrap: true, size: "xxl", weight: "bold", color: C.green, align: "center",
             text: `${opts.count} 個掌聲`,
