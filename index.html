@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>小農鮮蔬 · 預購採摘平台</title>
+<style>
+  :root{
+    --green:#3f9d4f; --green-d:#2f7e3d; --green-l:#eaf6ec;
+    --soil:#7a4f2c; --soil-d:#5e3c20;
+    --ink:#243024; --muted:#7c8a7c; --line:#e3ebe3; --bg:#f4f8f3;
+    --amber:#e8893a; --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+    color:var(--ink); background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:540px;margin:0 auto;min-height:100%;position:relative;padding-bottom:78px;}
+  .hidden{display:none!important;}
+  button{font-family:inherit;cursor:pointer;}
+  h1,h2,h3,p{margin:0;}
+
+  .appbar{
+    position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+    padding:12px 16px;background:linear-gradient(180deg,var(--green),var(--green-d));
+    color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.12);
+  }
+  .appbar .logo{width:30px;height:30px;flex:none;}
+  .appbar .ttl{font-size:18px;font-weight:800;letter-spacing:.5px;}
+  .appbar .sub{font-size:11px;opacity:.85;margin-top:1px;}
+  .appbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  .iconbtn{background:rgba(255,255,255,.18);border:0;border-radius:10px;padding:7px;display:flex;color:#fff;}
+  .iconbtn svg{width:18px;height:18px;display:block;}
+
+  .wrap{padding:16px;}
+  .section-title{font-size:15px;font-weight:800;margin:18px 4px 10px;display:flex;align-items:center;gap:8px;}
+  .section-title:first-child{margin-top:6px;}
+  .muted{color:var(--muted);}
+  .empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:14px;
+    background:var(--card);border:1px dashed var(--line);border-radius:14px;}
+  .loading{text-align:center;color:var(--muted);padding:50px 10px;font-size:14px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:12px;}
+  .veg-card{display:flex;gap:12px;align-items:flex-start;}
+  .veg-art{width:60px;height:60px;flex:none;border-radius:14px;background:var(--green-l);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .veg-art svg{width:50px;height:50px;}
+  .veg-main{flex:1;min-width:0;}
+  .veg-name{font-size:16px;font-weight:800;}
+  .veg-feat{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .veg-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--green-l);color:var(--green-d);}
+  .tag.amber{background:#fdeee1;color:#b6611f;}
+  .tag.soil{background:#efe6dc;color:#7a4f2c;}
+  .price{font-size:18px;font-weight:900;color:var(--green-d);}
+  .price small{font-size:11px;font-weight:700;color:var(--muted);}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:12px;
+    padding:11px 16px;font-weight:800;font-size:15px;background:var(--green);color:#fff;width:100%;}
+  .btn:active{transform:translateY(1px);}
+  .btn.amber{background:var(--amber);}
+  .btn.ghost{background:#fff;color:var(--green-d);border:1.5px solid var(--green);}
+  .btn.gray{background:#eef2ee;color:#566;}
+  .btn.sm{width:auto;padding:8px 13px;font-size:13.5px;border-radius:10px;}
+  .btn:disabled{opacity:.5;}
+  .btn svg{width:17px;height:17px;}
+
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:#566;margin-bottom:5px;}
+  .field input,.field textarea,.field select{
+    width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;font-size:15px;
+    font-family:inherit;background:#fff;color:var(--ink);}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:0;border-color:var(--green);}
+  .field textarea{resize:vertical;min-height:60px;}
+  .row2{display:flex;gap:10px;}
+  .row2>*{flex:1;}
+  .err{color:#c0392b;font-size:13px;margin:6px 2px;min-height:18px;}
+
+  .auth-hero{padding:30px 22px 10px;text-align:center;}
+  .auth-hero .big-logo{width:74px;height:74px;margin:0 auto 12px;}
+  .auth-hero h1{font-size:24px;font-weight:900;}
+  .auth-hero p{color:var(--muted);font-size:13.5px;margin-top:5px;}
+  .auth-card{margin:14px 16px;}
+  .switch{text-align:center;font-size:13.5px;color:var(--muted);margin-top:14px;}
+  .switch a{color:var(--green-d);font-weight:800;text-decoration:none;}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;max-width:540px;margin:0 auto;
+    background:#fff;border-top:1px solid var(--line);display:flex;
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,.05);}
+  .tab{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 2px;color:#9aa89a;font-size:11px;font-weight:700;}
+  .tab svg{width:23px;height:23px;}
+  .tab.active{color:var(--green-d);}
+
+  .ghouse{position:relative;border-radius:20px 20px 0 0;overflow:hidden;
+    background:linear-gradient(180deg,#d4f1fb 0%,#bfe6ef 50%,#dff0d6 100%);padding:18px 0 12px;
+    box-shadow:inset 0 -6px 12px rgba(0,0,0,.04);}
+  .ghouse svg{display:block;width:100%;height:88px;}
+  .ghouse .gh-label{position:absolute;top:14px;left:0;right:0;text-align:center;
+    color:#2f6d4a;font-weight:900;font-size:13.5px;letter-spacing:4px;
+    text-shadow:0 1px 0 rgba(255,255,255,.6);}
+  .plotwrap{background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 26px),
+      linear-gradient(180deg,#825632 0%,#6b4628 40%,#553820 100%);
+    padding:16px 14px;border-radius:0 0 20px 20px;border:1px solid #43301c;border-top:0;
+    box-shadow:inset 0 10px 22px rgba(0,0,0,.30);}
+  .plots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;}
+  .plot{position:relative;aspect-ratio:1/1;border-radius:18px;min-width:0;cursor:pointer;
+    background:
+      radial-gradient(70% 55% at 50% 30%, #a06b3d 0%, #82542e 50%, #5f3d22 100%);
+    box-shadow:
+      inset 0 4px 8px rgba(0,0,0,.30), inset 0 -12px 16px rgba(0,0,0,.24),
+      0 0 0 3px #8a5a31, 0 0 0 6px #6b4421, 0 4px 7px rgba(0,0,0,.32);
+    display:flex;align-items:center;justify-content:center;transition:transform .12s;}
+  .plot:active{transform:scale(.95);}
+  .plot.empty::after{content:"";width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.28), rgba(0,0,0,.3));}
+  .plot.mine{box-shadow:inset 0 4px 8px rgba(0,0,0,.30),inset 0 -12px 16px rgba(0,0,0,.24),
+    0 0 0 3px var(--green),0 0 0 6px #fff,0 0 16px rgba(63,157,79,.75),0 4px 7px rgba(0,0,0,.32);}
+  .plot .sprout{width:72%;height:72%;filter:drop-shadow(0 5px 5px rgba(0,0,0,.32));}
+  .plot .plotnum{position:absolute;top:5px;left:8px;font-size:10px;font-weight:800;
+    color:rgba(255,255,255,.45);}
+  .plot.new .sprout .s-grow{animation:sprout .7s cubic-bezier(.34,1.56,.64,1) both;}
+  .sprout .s-grow{transform-origin:50% 92%;}
+  @keyframes sprout{0%{transform:scale(.05)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+  .legend-row{display:flex;gap:14px;justify-content:center;margin:10px 2px 2px;font-size:11.5px;color:var(--muted);}
+  .legend-row span{display:flex;align-items:center;gap:5px;}
+  .lg-dot{width:12px;height:12px;border-radius:4px;}
+
+  .modal-bg{position:fixed;inset:0;z-index:60;background:rgba(20,30,20,.5);display:flex;
+    align-items:flex-end;justify-content:center;padding:0;}
+  .modal{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:540px;
+    padding:18px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;
+    animation:slideup .25s ease;position:relative;}
+  @keyframes slideup{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+  .modal h3{font-size:18px;font-weight:900;margin-bottom:4px;}
+  .pick{display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);border-radius:13px;
+    padding:10px;margin-bottom:9px;cursor:pointer;}
+  .pick.sel{border-color:var(--green);background:var(--green-l);}
+  .pick .veg-art{width:46px;height:46px;border-radius:11px;}
+  .pick .veg-art svg{width:38px;height:38px;}
+  .stepper{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;}
+  .stepper button{width:46px;height:46px;border:0;background:#f0f4f0;font-size:22px;font-weight:800;color:var(--green-d);}
+  .stepper input{width:100%;border:0;text-align:center;font-size:17px;font-weight:800;}
+  .sumline{display:flex;justify-content:space-between;align-items:center;margin:12px 2px;font-size:14px;}
+  .sumline b{font-size:20px;color:var(--green-d);}
+
+  .seg{display:flex;background:#eef2ee;border-radius:12px;padding:4px;margin:4px 0 14px;}
+  .seg button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font-weight:800;font-size:14px;color:#667;}
+  .seg button.active{background:#fff;color:var(--green-d);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .stat{background:var(--green-l);border-radius:13px;padding:12px;}
+  .stat .n{font-size:22px;font-weight:900;color:var(--green-d);}
+  .stat .l{font-size:11.5px;color:#5a6;font-weight:700;margin-top:2px;}
+  .adm-item{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:10px;margin-bottom:9px;}
+  .adm-item .veg-art{width:42px;height:42px;border-radius:10px;}
+  .adm-item .veg-art svg{width:34px;height:34px;}
+  .adm-item .info{flex:1;min-width:0;}
+  .adm-item .nm{font-weight:800;font-size:14.5px;}
+  .adm-item .mt{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .linkbtn{background:none;border:0;color:#c0392b;font-weight:700;font-size:12.5px;padding:4px;}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:80;
+    background:#243024;color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:700;
+    opacity:0;transition:opacity .25s, transform .25s;pointer-events:none;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  /* 首頁視窗面板 */
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);display:flex;flex-direction:column;overflow:hidden;}
+  .panel.full{grid-column:1 / -1;}
+  .panel .phead{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:11px 13px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#f4faf3,#eaf6ec);}
+  .panel .phead .pt{font-size:13.5px;font-weight:800;color:var(--green-d);}
+  .panel .phead .pc{font-size:11px;font-weight:800;color:#fff;background:var(--green);
+    border-radius:999px;padding:2px 9px;min-width:22px;text-align:center;}
+  .panel .pbody{padding:9px;overflow-y:auto;max-height:40vh;-webkit-overflow-scrolling:touch;}
+  .panel.full .pbody{max-height:44vh;}
+  .panel .pempty{color:var(--muted);font-size:12.5px;text-align:center;padding:24px 6px;line-height:1.6;}
+  .mini{display:flex;gap:9px;align-items:center;padding:8px;border-radius:13px;background:#fafdf9;
+    border:1px solid var(--line);margin-bottom:8px;}
+  .mini:last-child{margin-bottom:0;}
+  .mini .veg-art{width:44px;height:44px;border-radius:11px;}
+  .mini .veg-art svg{width:35px;height:35px;}
+  .mini .m-main{flex:1;min-width:0;}
+  .mini .m-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mini .m-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .mini .m-price{font-size:15px;font-weight:900;color:var(--green-d);white-space:nowrap;}
+
+  /* 種植特點選擇鈕 */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;
+    font-size:14px;font-weight:700;color:#566;display:inline-flex;align-items:center;gap:6px;}
+  .chip.on{border-color:var(--green);background:var(--green-l);color:var(--green-d);}
+  .chip.on::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);}
+
+  /* 照片上傳 */
+  .photo-pick{display:flex;gap:12px;align-items:center;}
+  .photo-prev{width:78px;height:78px;border-radius:14px;border:1.5px dashed #cdd8cd;
+    background:#f6faf5;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;color:#9aa89a;}
+  .photo-prev img{width:100%;height:100%;object-fit:cover;}
+  .photo-prev svg{width:32px;height:32px;}
+  .photo-hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .veg-art img{width:100%;height:100%;object-fit:cover;}
+</style>
+</head>
+<body>
+  <div id="app"><div class="loading">載入中…</div></div>
+  <div id="toast" class="toast"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+/* =================== Supabase 連線 =================== */
+const SB_URL = "https://hhcubvixldieuwdeqnwc.supabase.co";
+const SB_KEY = "sb_publishable_S-fBRRvMYbhAq_FmxgTDbQ_qGeQKmwA";
+const SB = createClient(SB_URL, SB_KEY, { auth:{ persistSession:false } });
+
+/* =================== 工具 =================== */
+const app=document.getElementById("app");
+function el(html){var d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild;}
+function fmt(n){ return (Math.round((+n)*100)/100).toString(); }
+function priceTag(pph){ return "每半臺斤 $"+pph; }
+function totalPrice(catty,pph){ return Math.round(catty*2*pph); } /* 1 臺斤 = 2 個半臺斤 */
+function dateStr(ts){var d=new Date(ts);return (d.getMonth()+1)+"/"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+function byNew(a,b){return new Date(b.created_at)-new Date(a.created_at);}
+function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},2000);}
+function go(hash){ location.hash=hash; }
+function val(id){var e=document.getElementById(id);return e?e.value:"";}
+function loading(){ app.innerHTML='<div class="loading">載入中…</div>'; }
+
+/* =================== Session(存於本機,內容為 token 與基本資料)=================== */
+function session(){ try{ return JSON.parse(localStorage.getItem("farm.sess")||"null"); }catch(e){ return null; } }
+function setSession(s){ if(s) localStorage.setItem("farm.sess",JSON.stringify(s)); else localStorage.removeItem("farm.sess"); }
+
+/* =================== API(Supabase RPC + 讀取)=================== */
+const API={
+  async register(phone,name,pw){ const {data,error}=await SB.rpc("farm_register",{p_phone:phone,p_name:name,p_password:pw}); if(error) throw error; return data; },
+  async login(phone,pw){ const {data,error}=await SB.rpc("farm_login",{p_phone:phone,p_password:pw}); if(error) throw error; return data; },
+  async logout(){ const s=session(); if(s) try{ await SB.rpc("farm_logout",{p_token:s.token}); }catch(e){} setSession(null); },
+  async catalogPre(){ const {data}=await SB.from("farm_crops_pre").select("*").order("created_at",{ascending:true}); return data||[]; },
+  async catalogFresh(){ const {data}=await SB.from("farm_crops_fresh").select("*").order("listed_at",{ascending:false}); return data||[]; },
+  async preorders(){ const {data}=await SB.from("farm_preorders").select("*"); return data||[]; },
+  async myFreshOrders(){ const s=session(); if(!s) return []; const {data}=await SB.rpc("farm_my_fresh_orders",{p_token:s.token}); return data||[]; },
+  async createPreorder(plot,cropId,catty){ const s=session(); const {data,error}=await SB.rpc("farm_create_preorder",{p_token:s.token,p_plot:plot,p_crop_id:cropId,p_catty:catty}); if(error) throw error; return data; },
+  async cancelPreorder(id){ const s=session(); const {data,error}=await SB.rpc("farm_cancel_preorder",{p_token:s.token,p_id:id}); if(error) throw error; return data; },
+  async buyFresh(freshId,catty){ const s=session(); const {data,error}=await SB.rpc("farm_buy_fresh",{p_token:s.token,p_fresh_id:freshId,p_catty:catty}); if(error) throw error; return data; },
+  async adminAddPre(o){ const s=session(); const {data,error}=await SB.rpc("farm_admin_add_pre",{p_token:s.token,p_name:o.name,p_feature:o.feature,p_art:o.art,p_target:o.qty,p_price:o.price}); if(error) throw error; return data; },
+  async adminDelPre(id){ const s=session(); const {data,error}=await SB.rpc("farm_admin_del_pre",{p_token:s.token,p_id:id}); if(error) throw error; return data; },
+  async adminAddFresh(o){ const s=session(); const {data,error}=await SB.rpc("farm_admin_add_fresh",{p_token:s.token,p_name:o.name,p_feature:o.feature,p_art:o.art,p_total:o.qty,p_price:o.price,p_image:o.image||null}); if(error) throw error; return data; },
+  async adminDelFresh(id){ const s=session(); const {data,error}=await SB.rpc("farm_admin_del_fresh",{p_token:s.token,p_id:id}); if(error) throw error; return data; }
+};
+
+/* =================== 自製 SVG 圖庫(無 emoji)=================== */
+function svgLogo(){
+  return '<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" fill="#fff" opacity=".18"/>'+
+    '<path d="M24 38c0-9 0-14 0-14" stroke="#2f7e3d" stroke-width="3" stroke-linecap="round"/>'+
+    '<path d="M24 26c-7 0-12-4-12-11 7 0 12 4 12 11z" fill="#7fd08a"/>'+
+    '<path d="M24 22c1-7 6-11 13-11 0 7-6 12-13 11z" fill="#3f9d4f"/></svg>';
+}
+var VEG = {
+  butter:["#bdf07f","#86d64a","#5fb52f","#3f8f1f"],
+  romaine:["#cdeF8a","#9bd84e","#6cb82e","#4c8e1c"],
+  bokchoy:["#d9f3b0","#aee06a","#7ec23a","#e9f2c8"],
+  cabbage:["#cfeaa0","#a7d56a","#7bbf45","#5b9a30"]
+};
+function vegArt(type){
+  var c=VEG[type]||VEG.butter;
+  if(type==="bokchoy"){
+    return '<svg viewBox="0 0 100 100"><ellipse cx="50" cy="86" rx="26" ry="6" fill="rgba(0,0,0,.12)"/>'+
+      '<path d="M50 88c-14 0-20-30-14-52 4 14 10 22 14 22 4 0 10-8 14-22 6 22 0 52-14 52z" fill="'+c[1]+'"/>'+
+      '<path d="M50 86c-7 0-11-26-9-46 3 12 6 20 9 20s6-8 9-20c2 20-2 46-9 46z" fill="'+c[3]+'"/>'+
+      '<path d="M50 84c-2-26-2-46-2-46" stroke="'+c[0]+'" stroke-width="4" stroke-linecap="round"/></svg>';
+  }
+  if(type==="cabbage"){
+    return '<svg viewBox="0 0 100 100"><ellipse cx="50" cy="88" rx="28" ry="6" fill="rgba(0,0,0,.12)"/>'+
+      '<circle cx="50" cy="54" r="34" fill="'+c[3]+'"/>'+
+      '<path d="M50 20c18 6 28 22 24 40-8-6-16-8-24-8s-16 2-24 8C22 42 32 26 50 20z" fill="'+c[2]+'"/>'+
+      '<path d="M50 26c11 5 17 15 15 27-6-4-10-5-15-5s-9 1-15 5c-2-12 4-22 15-27z" fill="'+c[1]+'"/>'+
+      '<circle cx="50" cy="52" r="9" fill="'+c[0]+'"/></svg>';
+  }
+  return '<svg viewBox="0 0 100 100"><ellipse cx="50" cy="86" rx="26" ry="6" fill="rgba(0,0,0,.12)"/>'+
+    '<path d="M50 84 C20 80 12 52 26 40 C18 24 40 14 50 26 C60 14 82 24 74 40 C88 52 80 80 50 84Z" fill="'+c[3]+'"/>'+
+    '<path d="M50 80 C28 76 22 54 33 44 C27 30 44 24 50 34 C56 24 73 30 67 44 C78 54 72 76 50 80Z" fill="'+c[2]+'"/>'+
+    '<path d="M50 74 C36 72 30 56 39 48 C35 38 46 34 50 42 C54 34 65 38 61 48 C70 56 64 72 50 74Z" fill="'+c[1]+'"/>'+
+    '<path d="M50 66 C42 65 38 56 43 50 C41 44 48 42 50 47 C52 42 59 44 57 50 C62 56 58 65 50 66Z" fill="'+c[0]+'"/></svg>';
+}
+function sproutArt(){
+  return '<svg viewBox="0 0 100 100"><g class="s-grow">'+
+    '<path d="M50 92 L50 54" stroke="#3f8f1f" stroke-width="6" stroke-linecap="round"/>'+
+    '<path d="M50 64 C36 64 26 56 24 42 C40 42 50 50 50 64Z" fill="#6cc23a"/>'+
+    '<path d="M50 58 C64 58 74 50 76 36 C60 36 50 44 50 58Z" fill="#86d64a"/></g></svg>';
+}
+var IC={
+  home:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  green:'<svg viewBox="0 0 24 24" fill="none"><path d="M3 20h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 20V9l8-5 8 5v11" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 20v-6h8v6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  basket:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 9h14l-1.3 9.2a2 2 0 01-2 1.8H8.3a2 2 0 01-2-1.8L5 9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 9l3-5 3 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  out:'<svg viewBox="0 0 24 24" fill="none"><path d="M14 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 8l-4 4 4 4M6 12h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none"><path d="M20 11a8 8 0 10-.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 4v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg>'
+};
+/* 照片優先,否則用插畫 */
+function artImg(art,imageUrl){ return imageUrl ? '<img src="'+imageUrl+'" alt="">' : vegArt(art||"cabbage"); }
+/* 壓縮並縮放上傳照片成 data URL */
+function resizeImage(file,maxDim,q){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){
+      var s=Math.min(1,maxDim/Math.max(img.width,img.height));
+      var cw=Math.round(img.width*s), ch=Math.round(img.height*s);
+      var cv=document.createElement("canvas"); cv.width=cw; cv.height=ch;
+      cv.getContext("2d").drawImage(img,0,0,cw,ch);
+      try{ resolve(cv.toDataURL("image/jpeg",q)); }catch(e){ reject(e); }
+    };
+    img.onerror=reject;
+    var fr=new FileReader(); fr.onload=function(){ img.src=fr.result; }; fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+/* 首頁視窗面板 */
+function panel(title,count,inner,full){
+  return '<div class="panel'+(full?' full':'')+'"><div class="phead"><span class="pt">'+title+'</span><span class="pc">'+count+'</span></div>'+
+    '<div class="pbody">'+inner+'</div></div>';
+}
+function pempty(t){return '<div class="pempty">'+t+'</div>';}
+function miniCard(art,imageUrl,name,catty,pph,sub){
+  return '<div class="mini"><div class="veg-art">'+artImg(art,imageUrl)+'</div>'+
+    '<div class="m-main"><div class="m-name">'+name+'</div>'+
+      '<div class="m-sub">'+fmt(catty)+' 臺斤 · '+sub+'</div></div>'+
+    '<div class="m-price">$'+totalPrice(catty,pph)+'</div></div>';
+}
+
+/* =================== 版面元件 =================== */
+function appbar(title,sub,opts){
+  opts=opts||{};
+  var right="";
+  if(opts.refresh) right+='<button class="iconbtn" data-act="refresh" title="重新整理">'+IC.refresh+'</button>';
+  if(opts.logout) right+='<button class="iconbtn" data-act="logout" title="登出">'+IC.out+'</button>';
+  var back=opts.back?'<button class="iconbtn" data-act="back" style="margin-right:2px">'+IC.back+'</button>':'<span class="logo">'+svgLogo()+'</span>';
+  return '<div class="appbar">'+back+
+    '<div><div class="ttl">'+title+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'+
+    '<div class="right">'+right+'</div></div>';
+}
+function tabbar(active){
+  var u=session(); if(!u) return "";
+  function tab(id,hash,label,icon){return '<button class="tab '+(active===id?'active':'')+'" data-nav="'+hash+'">'+icon+'<span>'+label+'</span></button>';}
+  var html='<div class="tabbar">'+
+    tab("home","#/home","主頁",IC.home)+
+    tab("pre","#/preorder","預購菜圃",IC.green)+
+    tab("fresh","#/fresh","新鮮採摘",IC.basket);
+  if(u.role==="admin") html+=tab("admin","#/admin","後臺",IC.gear);
+  html+='</div>';
+  return html;
+}
+function sect(t){return '<div class="section-title">'+t+'</div>';}
+function empty(t){return '<div class="empty">'+t+'</div>';}
+
+/* =================== 路由 =================== */
+async function render(){
+  var u=session();
+  var hash=location.hash||"#/login";
+  var route=hash.replace(/^#\//,"").split("/")[0];
+  if(!u && route!=="login" && route!=="register"){ location.hash="#/login"; return; }
+  if(u && (route==="login"||route==="register"||route==="")){ location.hash="#/home"; return; }
+  if(route==="admin" && (!u||u.role!=="admin")){ location.hash="#/home"; return; }
+
+  if(route==="login") return viewLogin();
+  if(route==="register") return viewRegister();
+  if(route==="home") return viewHome();
+  if(route==="preorder") return viewPreorder();
+  if(route==="fresh") return viewFresh();
+  if(route==="admin") return viewAdmin();
+  location.hash="#/home";
+}
+window.addEventListener("hashchange",render);
+
+/* 全域點擊:導覽 / 登出 / 返回 / 重新整理 */
+app.addEventListener("click",async function(e){
+  var nav=e.target.closest("[data-nav]"); if(nav){ go(nav.getAttribute("data-nav")); return; }
+  var act=e.target.closest("[data-act]"); if(!act) return;
+  var a=act.getAttribute("data-act");
+  if(a==="logout"){ await API.logout(); go("#/login"); }
+  if(a==="back"){ history.length>1?history.back():go("#/home"); }
+  if(a==="refresh"){ render(); }
+});
+
+/* =================== 登入 / 註冊 =================== */
+function viewLogin(){
+  app.innerHTML=
+    '<div class="auth-hero"><div class="big-logo">'+svgLogo()+'</div>'+
+      '<h1>小農鮮蔬</h1><p>當季預購 · 新鮮採摘 · 產地直送</p></div>'+
+    '<div class="card auth-card">'+
+      '<div class="field"><label>電話</label><input id="phone" type="tel" inputmode="numeric" placeholder="例如 0912345678" autocomplete="username"></div>'+
+      '<div class="field"><label>密碼</label><input id="pw" type="password" placeholder="請輸入密碼" autocomplete="current-password"></div>'+
+      '<div class="err" id="err"></div>'+
+      '<button class="btn" id="loginBtn">登入</button>'+
+      '<div class="switch">還沒有帳號?<a data-nav="#/register">立即註冊</a></div>'+
+    '</div>';
+  document.getElementById("loginBtn").onclick=doLogin;
+  document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
+}
+async function doLogin(){
+  var phone=val("phone").trim(), pw=val("pw");
+  var err=document.getElementById("err"), btn=document.getElementById("loginBtn");
+  if(!phone||!pw){ err.textContent="請輸入電話與密碼"; return; }
+  btn.disabled=true; btn.textContent="登入中…";
+  try{
+    var r=await API.login(phone,pw);
+    if(r&&r.error){ err.textContent=r.error; btn.disabled=false; btn.textContent="登入"; return; }
+    setSession(r); go("#/home"); toast("歡迎回來,"+r.name);
+  }catch(ex){ err.textContent="連線失敗,請稍後再試"; btn.disabled=false; btn.textContent="登入"; }
+}
+function viewRegister(){
+  app.innerHTML=
+    appbar("註冊","建立你的帳號",{back:true})+
+    '<div class="wrap"><div class="card">'+
+      '<div class="field"><label>姓名</label><input id="name" placeholder="你的名字"></div>'+
+      '<div class="field"><label>電話(作為帳號)</label><input id="phone" type="tel" inputmode="numeric" placeholder="例如 0912345678"></div>'+
+      '<div class="field"><label>設定密碼</label><input id="pw" type="password" placeholder="至少 4 碼"></div>'+
+      '<div class="field"><label>確認密碼</label><input id="pw2" type="password" placeholder="再輸入一次"></div>'+
+      '<div class="err" id="err"></div>'+
+      '<button class="btn" id="regBtn">註冊並登入</button>'+
+      '<div class="switch">已經有帳號?<a data-nav="#/login">前往登入</a></div>'+
+    '</div></div>';
+  document.getElementById("regBtn").onclick=doRegister;
+}
+async function doRegister(){
+  var name=val("name").trim(), phone=val("phone").trim(), pw=val("pw"), pw2=val("pw2");
+  var err=document.getElementById("err"), btn=document.getElementById("regBtn");
+  if(!name||!phone||!pw){ err.textContent="請完整填寫姓名、電話與密碼"; return; }
+  if(!/^[0-9]{6,}$/.test(phone)){ err.textContent="請輸入有效的電話號碼"; return; }
+  if(pw.length<4){ err.textContent="密碼至少 4 碼"; return; }
+  if(pw!==pw2){ err.textContent="兩次密碼不一致"; return; }
+  btn.disabled=true; btn.textContent="註冊中…";
+  try{
+    var r=await API.register(phone,name,pw);
+    if(r&&r.error){ err.textContent=r.error; btn.disabled=false; btn.textContent="註冊並登入"; return; }
+    setSession(r); go("#/home"); toast("註冊成功,歡迎 "+name);
+  }catch(ex){ err.textContent="連線失敗,請稍後再試"; btn.disabled=false; btn.textContent="註冊並登入"; }
+}
+
+/* =================== 主頁 =================== */
+async function viewHome(){
+  loading();
+  var u=session();
+  var [pos,fresh]=await Promise.all([API.preorders(),API.myFreshOrders()]);
+  var myPre=pos.filter(function(p){return p.user_id===u.user_id;}).sort(byNew);
+  var myFresh=(fresh||[]).slice().sort(byNew);
+  var activePre=myPre.filter(function(p){return p.status==="預購中";});
+  var history=myPre.concat(myFresh).sort(byNew);
+
+  function preMini(p){ return miniCard(p.art,null,p.crop_name,p.catty,p.price_per_half,"第 "+(p.plot_index+1)+" 號 · "+dateStr(p.created_at)); }
+  function freshMini(o){ return miniCard(o.art,o.image_url,o.crop_name,o.catty,o.price_per_half,"約3日後 · "+dateStr(o.created_at)); }
+  function histRow(it){ return it.plot_index!=null?preMini(it):freshMini(it); }
+
+  app.innerHTML=
+    appbar("主頁","哈囉,"+u.name,{logout:true,refresh:true})+
+    '<div class="wrap">'+
+      '<div class="panels">'+
+        panel("進行中的預購",activePre.length,activePre.length?activePre.map(preMini).join(""):pempty("尚無預購中的菜色"))+
+        panel("已訂購",myFresh.length,myFresh.length?myFresh.map(freshMini).join(""):pempty("尚無採購訂單"))+
+        panel("過往訂購紀錄",history.length,history.length?history.map(histRow).join(""):pempty("尚無任何紀錄"),true)+
+      '</div>'+
+    '</div>'+tabbar("home");
+}
+function orderCard(art,name,catty,pph,kind,ts,status,note){
+  return '<div class="card veg-card">'+
+    '<div class="veg-art">'+vegArt(art)+'</div>'+
+    '<div class="veg-main">'+
+      '<div class="veg-name">'+name+'</div>'+
+      '<div class="veg-meta">'+
+        '<span class="tag">'+kind+'</span>'+
+        '<span class="tag soil">'+fmt(catty)+' 臺斤</span>'+
+        '<span class="tag amber">'+(status||"")+'</span>'+
+      '</div>'+
+      '<div class="veg-feat" style="margin-top:7px">'+note+' · '+dateStr(ts)+'</div>'+
+    '</div>'+
+    '<div style="text-align:right"><div class="price">$'+totalPrice(catty,pph)+'</div><div class="veg-feat">'+priceTag(pph)+'</div></div>'+
+  '</div>';
+}
+
+/* =================== 預購菜圃(8x10 溫室格)=================== */
+var GH_COLS=3, GH_ROWS=20, GH_N=GH_COLS*GH_ROWS;
+async function viewPreorder(){
+  loading();
+  var u=session();
+  var [crops,pos]=await Promise.all([API.catalogPre(),API.preorders()]);
+  var byPlot={}; pos.forEach(function(p){ byPlot[p.plot_index]=p; });
+
+  function plotCell(i){
+    var po=byPlot[i];
+    var num='<span class="plotnum">'+(i+1)+'</span>';
+    if(po){
+      var mine=po.user_id===u.user_id;
+      return '<div class="plot '+(mine?'mine':'')+'" data-plot="'+i+'" data-occupied="1">'+num+'<div class="sprout">'+sproutArt()+'</div></div>';
+    }
+    return '<div class="plot empty" data-plot="'+i+'">'+num+'</div>';
+  }
+  var cells=""; for(var i=0;i<GH_N;i++) cells+=plotCell(i);
+
+  var cropList=crops.length? crops.map(function(c){
+    return '<div class="card veg-card"><div class="veg-art">'+vegArt(c.art)+'</div>'+
+      '<div class="veg-main"><div class="veg-name">'+c.name+'</div>'+
+        '<div class="veg-feat">'+c.feature+'</div>'+
+        '<div class="veg-meta"><span class="tag">目標 '+fmt(c.target_catty)+' 臺斤</span>'+
+        '<span class="tag amber">'+priceTag(c.price_per_half)+'</span></div></div></div>';
+  }).join("") : empty("後臺尚未設定當季預購菜色");
+
+  app.innerHTML=
+    appbar("預購菜圃","點空格預購當季菜色",{refresh:true})+
+    '<div class="wrap">'+
+      '<div class="ghouse"><div class="gh-label">溫 室 預 購 菜 圃</div>'+greenhouseSVG()+'</div>'+
+      '<div class="plotwrap"><div class="plots" id="plots">'+cells+'</div></div>'+
+      '<div class="legend-row">'+
+        '<span><i class="lg-dot" style="background:#5e3c20"></i>空格(可預購)</span>'+
+        '<span><i class="lg-dot" style="background:#6cc23a"></i>已被預購</span>'+
+        '<span><i class="lg-dot" style="background:#3f9d4f"></i>我的預購</span>'+
+      '</div>'+
+      sect("當季可預購菜色")+cropList+
+    '</div>'+tabbar("pre");
+
+  document.getElementById("plots").addEventListener("click",function(e){
+    var cell=e.target.closest(".plot"); if(!cell) return;
+    var idx=+cell.getAttribute("data-plot");
+    if(cell.getAttribute("data-occupied")){ showPlotInfo(byPlot[idx]); }
+    else { openPreorderModal(idx,crops); }
+  });
+}
+function greenhouseSVG(){
+  return '<svg viewBox="0 0 320 64" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0" stop-color="#eafaf0"/><stop offset="1" stop-color="#cfeecb"/></linearGradient></defs>'+
+    '<path d="M0 64 V26 Q160 -16 320 26 V64 Z" fill="url(#gl)"/>'+
+    '<path d="M0 26 Q160 -16 320 26" fill="none" stroke="#9bbf9b" stroke-width="2"/>'+
+    '<path d="M40 64 V33" stroke="#b9d6b9" stroke-width="2"/><path d="M110 64 V25" stroke="#b9d6b9" stroke-width="2"/>'+
+    '<path d="M210 64 V25" stroke="#b9d6b9" stroke-width="2"/><path d="M280 64 V33" stroke="#b9d6b9" stroke-width="2"/></svg>';
+}
+function showPlotInfo(po){
+  if(!po) return;
+  var u=session();
+  var mine=po.user_id===u.user_id;
+  modal(
+    '<h3>第 '+(po.plot_index+1)+' 號菜圃</h3>'+
+    '<div class="card veg-card" style="margin-top:12px">'+
+      '<div class="veg-art">'+vegArt(po.art)+'</div>'+
+      '<div class="veg-main"><div class="veg-name">'+po.crop_name+'</div>'+
+        '<div class="veg-meta"><span class="tag soil">'+fmt(po.catty)+' 臺斤</span>'+
+        '<span class="tag">'+(mine?"我的預購":"預購人:"+po.user_name)+'</span></div>'+
+        '<div class="veg-feat" style="margin-top:7px">預購於 '+dateStr(po.created_at)+'</div></div></div>'+
+    (mine?'<button class="btn gray" id="cancelPre">取消這筆預購</button>':'<button class="btn ghost" data-close>關閉</button>')
+  );
+  if(mine){
+    document.getElementById("cancelPre").onclick=async function(){
+      try{ var r=await API.cancelPreorder(po.id); if(r&&r.error){toast(r.error);return;} closeModal(); toast("已取消預購"); render(); }
+      catch(ex){ toast("連線失敗"); }
+    };
+  }
+}
+function openPreorderModal(idx,crops){
+  if(!crops.length){ toast("後臺尚未設定預購菜色"); return; }
+  var selId=crops[0].id, catty=1;
+  function body(){
+    var c=crops.filter(function(x){return x.id===selId;})[0];
+    return '<h3>預購 · 第 '+(idx+1)+' 號菜圃</h3>'+
+      '<p class="muted" style="font-size:13px;margin:4px 0 12px">選擇菜色與預購數量(臺斤)</p>'+
+      crops.map(function(c){
+        return '<div class="pick '+(c.id===selId?'sel':'')+'" data-pick="'+c.id+'">'+
+          '<div class="veg-art">'+vegArt(c.art)+'</div>'+
+          '<div style="flex:1"><div class="veg-name" style="font-size:14.5px">'+c.name+'</div>'+
+          '<div class="veg-feat">'+priceTag(c.price_per_half)+'</div></div></div>';
+      }).join("")+
+      '<div class="field" style="margin-top:8px"><label>預購數量(臺斤,每 0.5 臺斤一單位)</label>'+
+        '<div class="stepper"><button data-step="-1">−</button>'+
+        '<input id="catty" value="'+catty+'" readonly><button data-step="1">+</button></div></div>'+
+      '<div class="sumline"><span>'+priceTag(c.price_per_half)+' × '+fmt(catty*2)+' 份</span>'+
+        '<b>$'+totalPrice(catty,c.price_per_half)+'</b></div>'+
+      '<button class="btn" id="confirmPre">確認預購</button>';
+  }
+  modal(body());
+  function refresh(){document.querySelector(".modal").innerHTML=body();rebind();}
+  function rebind(){
+    var box=document.querySelector(".modal");
+    box.querySelectorAll("[data-pick]").forEach(function(p){p.onclick=function(){selId=p.getAttribute("data-pick");refresh();};});
+    box.querySelectorAll("[data-step]").forEach(function(b){b.onclick=function(){
+      catty=Math.max(0.5,Math.round((catty+(+b.getAttribute("data-step"))*0.5)*2)/2); refresh();};});
+    document.getElementById("confirmPre").onclick=async function(){
+      var c=crops.filter(function(x){return x.id===selId;})[0];
+      this.disabled=true;
+      try{
+        var r=await API.createPreorder(idx,selId,catty);
+        if(r&&r.error){ toast(r.error); closeModal(); render(); return; }
+        closeModal(); await render();
+        setTimeout(function(){var cell=document.querySelector('.plot[data-plot="'+idx+'"]');if(cell)cell.classList.add("new");},40);
+        toast("預購成功!菜苗已種下");
+      }catch(ex){ toast("連線失敗"); }
+    };
+  }
+  rebind();
+}
+
+/* =================== 新鮮採摘 =================== */
+async function viewFresh(){
+  loading();
+  var list=await API.catalogFresh();
+  var cards=list.length? list.map(function(c){
+    var sold=c.remain_catty<=0;
+    return '<div class="card veg-card"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
+      '<div class="veg-main"><div class="veg-name">'+c.name+'</div>'+
+        '<div class="veg-feat">'+c.feature+'</div>'+
+        '<div class="veg-meta">'+
+          '<span class="tag amber">'+priceTag(c.price_per_half)+'</span>'+
+          '<span class="tag '+(sold?'soil':'')+'">'+(sold?'已售完':'尚餘 '+fmt(c.remain_catty)+' 臺斤')+'</span>'+
+          '<span class="tag">約 3 日後出貨</span>'+
+        '</div>'+
+        '<div style="margin-top:10px">'+(sold?'<button class="btn gray" disabled>已售完</button>':'<button class="btn amber sm" data-buy="'+c.id+'">選購</button>')+'</div>'+
+      '</div></div>';
+  }).join("") : empty("目前沒有現成可採摘的蔬菜,後臺上架後就會出現");
+
+  app.innerHTML=
+    appbar("新鮮採摘","現採現貨 · 約 3 日後出貨",{refresh:true})+
+    '<div class="wrap">'+sect("現成可購買蔬菜")+cards+'</div>'+tabbar("fresh");
+
+  app.querySelectorAll("[data-buy]").forEach(function(b){
+    b.onclick=function(){ var c=list.filter(function(x){return x.id===b.getAttribute("data-buy");})[0]; openBuyModal(c); };
+  });
+}
+function openBuyModal(c){
+  if(!c) return;
+  var catty=Math.min(1,c.remain_catty);
+  function body(){
+    return '<h3>選購 · '+c.name+'</h3>'+
+      '<div class="card veg-card" style="margin-top:12px"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
+        '<div class="veg-main"><div class="veg-feat">'+c.feature+'</div>'+
+        '<div class="veg-meta"><span class="tag amber">'+priceTag(c.price_per_half)+'</span>'+
+        '<span class="tag">尚餘 '+fmt(c.remain_catty)+' 臺斤</span></div></div></div>'+
+      '<div class="field"><label>購買數量(臺斤)</label>'+
+        '<div class="stepper"><button data-step="-1">−</button><input id="catty" value="'+fmt(catty)+'" readonly><button data-step="1">+</button></div></div>'+
+      '<div class="sumline"><span>'+priceTag(c.price_per_half)+' × '+fmt(catty*2)+' 份</span><b>$'+totalPrice(catty,c.price_per_half)+'</b></div>'+
+      '<button class="btn amber" id="confirmBuy">確認購買</button>';
+  }
+  modal(body());
+  function rebind(){
+    var box=document.querySelector(".modal");
+    box.querySelectorAll("[data-step]").forEach(function(b){b.onclick=function(){
+      catty=Math.max(0.5,Math.round((catty+(+b.getAttribute("data-step"))*0.5)*2)/2);
+      catty=Math.min(catty,c.remain_catty); document.querySelector(".modal").innerHTML=body();rebind();};});
+    document.getElementById("confirmBuy").onclick=async function(){
+      this.disabled=true;
+      try{
+        var r=await API.buyFresh(c.id,catty);
+        if(r&&r.error){ toast(r.error); closeModal(); render(); return; }
+        closeModal(); toast("購買成功!約 3 日後出貨"); render();
+      }catch(ex){ toast("連線失敗"); }
+    };
+  }
+  rebind();
+}
+
+/* =================== 管理後臺 =================== */
+async function viewAdmin(){
+  loading();
+  var tab=localStorage.getItem("farm.admtab")||"pre";
+  var [crops,fresh,pos]=await Promise.all([API.catalogPre(),API.catalogFresh(),API.preorders()]);
+
+  var bodyHtml;
+  if(tab==="pre"){
+    var totalCount=pos.length, totalCatty=pos.reduce(function(s,p){return s+(+p.catty);},0);
+    var stats='<div class="stat-grid">'+
+      '<div class="stat"><div class="n">'+totalCount+'</div><div class="l">總預購筆數</div></div>'+
+      '<div class="stat"><div class="n">'+fmt(totalCatty)+'</div><div class="l">總預購臺斤</div></div></div>';
+    var perCrop=crops.map(function(c){
+      var ps=pos.filter(function(p){return p.crop_id===c.id;});
+      var ct=ps.reduce(function(s,p){return s+(+p.catty);},0);
+      return '<div class="adm-item"><div class="veg-art">'+vegArt(c.art)+'</div>'+
+        '<div class="info"><div class="nm">'+c.name+'</div><div class="mt">'+c.feature+'</div>'+
+          '<div class="mt" style="color:#3f9d4f;font-weight:700;margin-top:5px">已預購 '+ps.length+' 筆 · '+fmt(ct)+'/'+fmt(c.target_catty)+' 臺斤 · '+priceTag(c.price_per_half)+'</div></div>'+
+        '<button class="linkbtn" data-delpre="'+c.id+'">刪除</button></div>';
+    }).join("")||empty("尚未新增任何預購菜色");
+    bodyHtml=sect("預購統計")+stats+sect("新增預購種植菜色")+adminForm("pre")+sect("目前預購菜色")+perCrop;
+  }else{
+    var soldCatty=fresh.reduce(function(s,c){return s+(+c.total_catty - +c.remain_catty);},0);
+    var stats2='<div class="stat-grid">'+
+      '<div class="stat"><div class="n">'+fresh.length+'</div><div class="l">上架品項</div></div>'+
+      '<div class="stat"><div class="n">'+fmt(soldCatty)+'</div><div class="l">已售出臺斤</div></div></div>';
+    var items=fresh.map(function(c){
+      return '<div class="adm-item"><div class="veg-art">'+artImg(c.art,c.image_url)+'</div>'+
+        '<div class="info"><div class="nm">'+c.name+'</div><div class="mt">'+c.feature+'</div>'+
+          '<div class="mt" style="color:#e8893a;font-weight:700;margin-top:5px">剩 '+fmt(c.remain_catty)+'/'+fmt(c.total_catty)+' 臺斤 · '+priceTag(c.price_per_half)+'</div></div>'+
+        '<button class="linkbtn" data-delfresh="'+c.id+'">刪除</button></div>';
+    }).join("")||empty("尚未上架任何現成蔬菜");
+    bodyHtml=sect("販售統計")+stats2+sect("上架現有可售蔬菜")+adminForm("fresh")+sect("目前上架蔬菜")+items;
+  }
+
+  app.innerHTML=
+    appbar("管理後臺","設定當季菜色 · 查看統計",{logout:true,refresh:true})+
+    '<div class="wrap">'+
+      '<div class="seg"><button data-tab="pre" class="'+(tab==="pre"?"active":"")+'">預購種植菜色</button>'+
+      '<button data-tab="fresh" class="'+(tab==="fresh"?"active":"")+'">現有可售蔬菜</button></div>'+
+      '<div id="admBody">'+bodyHtml+'</div>'+
+    '</div>'+tabbar("admin");
+
+  app.querySelectorAll("[data-tab]").forEach(function(b){b.onclick=function(){localStorage.setItem("farm.admtab",b.getAttribute("data-tab"));viewAdmin();};});
+  bindAdminForm(tab);
+  app.querySelectorAll("[data-delpre]").forEach(function(b){b.onclick=async function(){
+    if(!confirm("確定刪除此預購菜色?")) return;
+    try{ var r=await API.adminDelPre(b.getAttribute("data-delpre")); if(r&&r.error){toast(r.error);return;} toast("已刪除"); viewAdmin(); }catch(ex){ toast("連線失敗"); }
+  };});
+  app.querySelectorAll("[data-delfresh]").forEach(function(b){b.onclick=async function(){
+    if(!confirm("確定下架此蔬菜?")) return;
+    try{ var r=await API.adminDelFresh(b.getAttribute("data-delfresh")); if(r&&r.error){toast(r.error);return;} toast("已下架"); viewAdmin(); }catch(ex){ toast("連線失敗"); }
+  };});
+}
+function artOptions(){
+  return [["butter","奶油萵苣型"],["romaine","長葉萵苣型"],["bokchoy","青江/小白菜型"],["cabbage","結球高麗菜型"]]
+    .map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join("");
+}
+var FEAT_OPTIONS=["溫室","不灑農藥","不灑化肥","當季"];
+function adminForm(kind){
+  var qtyLabel=kind==="pre"?"目標種植數量(臺斤)":"上架數量(臺斤)";
+  var chips='<div class="chips" id="f_feat">'+FEAT_OPTIONS.map(function(f){
+      return '<button type="button" class="chip" data-feat="'+f+'">'+f+'</button>';}).join("")+'</div>';
+  var artField = kind==="pre"
+    ? '<div class="field"><label>圖樣</label><select id="f_art">'+artOptions()+'</select></div>'
+    : '<div class="field"><label>蔬菜照片(上傳或拍照)</label>'+
+        '<div class="photo-pick"><div class="photo-prev" id="f_prev">'+IC.camera+'</div>'+
+        '<div style="flex:1"><input id="f_photo" type="file" accept="image/*" capture="environment">'+
+        '<div class="photo-hint">可從相簿選擇,或手機直接拍照</div></div></div></div>';
+  return '<div class="card">'+
+    '<div class="field"><label>菜名</label><input id="f_name" placeholder="例如 奶油萵苣"></div>'+
+    '<div class="field"><label>種植特點(可複選)</label>'+chips+'</div>'+
+    artField+
+    '<div class="row2">'+
+      '<div class="field"><label>'+qtyLabel+'</label><input id="f_qty" type="number" inputmode="decimal" placeholder="臺斤"></div>'+
+      '<div class="field"><label>每半臺斤價格($)</label><input id="f_price" type="number" inputmode="numeric" placeholder="元"></div>'+
+    '</div>'+
+    '<div class="err" id="f_err"></div>'+
+    '<button class="btn" id="f_add">'+IC.plus+'新增上架</button></div>';
+}
+function bindAdminForm(kind){
+  var btn=document.getElementById("f_add"); if(!btn) return;
+  var feats=[];
+  document.querySelectorAll("#f_feat .chip").forEach(function(ch){
+    ch.onclick=function(){
+      ch.classList.toggle("on");
+      var f=ch.getAttribute("data-feat");
+      if(ch.classList.contains("on")){ if(feats.indexOf(f)<0) feats.push(f); }
+      else { feats=feats.filter(function(x){return x!==f;}); }
+    };
+  });
+  var imgData=null;
+  var photo=document.getElementById("f_photo");
+  if(photo){
+    photo.onchange=function(){
+      var file=photo.files&&photo.files[0]; if(!file) return;
+      resizeImage(file,640,0.7).then(function(d){ imgData=d; var p=document.getElementById("f_prev"); if(p) p.innerHTML='<img src="'+d+'">'; })
+        .catch(function(){ toast("照片讀取失敗"); });
+    };
+  }
+  btn.onclick=async function(){
+    var name=val("f_name").trim(), feature=feats.join("、"),
+        qty=parseFloat(val("f_qty")), price=parseInt(val("f_price"),10);
+    var err=document.getElementById("f_err");
+    if(!name){ err.textContent="請填寫菜名"; return; }
+    if(!feature){ err.textContent="請至少選一個種植特點"; return; }
+    if(!(qty>0)){ err.textContent="請輸入有效數量(臺斤)"; return; }
+    if(!(price>0)){ err.textContent="請輸入有效的每半臺斤價格"; return; }
+    btn.disabled=true;
+    try{
+      var r=kind==="pre"? await API.adminAddPre({name:name,feature:feature,art:val("f_art"),qty:qty,price:price})
+                        : await API.adminAddFresh({name:name,feature:feature,art:"cabbage",qty:qty,price:price,image:imgData});
+      if(r&&r.error){ err.textContent=r.error; btn.disabled=false; return; }
+      toast("已新增「"+name+"」"); viewAdmin();
+    }catch(ex){ err.textContent="連線失敗,請稍後再試"; btn.disabled=false; }
+  };
+}
+
+/* =================== Modal =================== */
+function modal(html){
+  closeModal();
+  var bg=el('<div class="modal-bg"><div class="modal">'+html+'</div></div>');
+  bg.addEventListener("click",function(e){ if(e.target===bg) closeModal(); if(e.target.closest("[data-close]")) closeModal(); });
+  document.body.appendChild(bg);
+}
+function closeModal(){var m=document.querySelector(".modal-bg");if(m)m.remove();}
+
+/* =================== 啟動 =================== */
+render();
+</script>
+</body>
+</html>

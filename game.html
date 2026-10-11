@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>開心農場 · 三方贊助採收 🥬</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    font-family: "Segoe UI", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    user-select: none; background: #2e7d32;
+  }
+  #scene {
+    position: fixed; inset: 0;
+    background-color: #2e7d32;
+    background-image:
+      linear-gradient(rgba(0,0,0,0) 62%, rgba(0,25,0,0.22) 100%),
+      url("https://d8j0ntlcm91z4.cloudfront.net/user_3E8E7dfEkimdmsd0LdokMgNgQuE/hf_20260630_063907_b4b912e8-cf30-42a3-80f8-a65d741fb057.png");
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+  }
+  #scene.fallback {
+    background-image:
+      linear-gradient(180deg, #bfe7ff 0%, #d7f0c6 30%, #9c6a3f 55%, #6e4326 100%);
+  }
+
+  /* ===== HUD:三個贊助商 ===== */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    display: flex; gap: 8px; justify-content: center; align-items: stretch;
+    padding: 10px 8px; flex-wrap: wrap; pointer-events: none;
+  }
+  .sponsor {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px; padding: 6px 14px; min-width: 90px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+    border-bottom: 5px solid var(--c); text-align: center;
+  }
+  .sponsor .name { font-weight: 800; font-size: clamp(13px, 3.6vw, 17px); color: var(--c); display:flex; align-items:center; gap:5px; justify-content:center;}
+  .sponsor .cnt { font-weight: 900; font-size: clamp(20px, 6vw, 30px); color: #333; line-height: 1.1; }
+  .sponsor .lbl { font-size: 11px; color: #888; }
+
+  #title {
+    position: fixed; bottom: 12px; left: 0; right: 0; text-align: center;
+    color: #fff; font-weight: 800; font-size: clamp(12px, 3.3vw, 16px);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.7); z-index: 30; pointer-events: none;
+  }
+  #reset {
+    position: fixed; right: 10px; bottom: 38px; z-index: 31; pointer-events: auto;
+    background: #ffb300; color: #5a3d00; border: 3px solid #fff;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); border-radius: 999px;
+    padding: 8px 14px; font-weight: 800; font-size: clamp(13px, 3.3vw, 18px); cursor: pointer;
+  }
+  #reset:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+
+  /* ===== 田地(全部程式繪製,保證對齊)===== */
+  #board { position: fixed; left: 0; top: 0; z-index: 10; }
+  .tile { position: absolute; }
+
+  /* 木框 + 土壤,都是菱形;crop 站在正中央 */
+  .diamond { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .depth { background: #6b3f1c; }                                   /* 木框厚度(下緣) */
+  .frame { background: linear-gradient(180deg, #b07a43, #8a5a31); } /* 木框上面 */
+  .soil  { background:
+             radial-gradient(120% 120% at 50% 35%, #7a4f2c, #5e3c20);
+           box-shadow: inset 0 0 0 2px rgba(0,0,0,0.12); }
+  .soil::after { content:""; position:absolute; inset:0;
+           background: repeating-linear-gradient(115deg, rgba(0,0,0,0.10) 0 5px, rgba(255,255,255,0.04) 5px 11px);
+           clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .accent { background: var(--c); opacity: .9; }                    /* 贊助商色,薄薄一圈 */
+
+  .crop {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -70%);
+    cursor: pointer;
+  }
+  .crop svg { display:block; width:100%; height:100%; overflow: visible; }
+  .leaf { transform-origin: 50% 92%; transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+  .crop.sprout  .leaf { transform: scale(.30); }
+  .crop.growing .leaf { transform: scale(.62); }
+  .crop.ready   .leaf { transform: scale(1); }
+  .crop.ready { animation: glow 1.8s ease-in-out infinite; }
+  @keyframes glow {
+    0%,100% { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)) drop-shadow(0 0 2px rgba(255,255,150,.4)); }
+    50%     { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)) drop-shadow(0 0 11px rgba(255,255,110,.95)); }
+  }
+  .crop:not(.ready) { filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+  .crop.ready:hover { transform: translate(-50%, -74%) scale(1.06); }
+
+  .pop {
+    position: fixed; z-index: 40; pointer-events: none;
+    font-weight: 900; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,.5);
+    animation: floatUp .9s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { transform: translate(-50%,-50%) scale(.6); opacity: 0; }
+    20%  { transform: translate(-50%,-95%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%,-165%) scale(1); opacity: 0; }
+  }
+
+  #hint {
+    position: fixed; inset: 0; z-index: 50; display:flex;
+    align-items:center; justify-content:center; flex-direction:column;
+    background: rgba(0,0,0,0.45); color:#fff; text-align:center; padding:24px;
+    transition: opacity .4s ease;
+  }
+  #hint h1 { font-size: clamp(26px,8vw,52px); margin:0 0 8px; text-shadow:0 3px 10px rgba(0,0,0,.6); }
+  #hint p { font-size: clamp(14px,4.2vw,21px); margin:4px 0; opacity:.95; }
+  #hint .play {
+    margin-top:22px; background:#6fbf3a; color:#fff; border:4px solid #fff;
+    box-shadow:0 6px 0 rgba(0,0,0,0.25); border-radius:999px;
+    padding:14px 40px; font-weight:900; font-size:clamp(18px,5vw,26px); cursor:pointer;
+  }
+  #hint .play:active { transform: translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.25); }
+  #hint.hide { opacity:0; pointer-events:none; }
+  #hint .legend { margin-top:16px; display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  #hint .legend span { display:flex; align-items:center; gap:6px; font-size:15px; }
+  #hint .dot { width:14px; height:14px; border-radius:4px; display:inline-block; }
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="board"></div>
+
+  <div id="hud"></div>
+  <div id="title">點一下成熟發光的菜就能採收 · 算進該方格的贊助商</div>
+  <button id="reset">🌱 重新整地</button>
+
+  <div id="hint">
+    <h1>🥬 開心農場</h1>
+    <p>田地分給 <b>三個贊助商</b>,每格剛好種一棵菜</p>
+    <p>採收哪一格,就替那個贊助商 +1 🥬</p>
+    <div class="legend" id="legend"></div>
+    <button class="play" id="playBtn">開始採收</button>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===== 可自行修改:三個贊助商(名稱 / emoji / 顏色) ===== */
+  var SPONSORS = [
+    { name: "小秀", emoji: "🟢", color: "#3aa655" },
+    { name: "小陳", emoji: "🟠", color: "#e8893a" },
+    { name: "小芳", emoji: "🔵", color: "#3a86d6" }
+  ];
+
+  var COLS = 5, ROWS = 6;            // 5x6 = 30 格(每個贊助商正好 10 格)
+  var counts = [0, 0, 0];
+
+  (function () {
+    var url = "https://d8j0ntlcm91z4.cloudfront.net/user_3E8E7dfEkimdmsd0LdokMgNgQuE/hf_20260630_063907_b4b912e8-cf30-42a3-80f8-a65d741fb057.png", img = new Image();
+    img.onerror = function () { document.getElementById("scene").classList.add("fallback"); };
+    img.src = url;
+    setTimeout(function () { if (!img.complete) document.getElementById("scene").classList.add("fallback"); }, 4000);
+  })();
+
+  // 依列(row)分三區:前 2 列=小秀、中 2 列=小陳、後 2 列=小芳 → 每區 10 格
+  function sponsorOf(row) { return Math.min(2, Math.floor(row / (ROWS / 3))); }
+
+  var board = document.getElementById("board");
+  var hud = document.getElementById("hud");
+  var legend = document.getElementById("legend");
+
+  SPONSORS.forEach(function (s, i) {
+    var d = document.createElement("div");
+    d.className = "sponsor"; d.style.setProperty("--c", s.color);
+    d.innerHTML = '<div class="name">' + s.emoji + ' ' + s.name + '</div>' +
+                  '<div class="cnt" id="cnt' + i + '">0</div>' +
+                  '<div class="lbl">採收 🥬</div>';
+    hud.appendChild(d);
+    var lg = document.createElement("span");
+    lg.innerHTML = '<i class="dot" style="background:' + s.color + '"></i>' + s.name;
+    legend.appendChild(lg);
+  });
+
+  function lettuceSVG() {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<g class="leaf">' +
+      '<path d="M50 84 C20 80 12 52 26 40 C18 24 40 14 50 26 C60 14 82 24 74 40 C88 52 80 80 50 84Z" fill="#3f8f1f"/>' +
+      '<path d="M50 80 C28 76 22 54 33 44 C27 30 44 24 50 34 C56 24 73 30 67 44 C78 54 72 76 50 80Z" fill="#5fb52f"/>' +
+      '<path d="M50 74 C36 72 30 56 39 48 C35 38 46 34 50 42 C54 34 65 38 61 48 C70 56 64 72 50 74Z" fill="#86d64a"/>' +
+      '<path d="M50 66 C42 65 38 56 43 50 C41 44 48 42 50 47 C52 42 59 44 57 50 C62 56 58 65 50 66Z" fill="#bdf07f"/>' +
+      '</g></svg>';
+  }
+
+  var tiles = [];
+
+  for (var row = 0; row < ROWS; row++) {
+    for (var col = 0; col < COLS; col++) {
+      var sp = sponsorOf(row);
+      var t = document.createElement("div");
+      t.className = "tile";
+      // 木框厚度 / 木框 / 贊助商色細邊 / 土壤 / 蔬菜
+      t.innerHTML =
+        '<div class="diamond depth"></div>' +
+        '<div class="diamond frame"></div>' +
+        '<div class="diamond accent" style="--c:' + SPONSORS[sp].color + '"></div>' +
+        '<div class="diamond soil"></div>' +
+        '<div class="crop sprout">' + lettuceSVG() + '</div>';
+      board.appendChild(t);
+
+      var tile = {
+        el: t, col: col, row: row, sp: sp, state: "sprout", timer: null,
+        depth: t.children[0], frame: t.children[1], accent: t.children[2],
+        soil: t.children[3], crop: t.children[4]
+      };
+      (function (c) { c.crop.addEventListener("click", function (e) { harvest(c, e); }); })(tile);
+      tiles.push(tile);
+      grow(tile, Math.random() * 2600);
+    }
+  }
+
+  function setState(tile, s) {
+    tile.state = s;
+    tile.crop.classList.remove("sprout", "growing", "ready");
+    tile.crop.classList.add(s);
+  }
+  function grow(tile, delay) {
+    clearTimeout(tile.timer);
+    setState(tile, "sprout");
+    tile.timer = setTimeout(function () {
+      setState(tile, "growing");
+      tile.timer = setTimeout(function () { setState(tile, "ready"); }, 1600);
+    }, delay || 0);
+  }
+
+  function harvest(tile, e) {
+    if (tile.state !== "ready") return;
+    counts[tile.sp] += 1;
+    document.getElementById("cnt" + tile.sp).textContent = counts[tile.sp];
+    showPop(e, "+1 🥬", SPONSORS[tile.sp].color);
+    blip();
+    tile.crop.classList.remove("ready");
+    var leaf = tile.crop.querySelector(".leaf");
+    leaf.style.transition = "transform .18s ease";
+    leaf.style.transform = "scale(.12)";
+    setTimeout(function () { leaf.style.transition = ""; grow(tile, 250); }, 200);
+  }
+
+  function showPop(e, txt, color) {
+    var p = document.createElement("div");
+    p.className = "pop"; p.textContent = txt; p.style.color = color || "#fff";
+    p.style.left = ((e && e.clientX) || innerWidth / 2) + "px";
+    p.style.top = ((e && e.clientY) || innerHeight / 2) + "px";
+    document.body.appendChild(p);
+    setTimeout(function () { p.remove(); }, 900);
+  }
+
+  var actx = null;
+  function blip() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(520, actx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, actx.currentTime + 0.08);
+      g.gain.setValueAtTime(0.14, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.18);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + 0.2);
+    } catch (err) {}
+  }
+
+  // ===== 等角排版:格子與蔬菜共用同一套座標,必定對齊 =====
+  function layout() {
+    var vw = innerWidth, vh = innerHeight;
+    // 田地等角寬度 = (COLS+ROWS) * tileW/2;讓它約佔畫面寬 92%
+    var tileW = Math.min(vw * 0.92 / ((COLS + ROWS) / 2), vh * 0.62 / ((COLS + ROWS) / 2 * 0.58));
+    tileW = Math.min(tileW, 150);
+    var tileH = tileW * 0.58;
+    var depth = Math.max(7, tileH * 0.22);   // 木框厚度
+    var frameInset = tileW * 0.05;            // 木框寬
+    var soilInset = frameInset + tileW * 0.05;
+    var accentInset = frameInset + tileW * 0.018;
+    var cropW = tileW * 0.80;
+
+    var originX = vw / 2;
+    var originY = (vh - (COLS + ROWS) * (tileH / 2)) / 2 + tileH * 1.1; // 垂直置中、略下移避開 HUD
+
+    tiles.forEach(function (t) {
+      var sx = originX + (t.col - t.row) * (tileW / 2);
+      var sy = originY + (t.col + t.row) * (tileH / 2);
+      t.el.style.left = sx + "px";
+      t.el.style.top = sy + "px";
+      t.el.style.zIndex = (t.col + t.row);
+
+      sizeDiamond(t.frame,  tileW, tileH, 0);
+      sizeDiamond(t.depth,  tileW, tileH, depth);   // 往下偏移 = 厚度
+      sizeDiamond(t.accent, tileW - accentInset * 2, tileH - accentInset * 2, 0);
+      sizeDiamond(t.soil,   tileW - soilInset * 2,   tileH - soilInset * 2,   0);
+
+      t.crop.style.width = cropW + "px";
+      t.crop.style.height = cropW + "px";
+    });
+  }
+  function sizeDiamond(el, w, h, yOffset) {
+    el.style.width = w + "px";
+    el.style.height = h + "px";
+    el.style.transform = "translate(-50%, calc(-50% + " + (yOffset || 0) + "px))";
+  }
+  layout();
+  addEventListener("resize", layout);
+
+  document.getElementById("reset").addEventListener("click", function () {
+    tiles.forEach(function (t) { grow(t, Math.random() * 2200); });
+  });
+  document.getElementById("playBtn").addEventListener("click", function () {
+    document.getElementById("hint").classList.add("hide");
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
