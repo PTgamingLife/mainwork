@@ -1,5 +1,6 @@
 ---
 name: reels-script
+category: social
 description: IG Reels 短影音設計器 + 自我學習迴圈。兩種用法:(1) 給標題與素材,依 MODEL.md 生成完整短影音腳本(hook/口白/畫面/字卡/CTA);(2) 上傳 reels 網址或截圖,分析流量原因並更新模型。觸發詞:「幫我寫 reels」「設計短影音」「reels 腳本」「分析這支 reels」「更新短影音模型」。
 ---
 
