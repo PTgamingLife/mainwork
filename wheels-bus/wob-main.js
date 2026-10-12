@@ -7,12 +7,13 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
 (() => {
   const $ = id => document.getElementById(id);
   const wob_el = {
-    setup: $('wob_setup'), stage: $('wob_stage'), scene: $('wob_scene'),
+    home: $('wob_home'), setup: $('wob_setup'), stage: $('wob_stage'), scene: $('wob_scene'),
     img: $('wob_img'), vid: $('wob_vid'), lyric: $('wob_lyric'),
     cam: $('wob_cam'), fill: $('wob_energy_fill'),
     wait: $('wob_wait'), waitHint: $('wob_wait_hint'), skip: $('wob_skip'),
     move: $('wob_move'), end: $('wob_end'), wall: $('wob_wall'),
     again: $('wob_again'), back: $('wob_back'), go: $('wob_go'),
+    toSetup: $('wob_to_setup'), setupBack: $('wob_setup_back'),
   };
 
   const wob_run = {
@@ -60,6 +61,7 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
 
   // ---------- 流程 ----------
   function wob_show(page) {
+    wob_el.home.classList.toggle('is-active', page === 'home');
     wob_el.setup.classList.toggle('is-active', page === 'setup');
     wob_el.stage.classList.toggle('is-active', page === 'stage');
   }
@@ -172,8 +174,8 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
   // ---------- 事件 ----------
   wob_run.audio.addEventListener('ended', wob_toEnd);
 
-  wob_el.go.addEventListener('click', () => {
-    // 在使用者點擊時解鎖聲音（iOS 需要）
+  // 開始播放 wob_state.media；必須在使用者點擊當下呼叫（iOS 解鎖聲音）
+  window.wob_launch = () => {
     wob_run.audio.src = wob_state.song.url;
     wob_run.audio.play().then(() => wob_run.audio.pause()).catch(() => {});
     if (!wob_run.audioCtx) {
@@ -183,7 +185,14 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
     wob_run.audioCtx.resume();
     wob_show('stage');
     wob_toWait();
+  };
+
+  wob_el.go.addEventListener('click', () => {
+    wob_state.media = wob_state.custom;
+    window.wob_launch();
   });
+  wob_el.toSetup.addEventListener('click', () => wob_show('setup'));
+  wob_el.setupBack.addEventListener('click', () => wob_show('home'));
 
   wob_el.skip.addEventListener('click', wob_toPlay);
 
@@ -197,9 +206,10 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
   wob_el.back.addEventListener('click', () => {
     wob_run.phase = 'idle';
     wob_run.audio.pause();
-    wob_show('setup');
+    wob_show('home');
   });
 
   wob_setup.init();
+  wob_preset.init();
   requestAnimationFrame(wob_tick);
 })();
