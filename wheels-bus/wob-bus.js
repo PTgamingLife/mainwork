@@ -1,6 +1,12 @@
 // wob_bus：卡通公車 SVG + 歌詞段落設定
-// wob_verseTimes：每段開始秒數。收到音檔後填入；null = 依歌曲長度平均分配。
-const wob_verseTimes = null;
+// wob_verseTimes：這首歌實際唱到的段落與開始秒數（scripts/wob_verse_times.py 抓的，
+// The Green Orbs 版，全長 124.12 秒）。null = wob_verses 全部段落依歌曲長度平均分配。
+const wob_verseTimes = [
+  { key: 'wheels', t: 11.94 },
+  { key: 'wipers', t: 36.86 },
+  { key: 'horn',   t: 68.42 },
+  { key: 'people', t: 108.86 },
+];
 
 const wob_verses = [
   { key: 'wheels',  line: 'The wheels on the bus go round and round', bubble: '' },
@@ -10,6 +16,7 @@ const wob_verses = [
   { key: 'babies',  line: 'The babies on the bus go wah, wah, wah', bubble: 'Wah~' },
   { key: 'mommies', line: 'The mommies on the bus go shh, shh, shh', bubble: 'Shh…' },
   { key: 'daddies', line: 'The daddies on the bus say I love you', bubble: '♥ I love you' },
+  { key: 'people',  line: 'The people on the bus go up and down', bubble: '' },
 ];
 
 const wob_bus = (() => {
@@ -59,10 +66,11 @@ const wob_bus = (() => {
     },
     // 依目前秒數回傳段落 index
     verseAt(t, duration) {
-      const times = wob_verseTimes || wob_verses.map((_, i) => (duration / wob_verses.length) * i);
-      let idx = 0;
-      for (let i = 0; i < times.length; i++) if (t >= times[i]) idx = i;
-      return idx;
+      const times = wob_verseTimes
+        || wob_verses.map((v, i) => ({ key: v.key, t: (duration / wob_verses.length) * i }));
+      let key = times[0].key;
+      for (const x of times) if (t >= x.t) key = x.key;
+      return wob_verses.findIndex(v => v.key === key);
     },
     setVerse(idx) {
       const v = wob_verses[idx];

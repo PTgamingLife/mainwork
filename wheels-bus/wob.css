@@ -177,7 +177,11 @@ body {
 .wob-face-kid { opacity: 1; }
 .wob-verse-babies .wob-face-baby,
 .wob-verse-mommies .wob-face-mom,
-.wob-verse-daddies .wob-face-dad { opacity: 1; }
+.wob-verse-daddies .wob-face-dad,
+.wob-verse-people .wob-face { opacity: 1; }
+.wob-verse-people .wob-face { animation: wob-updown .5s ease-in-out infinite alternate; }
+.wob-verse-people .wob-face-baby, .wob-verse-people .wob-face-dad { animation-delay: -.5s; }
+@keyframes wob-updown { from { transform: translateY(3px); } to { transform: translateY(-5px); } }
 
 /* 暫停時全部停住（覆蓋層除外） */
 .wob-scene:not(.is-playing) *,

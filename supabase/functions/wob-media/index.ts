@@ -47,9 +47,74 @@ async function wobStorage(path: string, init: RequestInit = {}): Promise<Respons
 
 type WobItem = { path: string; kind: "image" | "video"; v: string };
 
+// ---- 管理端（上傳素材用）：header x-wob-admin 的 sha256 必須在 wob_admin_tokens 表裡 ----
+//   POST ?op=put&path=items/001_x.jpg   body = 檔案內容，Content-Type = 檔案型別
+//   POST ?op=list                        回傳 items/ 底下的檔名
+//   POST ?op=delete  body = {"paths": [...]}
+async function wobIsAdmin(token: string): Promise<boolean> {
+  if (token.length < 32) return false;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const r = await fetch(`${SB_URL}/rest/v1/wob_admin_tokens?token_hash=eq.${hex}&select=token_hash`, {
+    headers: { Authorization: `Bearer ${SB_KEY}`, apikey: SB_KEY },
+  });
+  return r.ok && (await r.json() as unknown[]).length === 1;
+}
+
+const WOB_PATH_OK = /^(items\/[A-Za-z0-9_.-]{1,80}|manifest\.json)$/;
+
+async function wobAdmin(req: Request, op: string, url: URL): Promise<Response> {
+  if (op === "put") {
+    const path = url.searchParams.get("path") ?? "";
+    if (!WOB_PATH_OK.test(path)) return json({ error: "BAD_PATH" }, 400);
+    const r = await wobStorage(`object/${WOB_BUCKET}/${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": req.headers.get("content-type") ?? "application/octet-stream",
+        "x-upsert": "true",
+        "cache-control": path === WOB_MANIFEST ? "0" : "31536000",
+      },
+      body: await req.arrayBuffer(),
+    });
+    return json({ ok: r.ok, status: r.status }, r.ok ? 200 : 502);
+  }
+  if (op === "list") {
+    const r = await wobStorage(`object/list/${WOB_BUCKET}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prefix: "items", limit: 1000 }),
+    });
+    const rows = r.ok ? await r.json() as { name: string; id: string | null }[] : [];
+    return json({ paths: rows.filter((o) => o.id).map((o) => `items/${o.name}`) });
+  }
+  if (op === "delete") {
+    const { paths } = await req.json() as { paths?: string[] };
+    const ok = (paths ?? []).filter((p) => WOB_PATH_OK.test(p) && p !== WOB_MANIFEST);
+    if (ok.length) {
+      await wobStorage(`object/${WOB_BUCKET}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prefixes: ok }),
+      });
+    }
+    return json({ deleted: ok.length });
+  }
+  return json({ error: "BAD_OP" }, 400);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "METHOD" }, 405);
+
+  const url = new URL(req.url);
+  const op = url.searchParams.get("op");
+  if (op) {
+    if (!(await wobIsAdmin(req.headers.get("x-wob-admin") ?? ""))) {
+      await new Promise((r) => setTimeout(r, 800));
+      return json({ error: "UNAUTHORIZED" }, 401);
+    }
+    return wobAdmin(req, op, url);
+  }
   if (!WOB_PASSWORD) return json({ error: "NOT_CONFIGURED" }, 500);
 
   let password = "";

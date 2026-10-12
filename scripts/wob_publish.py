@@ -8,9 +8,11 @@
     # 只壓縮、不上傳（先檢查順序和大小）
     python scripts/wob_publish.py "D:\\寶寶照片\\公車" --dry-run
 
-需要 config/.env（已在 .gitignore，不會被 commit）：
+需要 config/.env（已在 .gitignore，不會被 commit），二選一：
     WOB_SUPABASE_URL=https://hhcubvixldieuwdeqnwc.supabase.co
     WOB_SUPABASE_SERVICE_KEY=<heart-cards 的 service_role key>
+  或
+    WOB_ADMIN_TOKEN=<管理金鑰；資料庫 wob_admin_tokens 表只存它的 sha256>
 
 規則：
   - 影片裁成前 3 秒、最長邊 1280、去掉聲音；不足 3 秒保留原長
@@ -27,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +42,11 @@ WOB_ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------- 設定 ----------
+WOB_FN_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/wob-media"
+
+
 def wob_env():
+    """有 WOB_SUPABASE_SERVICE_KEY 就直連 Storage；否則用 WOB_ADMIN_TOKEN 走 Edge Function。"""
     env_file = WOB_ROOT / "config" / ".env"
     if env_file.exists():
         for line in env_file.read_text(encoding="utf-8").splitlines():
@@ -48,9 +55,12 @@ def wob_env():
                 os.environ[m.group(1)] = m.group(2).strip().strip('"')
     url = os.environ.get("WOB_SUPABASE_URL", "").rstrip("/")
     key = os.environ.get("WOB_SUPABASE_SERVICE_KEY", "")
-    if not url or not key:
-        sys.exit("缺少 WOB_SUPABASE_URL / WOB_SUPABASE_SERVICE_KEY，請寫進 config/.env")
-    return url, key
+    admin = os.environ.get("WOB_ADMIN_TOKEN", "")
+    if url and key:
+        return WobDirect(url, key)
+    if admin:
+        return WobViaFunction(admin)
+    sys.exit("缺少金鑰：config/.env 需要 WOB_SUPABASE_URL + WOB_SUPABASE_SERVICE_KEY，或 WOB_ADMIN_TOKEN")
 
 
 # ---------- 排序 ----------
@@ -107,39 +117,64 @@ def wob_make_video(src, dst):
 
 
 # ---------- Supabase Storage ----------
-def wob_req(url, key, method="GET", data=None, headers=None):
-    h = {"Authorization": f"Bearer {key}", "apikey": key}
-    h.update(headers or {})
-    req = urllib.request.Request(url, data=data, method=method, headers=h)
+def wob_req(url, method="GET", data=None, headers=None):
+    req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=180) as r:
             return r.status, r.read()
     except urllib.error.HTTPError as e:
         return e.code, e.read()
 
 
-def wob_upload(base, key, path, file_path, ctype, cache="31536000"):
-    st, body = wob_req(f"{base}/storage/v1/object/{WOB_BUCKET}/{path}", key, "POST",
-                       Path(file_path).read_bytes(),
-                       {"Content-Type": ctype, "x-upsert": "true", "cache-control": cache})
+class WobDirect:
+    """用 service role key 直接打 Storage API。"""
+
+    def __init__(self, base, key):
+        self.base, self.auth = base, {"Authorization": f"Bearer {key}", "apikey": key}
+
+    def put(self, path, data, ctype):
+        cache = "0" if path == "manifest.json" else "31536000"
+        return wob_req(f"{self.base}/storage/v1/object/{WOB_BUCKET}/{path}", "POST", data,
+                       {**self.auth, "Content-Type": ctype, "x-upsert": "true", "cache-control": cache})
+
+    def list(self):
+        st, body = wob_req(f"{self.base}/storage/v1/object/list/{WOB_BUCKET}", "POST",
+                           json.dumps({"prefix": "items", "limit": 1000}).encode(),
+                           {**self.auth, "Content-Type": "application/json"})
+        if st >= 300:
+            raise RuntimeError(f"讀取清單失敗: {st} {body[:200]!r}（bucket {WOB_BUCKET} 存在嗎？）")
+        return [f"items/{o['name']}" for o in json.loads(body) if o.get("id")]
+
+    def delete(self, paths):
+        wob_req(f"{self.base}/storage/v1/object/{WOB_BUCKET}", "DELETE",
+                json.dumps({"prefixes": paths}).encode(), {**self.auth, "Content-Type": "application/json"})
+
+
+class WobViaFunction:
+    """用管理金鑰透過 wob-media Edge Function 上傳（不需要 service role key）。"""
+
+    def __init__(self, token):
+        self.auth = {"x-wob-admin": token}
+
+    def put(self, path, data, ctype):
+        q = urllib.parse.urlencode({"op": "put", "path": path})
+        return wob_req(f"{WOB_FN_URL}?{q}", "POST", data, {**self.auth, "Content-Type": ctype})
+
+    def list(self):
+        st, body = wob_req(f"{WOB_FN_URL}?op=list", "POST", b"", self.auth)
+        if st >= 300:
+            raise RuntimeError(f"讀取清單失敗: {st} {body[:200]!r}")
+        return json.loads(body)["paths"]
+
+    def delete(self, paths):
+        wob_req(f"{WOB_FN_URL}?op=delete", "POST", json.dumps({"paths": paths}).encode(),
+                {**self.auth, "Content-Type": "application/json"})
+
+
+def wob_upload(sb, path, file_path, ctype):
+    st, body = sb.put(path, Path(file_path).read_bytes(), ctype)
     if st >= 300:
         raise RuntimeError(f"上傳失敗 {path}: {st} {body[:200]!r}")
-
-
-def wob_list_items(base, key):
-    st, body = wob_req(f"{base}/storage/v1/object/list/{WOB_BUCKET}", key, "POST",
-                       json.dumps({"prefix": "items", "limit": 1000}).encode(),
-                       {"Content-Type": "application/json"})
-    if st >= 300:
-        raise RuntimeError(f"讀取清單失敗: {st} {body[:200]!r}（bucket {WOB_BUCKET} 存在嗎？）")
-    return [f"items/{o['name']}" for o in json.loads(body) if o.get("id")]
-
-
-def wob_delete(base, key, paths):
-    if not paths:
-        return
-    wob_req(f"{base}/storage/v1/object/{WOB_BUCKET}", key, "DELETE",
-            json.dumps({"prefixes": paths}).encode(), {"Content-Type": "application/json"})
 
 
 # ---------- 主流程 ----------
@@ -188,12 +223,12 @@ def main():
         print("（--dry-run：沒有上傳）")
         return
 
-    base, key = wob_env()
-    old = set(wob_list_items(base, key))
+    sb = wob_env()
+    old = set(sb.list())
     for n, it in enumerate(items, 1):
         print(f"上傳 {n}/{len(items)} {it['path']}", flush=True)
         if it["path"] not in old:
-            wob_upload(base, key, it["path"], it["file"],
+            wob_upload(sb, it["path"], it["file"],
                        "video/mp4" if it["kind"] == "video" else "image/jpeg")
     manifest = {
         "version": datetime.now().strftime("%Y%m%d%H%M%S"),
@@ -201,8 +236,10 @@ def main():
     }
     mpath = out_dir / "manifest.json"
     mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
-    wob_upload(base, key, "manifest.json", mpath, "application/json", cache="0")
-    wob_delete(base, key, sorted(old - {it["path"] for it in items}))
+    wob_upload(sb, "manifest.json", mpath, "application/json")
+    stale = sorted(old - {it["path"] for it in items})
+    if stale:
+        sb.delete(stale)
     print("\n✅ 完成！家人重新打開網頁、選「預設內容」就會看到新的內容。")
 
 

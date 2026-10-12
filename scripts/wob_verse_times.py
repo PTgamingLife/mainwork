@@ -4,10 +4,10 @@
     pip install faster-whisper
     python scripts/wob_verse_times.py "C:\\路徑\\The_Wheels_On_The_Bus.mp3"
 
-    # 抓不準時換大一點的模型（較慢、較準）
-    python scripts/wob_verse_times.py "歌.mp3" --model medium.en
+    # 想快一點可換小模型（較快、較不準）
+    python scripts/wob_verse_times.py "歌.mp3" --model small.en
 
-第一次執行會自動下載模型（small.en 約 500MB）。
+第一次執行會自動下載模型（medium.en 約 1.5GB）。
 輸出最後的「貼給 Claude」那段，複製回對話即可。
 """
 import argparse
@@ -43,25 +43,46 @@ def wob_fmt(sec):
     return f"{int(sec // 60)}:{sec % 60:04.1f}"
 
 
-def wob_key_of(text):
-    """回傳這句歌詞屬於哪一段；同時命中多個時取最先出現的關鍵字。"""
+def wob_hit(text):
+    """回傳 (key, 是否完整句)。同時命中多個時取最先出現的關鍵字；
+    完整句 = 關鍵字後面還有動作（go/goes/say…），不是只有一句「the wheels on the bus」。"""
     low = text.lower()
     hits = []
     for key, pat in WOB_KEYWORDS:
         m = re.search(pat, low)
         if m:
             hits.append((m.start(), key))
-    return min(hits)[1] if hits else None
+    if not hits:
+        return None, False
+    key = min(hits)[1]
+    # 模型常在間奏幻聽出「the wheels on the bus」，只有主詞沒有動作的不算數
+    bare = re.fullmatch(r"\W*the \w+ on the bus\W*", low) is not None
+    return key, not bare
 
 
-def wob_find_verses(segments):
-    """segments: [(start, end, text)]。關鍵字換了就算新的一段；
+def wob_lines(words, gap=1.2):
+    """words: [(start, end, word)] → 依句尾標點或停頓切成一行一行 [(start, end, text)]。"""
+    lines, cur = [], []
+    for i, (start, end, word) in enumerate(words):
+        cur.append((start, end, word))
+        nxt = words[i + 1][0] if i + 1 < len(words) else None
+        # 「…on the bus, the horn on the bus…」：前半是幻聽的殘句，從第二個 the 另起一行
+        restart = (nxt is not None and word.strip().lower() == "bus,"
+                   and words[i + 1][2].strip().lower() == "the")
+        if re.search(r"[.!?]$", word.strip()) or nxt is None or nxt - end > gap or restart:
+            lines.append((cur[0][0], cur[-1][1], "".join(w for _, _, w in cur).strip()))
+            cur = []
+    return lines
+
+
+def wob_find_verses(lines):
+    """lines: [(start, end, text)]。關鍵字換了就算新的一段；
     沒有關鍵字的句子（例如 all through the town）跟著前一段。"""
     verses = []
     current = None
-    for start, _end, text in segments:
-        key = wob_key_of(text)
-        if not key or key == current:
+    for start, _end, text in lines:
+        key, full = wob_hit(text)
+        if not key or not full or key == current:
             continue
         verses.append((key, start, text.strip()))
         current = key
@@ -78,16 +99,16 @@ def wob_transcribe(path, model_name):
     print("辨識中…", flush=True)
     segs, info = model.transcribe(
         path, language="en", initial_prompt=WOB_PROMPT,
-        vad_filter=False, word_timestamps=False, condition_on_previous_text=True,
+        vad_filter=False, word_timestamps=True, condition_on_previous_text=False,
     )
-    out = [(s.start, s.end, s.text) for s in segs]
-    return out, info.duration
+    words = [(w.start, w.end, w.word) for s in segs for w in (s.words or [])]
+    return wob_lines(words), info.duration
 
 
 def main():
     ap = argparse.ArgumentParser(description="抓 Wheels on the Bus 段落時間")
     ap.add_argument("audio", help="歌曲音檔路徑（mp3/m4a/wav）")
-    ap.add_argument("--model", default="small.en", help="tiny.en / base.en / small.en / medium.en")
+    ap.add_argument("--model", default="medium.en", help="tiny.en / base.en / small.en / medium.en")
     args = ap.parse_args()
 
     segments, duration = wob_transcribe(args.audio, args.model)
