@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cut">
+<meta name="color-scheme" content="light">
+<title>公車上的成長</title>
+<link rel="stylesheet" href="wob.css">
+</head>
+<body>
+
+<!-- ① 設定頁 -->
+<section id="wob_setup" class="wob-page is-active">
+  <header class="wob-setup-head">
+    <h1>🚌 公車上的成長</h1>
+    <p>照片和影片只存在這台裝置，不會上傳到網路。</p>
+  </header>
+
+  <div class="wob-card">
+    <h2>1. 歌曲</h2>
+    <label class="wob-btn wob-btn-ghost">選擇音檔
+      <input id="wob_song_input" type="file" accept="audio/*" hidden>
+    </label>
+    <span id="wob_song_info" class="wob-muted">尚未選擇</span>
+  </div>
+
+  <div class="wob-card">
+    <h2>2. 照片與影片 <small>每個停 3 秒</small></h2>
+    <div class="wob-row">
+      <label class="wob-btn wob-btn-ghost">加入照片/影片
+        <input id="wob_media_input" type="file" accept="image/*,video/*" multiple hidden>
+      </label>
+      <button id="wob_sort_date" class="wob-btn wob-btn-ghost" type="button">依日期排序</button>
+      <button id="wob_clear" class="wob-btn wob-btn-ghost wob-danger" type="button">全部清除</button>
+    </div>
+    <p id="wob_media_info" class="wob-muted"></p>
+    <ol id="wob_grid" class="wob-grid"></ol>
+  </div>
+
+  <div class="wob-card">
+    <h2>3. 動作靈敏度</h2>
+    <div class="wob-row" role="radiogroup" id="wob_sens">
+      <label><input type="radio" name="wob_sens" value="0.12"> 低（要大動作）</label>
+      <label><input type="radio" name="wob_sens" value="0.08" checked> 中（3 歲建議）</label>
+      <label><input type="radio" name="wob_sens" value="0.05"> 高</label>
+    </div>
+  </div>
+
+  <button id="wob_go" class="wob-btn wob-btn-big" type="button" disabled>開始 ▶</button>
+</section>
+
+<!-- ②③④ 舞台：等待 / 播放 / 結尾共用 -->
+<section id="wob_stage" class="wob-page">
+  <div id="wob_scene" class="wob-scene">
+    <div class="wob-sun"></div>
+    <div class="wob-cloud wob-cloud-1"></div>
+    <div class="wob-cloud wob-cloud-2"></div>
+
+    <figure id="wob_frame" class="wob-frame">
+      <img id="wob_img" alt="">
+      <video id="wob_vid" muted playsinline preload="auto"></video>
+    </figure>
+
+    <p id="wob_lyric" class="wob-lyric"></p>
+
+    <div class="wob-hills"></div>
+    <div class="wob-road"><div class="wob-road-line"></div></div>
+    <div id="wob_bus_wrap" class="wob-bus-wrap">
+      <div id="wob_bubble" class="wob-bubble"></div>
+      <div id="wob_bus"></div>
+    </div>
+
+    <div class="wob-hud">
+      <div class="wob-energy" aria-label="能量"><div id="wob_energy_fill"></div></div>
+      <video id="wob_cam" class="wob-cam" muted playsinline autoplay></video>
+    </div>
+
+    <div id="wob_wait" class="wob-overlay">
+      <div class="wob-overlay-box">
+        <div class="wob-clap">👏</div>
+        <p class="wob-overlay-title">拍拍手，公車出發！</p>
+        <p id="wob_wait_hint" class="wob-muted">正在開啟鏡頭和麥克風…</p>
+        <button id="wob_skip" class="wob-btn wob-btn-ghost wob-small" type="button">家長：直接開始</button>
+      </div>
+    </div>
+
+    <div id="wob_move" class="wob-overlay wob-overlay-soft">
+      <p class="wob-overlay-title">動一動！💃</p>
+    </div>
+
+    <div id="wob_end" class="wob-overlay wob-end">
+      <p class="wob-overlay-title">到站囉！🎉</p>
+      <div id="wob_wall" class="wob-wall"></div>
+      <div class="wob-row wob-center">
+        <button id="wob_again" class="wob-btn wob-btn-big" type="button">再玩一次</button>
+        <button id="wob_back" class="wob-btn wob-btn-ghost" type="button">回設定</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="wob-store.js"></script>
+<script src="wob-detect.js"></script>
+<script src="wob-bus.js"></script>
+<script src="wob-setup.js"></script>
+<script src="wob-main.js"></script>
+</body>
+</html>
