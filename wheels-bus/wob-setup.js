@@ -1,5 +1,5 @@
 // wob_setup：歌曲（固定）、靈敏度、自己上傳照片的設定頁
-const WOB_SLOT_SEC = 3;
+const WOB_SLOT_SEC = 2;
 const WOB_SONG_URL = 'song.mp3';
 
 const wob_state = {

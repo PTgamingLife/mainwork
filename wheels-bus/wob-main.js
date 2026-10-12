@@ -159,7 +159,7 @@ const WOB_MOVE_COOLDOWN = 500;   // 兩次「動一下」至少間隔 ms
       wob_el.scene.classList.toggle('is-playing', on);
       wob_el.move.classList.toggle('is-on', !on);
 
-      if (isVid && vid.currentTime >= WOB_SLOT_SEC) vid.pause(); // 超過 3 秒截掉
+      if (isVid && vid.currentTime >= WOB_SLOT_SEC) vid.pause(); // 超過一格的秒數就截掉
 
       const t = a.currentTime, dur = wob_state.song.duration || a.duration || 0;
       const slot = Math.floor(t / WOB_SLOT_SEC);

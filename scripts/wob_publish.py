@@ -15,7 +15,7 @@
     WOB_ADMIN_TOKEN=<管理金鑰；資料庫 wob_admin_tokens 表只存它的 sha256>
 
 規則：
-  - 影片裁成前 3 秒、最長邊 1280、去掉聲音；不足 3 秒保留原長
+  - 影片裁成前 2 秒（WOB_SLOT_SEC）、最長邊 1280、去掉聲音；較短的保留原長
   - 照片轉 JPG、最長邊 1600、依 EXIF 轉正
   - 順序：檔名開頭是數字（例如 001_xxx.jpg）照數字排；其餘照拍攝日期
   - 每次執行會「整組取代」雲端上的預設內容
@@ -35,7 +35,7 @@ from datetime import datetime
 from pathlib import Path
 
 WOB_BUCKET = "wob_media"
-WOB_SLOT_SEC = 3
+WOB_SLOT_SEC = 2
 WOB_IMG_EXT = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp"}
 WOB_VID_EXT = {".mp4", ".mov", ".m4v", ".3gp", ".webm"}
 WOB_ROOT = Path(__file__).resolve().parent.parent
