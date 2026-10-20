@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>十神修行錄</title>
+  <meta name="description" content="用你的八字十神能量,給自己戒律、約束與誓言,每天看見成長。">
+  <meta name="theme-color" content="#1B2440">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/sg-style.css">
+</head>
+<body>
+  <!-- 水墨筆觸濾鏡 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="sg-brush" x="-10%" y="-40%" width="120%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.04 0.9" numOctaves="3" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="sg-brush-soft" x="-5%" y="-30%" width="110%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03 0.6" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="sg-wash" x="-30%" y="-30%" width="160%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="40"/>
+        <feGaussianBlur stdDeviation="6"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="sg-ink sg-ink-a" aria-hidden="true"></div>
+  <div class="sg-ink sg-ink-b" aria-hidden="true"></div>
+
+  <header class="sg-top">
+    <div class="sg-seal" aria-hidden="true">修</div>
+    <div>
+      <h1 class="sg-title">十神修行錄</h1>
+      <p class="sg-sub" id="sg-greet">以命為墨,以行為筆</p>
+    </div>
+  </header>
+
+  <main id="sg-main" class="sg-main" aria-live="polite"></main>
+
+  <nav class="sg-nav" id="sg-nav" hidden>
+    <button data-sg-tab="chart" aria-label="命盤"><span>盤</span>命盤</button>
+    <button data-sg-tab="vows" aria-label="三誓"><span>誓</span>三誓</button>
+    <button data-sg-tab="today" aria-label="今日"><span>今</span>今日</button>
+    <button data-sg-tab="growth" aria-label="修行"><span>行</span>修行</button>
+  </nav>
+
+  <div class="sg-toast" id="sg-toast" role="status" hidden></div>
+
+  <script type="module" src="./js/sg-app.js"></script>
+</body>
+</html>
