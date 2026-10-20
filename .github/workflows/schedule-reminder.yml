@@ -1,9 +1,12 @@
-name: Daily Schedule Reminder — 9 AM LINE
+name: Daily Schedule Reminder + Roast — 6 AM LINE
 
 on:
   schedule:
     - cron: '0 22 * * *'  # 06:00 Taiwan time (UTC+8)
   workflow_dispatch:
+
+permissions:
+  contents: write  # daily_roast 要把當天那筆寫回 LOG.md
 
 jobs:
   send-reminder:
@@ -32,3 +35,24 @@ jobs:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+
+      - name: Send daily roast (三條建議)
+        run: python scripts/daily_roast.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Commit today's roast to LOG.md
+        run: |
+          if [ -z "$(git status --porcelain .claude/skills/daily-roast/LOG.md)" ]; then
+            echo "LOG.md 沒有變動，略過"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude/skills/daily-roast/LOG.md
+          git commit -m "daily-roast: $(TZ=Asia/Taipei date +%F) 三箭紀錄 [skip ci]"
+          git push
