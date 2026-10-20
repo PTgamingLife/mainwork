@@ -20,3 +20,7 @@ scripts/credentials.json
 .playwright-mcp/
 .claude-flow/
 supabase/.temp/
+
+# autoedit 工作目錄的影片素材/成品(只追蹤 plan 與 runner)
+scripts/autoedit/work_broll/*.mp4
+scripts/autoedit/work_broll/_plan_effective.json
