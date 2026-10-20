@@ -2,6 +2,7 @@
 -- 呼叫者盤點(2026-10-20):
 --   ipapp_add_credits / ipapp_use_credit  → 只有 Edge Function ipapp-generate / ipapp-admin(service_role)
 --   brain_ingest_knowledge / brain_match_knowledge → 只有 Edge Function brain(service_role)
+--   brain_nodes / brain_similarity_edges → 無呼叫者(前端已停用)
 --   amp_*_push_once → 只由 pg_cron(postgres)排程呼叫
 --   broll_bump_usage → broll_usages 的 trigger 函式,不該被 RPC 呼叫
 --   ipapp_leaderboard → ip-studio/leaderboard.html,登入後呼叫(authenticated)
@@ -17,6 +18,9 @@ revoke execute on function public.brain_ingest_knowledge(text, text, text[], dou
 revoke execute on function public.brain_match_knowledge(double precision[], integer, text[]) from public, anon, authenticated;
 grant execute on function public.brain_ingest_knowledge(text, text, text[], double precision[], uuid, text, text) to service_role;
 grant execute on function public.brain_match_knowledge(double precision[], integer, text[]) to service_role;
+-- 知識圖譜前端已停用
+revoke execute on function public.brain_nodes() from public, anon, authenticated;
+revoke execute on function public.brain_similarity_edges(double precision) from public, anon, authenticated;
 
 revoke execute on function public.amp_wish_push_once() from public, anon, authenticated;
 revoke execute on function public.amp_luck_push_once() from public, anon, authenticated;
