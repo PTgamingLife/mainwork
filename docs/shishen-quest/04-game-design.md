@@ -52,16 +52,15 @@
 | Edge Function `sg-api`(load / save / delete,驗 LIFF ID token) | ✅ 已部署 |
 | Edge Function `sg-push`(morning / evening Flex 推播) | ✅ 已部署;呼叫鏈驗證到「缺 LINE token」為止 |
 | `public.sg_push_call(mode)`(pg_cron → sg-push) | ✅ 已建立 |
-| pg_cron 排程(台北 07:30 / 21:00) | ⏸ 等 LINE 憑證設定後再下 |
+| pg_cron 排程(台北 07:30 / 21:00) | ✅ 已啟用(`sg-push-morning`、`sg-push-evening`) |
+| LINE 官方帳號 | 沿用「AI專注訓練器」,LIFF 沿用 `focus_mission_daily`(2011684838-Jdzxtrxn),覆蓋原內容 |
+| 圖文選單 `sg-setup-richmenu` | ✅ 已部署;等 `SG_LIFF_URL` 設好後執行 |
 | 前端雲端同步 | ✅ 登入 LINE 時自動同步;換裝置可從雲端還原;清除資料會一併刪除雲端紀錄 |
 
 ## 6. 上線還需要
 
-1. Supabase secrets:`SG_LIFF_CHANNEL_ID`、`SG_LINE_CHANNEL_ACCESS_TOKEN`、`SG_LIFF_URL`
-2. 新建 LIFF App(Endpoint URL = 網站網址),把 LIFF ID 填進 `shishen-quest/js/sg-app.js` 的 `SG_LIFF_ID`
-3. 網站部署(GitHub Pages)
-4. 下 pg_cron 排程:
-   ```sql
-   select cron.schedule('sg-push-morning', '30 23 * * *', $$select public.sg_push_call('morning')$$);
-   select cron.schedule('sg-push-evening', '0 13 * * *',  $$select public.sg_push_call('evening')$$);
-   ```
+1. Supabase secret `SG_LIFF_URL` = `https://liff.line.me/2011684838-Jdzxtrxn`
+2. LIFF `focus_mission_daily` 的 Endpoint URL 改成 `https://ptgaminglife.github.io/mainwork/shishen-quest/`
+3. 執行 `sg-setup-richmenu` 換上十神圖文選單(會刪除 OA 現有選單)
+
+本機試玩:網址加 `?mock=1` 可跳過 LINE 登入。

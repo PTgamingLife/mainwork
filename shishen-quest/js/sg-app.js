@@ -9,7 +9,7 @@ import {
 import { SG_ASSESS } from "./sg-data.js";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
-const SG_LIFF_ID = "";
+const SG_LIFF_ID = "2011684838-Jdzxtrxn";
 const SG_API_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/sg-api";
 
 const $main = document.getElementById("sg-main");
@@ -179,7 +179,7 @@ $nav.addEventListener("click", (e) => {
 });
 
 async function sgInitLiff() {
-  if (!SG_LIFF_ID) return;
+  if (!SG_LIFF_ID || new URLSearchParams(location.search).has("mock")) return; // ?mock=1 = 單機試玩
   try {
     await new Promise((ok, fail) => {
       const s = document.createElement("script");
