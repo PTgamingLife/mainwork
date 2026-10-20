@@ -8,8 +8,9 @@ import {
 } from "./sg-view.js";
 import { SG_ASSESS } from "./sg-data.js";
 
-// 上線時填入 LINE Developers 的 LIFF ID;空字串 = 單機模式
+// LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "";
+const SG_API_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/sg-api";
 
 const $main = document.getElementById("sg-main");
 const $nav = document.getElementById("sg-nav");
@@ -18,6 +19,28 @@ let sgState = sgLoad();
 let sgView = "chart";
 let sgReroll = 0;
 let sgLiff = null;
+let sgSyncTimer = 0;
+
+async function sgApi(action, extra = {}) {
+  const idToken = sgLiff?.getIDToken?.();
+  if (!idToken) return null;
+  const res = await fetch(SG_API_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, idToken, ...extra }),
+  });
+  if (!res.ok) throw new Error(`sg_api_${res.status}`);
+  return await res.json();
+}
+
+// 存本機,登入 LINE 時再同步到雲端(合併 1 秒內的多次變更)
+function sgPersist() {
+  sgSave(sgState);
+  if (!sgLiff || !sgState.sg_profile?.sg_consent_at) return;
+  clearTimeout(sgSyncTimer);
+  sgSyncTimer = setTimeout(() => {
+    sgApi("save", { state: sgState }).catch(() => sgToast("雲端同步失敗,資料已先存在手機"));
+  }, 1000);
+}
 
 function sgToast(msg) {
   $toast.textContent = msg;
@@ -61,6 +84,7 @@ function sgHandleBirth(form) {
   const unknown = fd.get("sg_hour_unknown") === "on";
   const time = String(fd.get("sg_birth_time") || "12:00");
   if (!name) return sgToast("請填暱稱");
+  if (fd.get("sg_consent") !== "on") return sgToast("請先閱讀並同意個人資料說明");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sgToast("請選擇出生日期");
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
@@ -69,8 +93,8 @@ function sgHandleBirth(form) {
   } catch {
     return sgToast("日期需在 1900–2100 年之間");
   }
-  sgState.sg_profile = { sg_nickname: name.slice(0, 12), sg_birth_date: date, sg_birth_time: unknown ? null : time };
-  sgSave(sgState);
+  sgState.sg_profile = { sg_nickname: name.slice(0, 12), sg_birth_date: date, sg_birth_time: unknown ? null : time, sg_consent_at: new Date().toISOString() };
+  sgPersist();
   sgGo("chart");
 }
 
@@ -83,7 +107,7 @@ function sgHandleAssess(form) {
     answers[k] = v;
   }
   sgState.sg_assess = answers;
-  sgSave(sgState);
+  sgPersist();
   sgToast("自評完成,雷達圖已疊上現況");
   sgGo("chart");
 }
@@ -92,7 +116,7 @@ function sgHandleOath(form) {
   const text = String(new FormData(form).get("sg_oath") || "").trim();
   if (text.length < 4) return sgToast("誓言至少寫 4 個字");
   sgStartVows(sgState, sgSuggestVows(sgState, sgReroll), text);
-  sgSave(sgState);
+  sgPersist();
   sgToast("三誓已立,明早記得回來打卡");
   sgGo("today");
 }
@@ -106,7 +130,7 @@ function sgHandleCheckin(form) {
     sg_oath_pct: Math.min(100, Math.max(0, Number(fd.get("sg_oath_pct")) || 0)),
     sg_note: String(fd.get("sg_note") || "").trim().slice(0, 60),
   });
-  sgSave(sgState);
+  sgPersist();
   const after = sgRealm(sgState).cur.sg_name;
   sgToast(after !== before ? `境界晉升:${after}!` : earnedAmulet ? `連續 ${streak} 天,獲得護符一枚` : `已落印,連續 ${streak} 天`);
   sgGo("growth");
@@ -141,9 +165,12 @@ $main.addEventListener("click", (e) => {
   if (go) return sgGo(go.dataset.sgGo);
   const act = e.target.closest("[data-sg-act]")?.dataset.sgAct;
   if (act === "reroll") { sgReroll += 1; sgRender(); }
-  if (act === "renew") { sgState.sg_vows = null; sgReroll = 0; sgSave(sgState); sgGo("vows"); }
+  if (act === "renew") { sgState.sg_vows = null; sgReroll = 0; sgPersist(); sgGo("vows"); }
   if (act === "share") sgShare();
-  if (act === "reset" && confirm("確定要清除所有資料、重新排盤嗎?")) { sgState = sgEmptyState(); sgSave(sgState); sgGo("chart"); }
+  if (act === "reset" && confirm("確定要清除所有資料(含雲端紀錄)、重新排盤嗎?")) {
+    sgApi("delete").catch(() => {});
+    sgState = sgEmptyState(); sgSave(sgState); sgGo("chart");
+  }
 });
 
 $nav.addEventListener("click", (e) => {
@@ -161,7 +188,18 @@ async function sgInitLiff() {
       document.head.appendChild(s);
     });
     await window.liff.init({ liffId: SG_LIFF_ID });
+    if (!window.liff.isLoggedIn()) { window.liff.login(); return; }
     sgLiff = window.liff;
+    const r = await sgApi("load");
+    if (r?.state?.sg_chart) {
+      // 雲端有資料 → 以雲端為準(換手機也能接續)
+      sgState = { ...sgEmptyState(), ...r.state };
+      sgSave(sgState);
+      sgView = sgState.sg_vows ? "today" : "chart";
+      sgRender();
+    } else if (sgState.sg_profile?.sg_consent_at) {
+      sgPersist(); // 先在單機玩過 → 上傳
+    }
   } catch { /* LIFF 失敗時退回單機模式 */ }
 }
 

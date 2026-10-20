@@ -18,7 +18,14 @@ export function sgViewOnboard() {
       <label class="sg-field"><span>出生日期(國曆)</span><input class="sg-input" type="date" name="sg_birth_date" min="1900-01-01" max="2100-12-31" required></label>
       <label class="sg-field"><span>出生時間</span><input class="sg-input" type="time" name="sg_birth_time" value="12:00"></label>
       <label class="sg-check"><input type="checkbox" name="sg_hour_unknown"> 不知道出生時辰(只排三柱)</label>
-      <p class="sg-muted">以台灣時區(UTC+8)計算;23:00 後出生算隔日子時。資料只存在你的裝置。</p>
+      <p class="sg-muted">以台灣時區(UTC+8)計算;23:00 後出生算隔日子時。</p>
+      <details class="sg-consent"><summary>個人資料蒐集說明</summary>
+        <p>1. 蒐集項目:暱稱、出生日期與時間、LINE 使用者 ID、自評與打卡紀錄。</p>
+        <p>2. 用途:排盤、產生修行任務、每日 LINE 提醒與成長紀錄,不做其他用途,不提供第三方。</p>
+        <p>3. 期間:至你刪除資料為止。可隨時在「命盤」頁按「重新排盤(清除資料)」刪除全部紀錄。</p>
+        <p>4. 性質:命理內容為自我覺察與娛樂參考,不構成醫療、心理或財務建議。</p>
+      </details>
+      <label class="sg-check"><input type="checkbox" name="sg_consent" required> 我已閱讀並同意上述個人資料蒐集與使用</label>
       <button class="sg-btn" type="submit">排盤</button>
     </form>
   </div>`;

@@ -44,16 +44,24 @@
 | 承諾 | 誓言可以分享給 LINE 好友見證 | 承諾裝置 |
 | v2 | 天干五合配對「結盟」、同好群組挑戰 | 社會連結 |
 
-## 5. 資料結構(Supabase 草稿:`shishen-quest/sql/sg_schema.sql`)
+## 5. 後端(2026-10-20 已建立,Supabase 專案 heart-cards)
 
-- `sg_users`:sg_line_uid、sg_nickname、sg_birth_at、sg_hour_known
-- `sg_charts`:sg_pillars、sg_scores(jsonb)
-- `sg_assess`:sg_scores(jsonb)、sg_taken_at
-- `sg_vows`:sg_kind(precept/bond/oath)、sg_god、sg_text、sg_start、sg_end、sg_status
-- `sg_checkins`:sg_date、sg_precept_ok、sg_bond_ok、sg_oath_pct、sg_note
+| 元件 | 狀態 |
+|---|---|
+| 資料表 `sg_users / sg_charts / sg_assess / sg_vows / sg_checkins / sg_push_auth` | ✅ 已套用(`supabase/migrations/20261020000100_shishen_quest.sql`),全表 RLS、無 anon 權限 |
+| Edge Function `sg-api`(load / save / delete,驗 LIFF ID token) | ✅ 已部署 |
+| Edge Function `sg-push`(morning / evening Flex 推播) | ✅ 已部署;呼叫鏈驗證到「缺 LINE token」為止 |
+| `public.sg_push_call(mode)`(pg_cron → sg-push) | ✅ 已建立 |
+| pg_cron 排程(台北 07:30 / 21:00) | ⏸ 等 LINE 憑證設定後再下 |
+| 前端雲端同步 | ✅ 登入 LINE 時自動同步;換裝置可從雲端還原;清除資料會一併刪除雲端紀錄 |
 
-## 6. 上線前還需要你
+## 6. 上線還需要
 
-1. LINE Official Account + LIFF ID(LINE Developers 後台)
-2. 同意建立 Supabase 資料表(migration)與部署推播 Edge Function
-3. 個資條款:出生時間屬於個人資料,需要同意文字
+1. Supabase secrets:`SG_LIFF_CHANNEL_ID`、`SG_LINE_CHANNEL_ACCESS_TOKEN`、`SG_LIFF_URL`
+2. 新建 LIFF App(Endpoint URL = 網站網址),把 LIFF ID 填進 `shishen-quest/js/sg-app.js` 的 `SG_LIFF_ID`
+3. 網站部署(GitHub Pages)
+4. 下 pg_cron 排程:
+   ```sql
+   select cron.schedule('sg-push-morning', '30 23 * * *', $$select public.sg_push_call('morning')$$);
+   select cron.schedule('sg-push-evening', '0 13 * * *',  $$select public.sg_push_call('evening')$$);
+   ```

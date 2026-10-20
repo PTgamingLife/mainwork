@@ -168,3 +168,7 @@ body {
   background: var(--sg-ink); color: var(--sg-gold-soft); padding: 10px 18px; border-radius: 999px;
   font-size: 14px; max-width: calc(100% - 32px); box-shadow: 0 8px 20px -8px rgba(0,0,0,.4);
 }
+
+.sg-consent { font-size: 13px; color: var(--sg-muted); margin: 8px 0; }
+.sg-consent summary { cursor: pointer; color: var(--sg-ink); font-weight: 600; }
+.sg-consent p { margin: 4px 0; line-height: 1.6; }
