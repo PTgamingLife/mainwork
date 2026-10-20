@@ -20,16 +20,18 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
+// 失敗原因寫進 log(不含 token 本身),方便查是哪一段沒設好
 async function verifyIdToken(idToken: string): Promise<string> {
-  if (!idToken || !LIFF_CHANNEL_ID) throw new Error("UNAUTHORIZED");
+  if (!LIFF_CHANNEL_ID) throw new Error("NO_CHANNEL_ID");
+  if (!idToken) throw new Error("NO_ID_TOKEN");
   const res = await fetch("https://api.line.me/oauth2/v2.1/verify", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ id_token: idToken, client_id: LIFF_CHANNEL_ID }),
   });
-  if (!res.ok) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error(`LINE_VERIFY_${res.status}:${(await res.text()).slice(0, 120)}`);
   const p = await res.json();
-  if (!p?.sub || p.aud !== LIFF_CHANNEL_ID) throw new Error("UNAUTHORIZED");
+  if (!p?.sub || p.aud !== LIFF_CHANNEL_ID) throw new Error("AUD_MISMATCH");
   return p.sub;
 }
 
@@ -187,7 +189,11 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "BAD_JSON" }, 400); }
   let uid: string;
-  try { uid = await verifyIdToken(String(body?.idToken ?? "")); } catch { return json({ error: "UNAUTHORIZED" }, 401); }
+  try { uid = await verifyIdToken(String(body?.idToken ?? "")); } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e);
+    console.error("sg-api auth", reason);
+    return json({ error: "UNAUTHORIZED", reason: reason.split(":")[0] }, 401);
+  }
   try {
     if (body.action === "load") return json({ state: await loadState(uid) });
     if (body.action === "save") { await saveState(uid, body.state); return json({ ok: true }); }
