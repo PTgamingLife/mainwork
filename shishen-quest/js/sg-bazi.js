@@ -124,17 +124,18 @@ export function sgGodOf(dayStem, otherStem) {
   return SG_GOD_BY_REL[rel][samePolarity ? 0 : 1];
 }
 
-// 十格分數(百分比,總和 100)
+// 十格原始能量:每格基礎 0.5(五能量各 1);天干 ×0.2、地支藏干依本中餘氣權重、月令 ×1.5;日干不計
+export const SG_STEM_WEIGHT = 0.2;
+export const SG_GOD_BASE = 0.5;
 function sgGodScores(dayStem, pillars) {
-  const raw = Object.fromEntries(SG_GOD_KEYS.map((k) => [k, 0]));
+  const raw = Object.fromEntries(SG_GOD_KEYS.map((k) => [k, SG_GOD_BASE]));
   pillars.forEach((p, i) => {
     if (!p) return;
-    if (i !== 2) raw[sgGodOf(dayStem, p.stem)] += 1; // 日干不計
-    const mult = i === 1 ? 1.5 : 1; // 月令加權
+    if (i !== 2) raw[sgGodOf(dayStem, p.stem)] += SG_STEM_WEIGHT;
+    const mult = i === 1 ? 1.5 : 1;
     SG_HIDDEN[p.branch].forEach(([s, w]) => { raw[sgGodOf(dayStem, s)] += w * mult; });
   });
-  const total = Object.values(raw).reduce((a, b) => a + b, 0) || 1;
-  return Object.fromEntries(SG_GOD_KEYS.map((k) => [k, Math.round((raw[k] / total) * 1000) / 10]));
+  return Object.fromEntries(SG_GOD_KEYS.map((k) => [k, Math.round(raw[k] * 100) / 100]));
 }
 
 // 驛馬:申子辰馬在寅、寅午戌馬在申、巳酉丑馬在亥、亥卯未馬在巳(依年支、日支)
@@ -145,13 +146,19 @@ function sgYima(bases, pillars) {
   return horses.filter((h) => branches.includes(h)).map((h) => SG_BRANCHES[h]);
 }
 
-// 五能量彙總
+// 五能量:0 創造力 1 生產力 2 制約力 3 解析力 4 群眾力
 export const SG_ENERGY_OF = {
-  bi_jian: 0, jie_cai: 0, shi_shen: 1, shang_guan: 1, zheng_cai: 2,
-  pian_cai: 2, zheng_guan: 3, qi_sha: 3, zheng_yin: 4, pian_yin: 4,
+  shi_shen: 0, shang_guan: 0, zheng_cai: 1, pian_cai: 1, zheng_guan: 2,
+  qi_sha: 2, zheng_yin: 3, pian_yin: 3, bi_jian: 4, jie_cai: 4,
 };
-export function sgEnergyTotals(scores) {
+export function sgEnergyTotals(gods) {
   const out = [0, 0, 0, 0, 0];
-  for (const [k, v] of Object.entries(scores)) out[SG_ENERGY_OF[k]] += v;
-  return out.map((v) => Math.round(v * 10) / 10);
+  for (const [k, v] of Object.entries(gods)) out[SG_ENERGY_OF[k]] += v;
+  return out.map((v) => Math.round(v * 100) / 100);
+}
+
+// 轉成百分比(圖表用)
+export function sgPercent(values) {
+  const total = values.reduce((a, b) => a + b, 0) || 1;
+  return values.map((v) => Math.round((v / total) * 1000) / 10);
 }
