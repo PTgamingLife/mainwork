@@ -1,13 +1,13 @@
 // 十神修行錄 — 控制器
 import { sgCalcChart } from "./sg-bazi.js";
 import {
-  sgLoad, sgSave, sgEmptyState, sgStartWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
+  sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
+  sgFallbackOptions, sgEnergies,
 } from "./sg-store.js";
 import {
-  sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth, sgDeltaChips,
+  sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
 } from "./sg-view.js";
-import { SG_OATH_TYPES, SG_WEEKLY_QUESTIONS } from "./sg-data.js";
-import { sgOathDelta } from "./sg-store.js";
+import { SG_WEEKLY_QUESTIONS } from "./sg-data.js";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";
@@ -18,7 +18,7 @@ const $nav = document.getElementById("sg-nav");
 const $toast = document.getElementById("sg-toast");
 let sgState = sgLoad();
 let sgView = "chart";
-const sgUi = { oathType: 0, precept: 0 };
+const sgUi = { options: null, oathWish: "", preceptWish: "", loading: false };
 let sgLiff = null;
 let sgSyncTimer = 0;
 
@@ -100,11 +100,34 @@ function sgHandleBirth(form) {
   sgGo("chart");
 }
 
+// ① 寫下想法 → AI 整理(未登入 LINE 或 AI 失敗時用系統建議)
+async function sgHandleWish(form) {
+  const fd = new FormData(form);
+  sgUi.oathWish = String(fd.get("sg_oath_wish") || "").trim();
+  sgUi.preceptWish = String(fd.get("sg_precept_wish") || "").trim();
+  if (sgUi.oathWish.length < 2) return sgToast("請先寫下你想立下的誓言");
+  sgUi.loading = true; sgRender();
+  try {
+    if (!sgLiff) throw new Error("離線模式");
+    clearTimeout(sgSyncTimer);
+    await sgApi("save", { state: sgState }); // 確保雲端已有資料列(AI 次數記在上面)
+    const r = await sgApi("suggest", { oath_wish: sgUi.oathWish, precept_wish: sgUi.preceptWish, energies: sgEnergies(sgState) });
+    const o = r.options;
+    if (!(o?.oaths?.length && o?.precepts?.length && o?.bonds?.length)) throw new Error("AI 回傳不完整");
+    sgUi.options = o;
+  } catch (e) {
+    sgUi.options = { ...sgFallbackOptions(sgState, sgUi.oathWish), fallback: e.message === "AI_LIMIT" ? "今天的 5 次已用完" : e.message };
+  }
+  sgUi.loading = false;
+  sgRender();
+}
+
+// ② 三類各選一個 → 落款
 function sgHandleVow(form) {
   const fd = new FormData(form);
-  const text = String(fd.get("sg_oath") || "").trim();
-  if (text.length < 4) return sgToast("誓言至少寫 4 個字");
-  sgStartWeek(sgState, Number(fd.get("sg_precept")) || 0, Number(fd.get("sg_oath_type")) || 0, text);
+  const pick = { oath: Number(fd.get("sg_oath")) || 0, precept: Number(fd.get("sg_precept")) || 0, bond: Number(fd.get("sg_bond")) || 0 };
+  sgStartWeek(sgState, sgUi.options, pick);
+  sgUi.options = null;
   sgPersist("vows");
   sgToast("已落款立誓,第一週修行開始");
   sgGo("today");
@@ -154,21 +177,13 @@ async function sgShare() {
 
 $main.addEventListener("submit", (e) => {
   e.preventDefault();
-  const handlers = { "sg-form-birth": sgHandleBirth, "sg-form-vow": sgHandleVow, "sg-form-checkin": sgHandleCheckin, "sg-form-review": sgHandleReview };
+  const handlers = { "sg-form-birth": sgHandleBirth, "sg-form-wish": sgHandleWish, "sg-form-vow": sgHandleVow, "sg-form-checkin": sgHandleCheckin, "sg-form-review": sgHandleReview };
   handlers[e.target.id]?.(e.target);
 });
 
 $main.addEventListener("input", (e) => {
   const out = { sg_oath_pct: "sg-pct-out", sg_score: "sg-score-out" }[e.target.name];
   if (out) document.getElementById(out).textContent = e.target.value;
-  if (e.target.name === "sg_precept") sgUi.precept = Number(e.target.value);
-  if (e.target.name === "sg_oath_type") {
-    // 只換誓言區的提示,不重畫整頁(保留已輸入的文字)
-    sgUi.oathType = Number(e.target.value);
-    const t = SG_OATH_TYPES[sgUi.oathType];
-    document.getElementById("sg-oath-chips").innerHTML = sgDeltaChips(sgOathDelta(sgUi.oathType));
-    e.target.form.sg_oath.placeholder = t.sg_example;
-  }
 });
 
 $main.addEventListener("click", (e) => {
@@ -176,6 +191,11 @@ $main.addEventListener("click", (e) => {
   if (go) return sgGo(go.dataset.sgGo);
   const act = e.target.closest("[data-sg-act]")?.dataset.sgAct;
   if (act === "share") sgShare();
+  if (act === "rewish") { sgUi.options = null; sgRender(); }
+  if (act === "revow" && confirm("重新立誓會結束本週的戒律、約束、誓言(已打卡紀錄保留),確定嗎?")) {
+    sgResetWeek(sgState); sgUi.options = null; sgPersist(); sgGo("chart");
+    setTimeout(() => document.getElementById("sg-form-wish")?.scrollIntoView({ behavior: "smooth" }), 100);
+  }
   if (act === "reset" && confirm("確定要清除所有資料(含雲端紀錄)、重新排盤嗎?")) {
     if (sgLiff) sgApi("delete").catch(() => {});
     sgState = sgEmptyState(); sgSave(sgState); sgGo("chart");

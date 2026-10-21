@@ -1,11 +1,11 @@
 // 十神修行錄 — 狀態與規則(本機 localStorage;登入 LINE 時由 sg-app 同步到雲端)
 import { sgEnergyTotals } from "./sg-bazi.js";
 import {
-  SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_TYPES, SG_ANGELS, SG_REALMS,
+  SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
 } from "./sg-data.js";
 
 const SG_KEY = "sg_state_v2";
-export const SG_STEP = 0.1;        // 每項任務完成一週,能量變化 ±0.1
+export const SG_STEP = 0.1;        // 每項任務完成一週,對應能量 +0.1(只加不扣)
 export const SG_WEEK_DAYS = 7;
 export const SG_PASS_DAYS = 5;     // 7 天內做到 5 天算完成
 const sgMother = (e) => (e + 4) % 5;   // 生 e 的能量
@@ -48,9 +48,8 @@ export function sgEnergies(state) {
   return sgBaseEnergies(state).map((v, i) => sgRound(Math.max(0.1, v + (state.sg_evolved?.[i] || 0))));
 }
 export function sgStrongWeak(values) {
-  let s = 0, w = 0;
-  values.forEach((v, i) => { if (v > values[s]) s = i; if (v < values[w]) w = i; });
-  return { s, w };
+  const idx = [0, 1, 2, 3, 4].sort((a, b) => values[a] - values[b]);
+  return { s: idx[4], w: idx[0], w2: idx[1] };
 }
 
 const sgDelta = (pairs) => {
@@ -73,38 +72,43 @@ export function sgInsight(state) {
   };
 }
 
-// ---- 戒律:由最弱制最旺,三個選項 ----
-export function sgPreceptOptions(state) {
-  const { s, w } = sgStrongWeak(sgEnergies(state));
-  return SG_WEAK_METHODS[w].map((m) => ({
-    sg_text: `${SG_OVERUSE_SCENE[s]},${m}。`,
-    sg_delta: sgDelta([[s, -SG_STEP], [w, SG_STEP]]),
-  }));
+// ---- 戒律、約束、誓言(只加能量,不扣)----
+// 戒律:用最弱的能量節制最旺 → 最弱 +0.1;約束:補第二弱 +0.1;誓言:誓言所需的能量 +0.1
+export const sgUp = (e) => sgDelta([[e, SG_STEP]]);
+
+export function sgOathEnergy(text, fallback) {
+  const i = SG_OATH_KEYWORDS.findIndex((re) => re.test(text));
+  return i >= 0 ? i : fallback;
 }
 
-// ---- 約束:補最弱,消耗生它的能量 ----
-export function sgBondSuggestion(state) {
-  const { w } = sgStrongWeak(sgEnergies(state));
-  return { sg_energy: w, sg_text: SG_BONDS[w], sg_delta: sgDelta([[w, SG_STEP], [sgMother(w), -SG_STEP]]) };
+// AI 無法使用時的固定選項(格式與 AI 回傳相同)
+export function sgFallbackOptions(state, oathWish) {
+  const { s, w, w2 } = sgStrongWeak(sgEnergies(state));
+  const t = oathWish.trim().slice(0, 50);
+  const e = sgOathEnergy(t, w);
+  return {
+    s, w, w2,
+    oaths: [`30 天內完成:${t}`, `30 天內每週推進一步:${t}`, `30 天內完成第一個可驗收的成果:${t}`].map((text) => ({ text, energy: e })),
+    precepts: SG_WEAK_METHODS[w].map((m) => ({ text: `${SG_OVERUSE_SCENE[s]},${m}。` })),
+    bonds: SG_BONDS[w2].map((text) => ({ text })),
+  };
 }
 
-// ---- 誓言:把「生目標的能量」轉移到目標 ----
-export function sgOathDelta(typeIdx) {
-  const t = SG_OATH_TYPES[typeIdx].sg_energy;
-  return sgDelta([[sgMother(t), -SG_STEP], [t, SG_STEP]]);
-}
-
-export function sgStartWeek(state, preceptIdx, oathType, oathText) {
+// 依選擇開始一週;opts 為 AI 或備案選項,pick = { oath, precept, bond } 索引
+export function sgStartWeek(state, opts, pick) {
   const today = sgDateStr();
-  const precept = sgPreceptOptions(state)[preceptIdx];
+  const oath = opts.oaths[pick.oath];
   state.sg_week = {
     sg_start: today,
     sg_end: sgAddDays(today, SG_WEEK_DAYS - 1),
-    sg_precept: precept,
-    sg_bond: sgBondSuggestion(state),
-    sg_oath: { sg_type: oathType, sg_text: oathText.trim().slice(0, 80), sg_delta: sgOathDelta(oathType), sg_pct: 0 },
+    sg_precept: { sg_text: opts.precepts[pick.precept].text, sg_energy: opts.w, sg_delta: sgUp(opts.w) },
+    sg_bond: { sg_text: opts.bonds[pick.bond].text, sg_energy: opts.w2, sg_delta: sgUp(opts.w2) },
+    sg_oath: { sg_text: oath.text.slice(0, 80), sg_energy: oath.energy, sg_delta: sgUp(oath.energy), sg_pct: 0 },
   };
 }
+
+// 重新立誓:放棄本週(已打卡的紀錄保留)
+export function sgResetWeek(state) { state.sg_week = null; }
 
 export function sgTotalDelta(week) {
   return [0, 1, 2, 3, 4].map((i) => sgRound(week.sg_precept.sg_delta[i] + week.sg_bond.sg_delta[i] + week.sg_oath.sg_delta[i]));
@@ -162,7 +166,8 @@ export function sgSubmitReview(state, answers) {
   };
   const applied = [0, 0, 0, 0, 0];
   for (const k of Object.keys(passed)) {
-    if (passed[k]) wk[k].sg_delta.forEach((v, i) => { applied[i] = sgRound(applied[i] + v); });
+    // 只加不扣(舊版存檔可能含負值,一律略過)
+    if (passed[k]) wk[k].sg_delta.forEach((v, i) => { if (v > 0) applied[i] = sgRound(applied[i] + v); });
   }
   const before = sgEnergies(state);
   state.sg_evolved = state.sg_evolved.map((v, i) => sgRound(v + applied[i]));

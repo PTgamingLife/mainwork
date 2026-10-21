@@ -4,17 +4,23 @@
 // v2:整份遊戲狀態存在 sg_users.sg_state(jsonb);立誓時(notify=vows)推一則 LINE 確認訊息。
 //
 // secrets:
-//   SG_LIFF_CHANNEL_ID            LINE Login channel ID(驗 ID token 的 aud)
 //   SG_LINE_CHANNEL_ACCESS_TOKEN  推立誓確認訊息
 //   SG_LIFF_URL                   確認訊息上的按鈕連結
+//   OPENAI_API_KEY / OPENAI_TEXT_MODEL  AI 整理立誓選項(每人每天 5 次)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 由 Supabase 自動注入
 
-const LIFF_CHANNEL_ID = Deno.env.get("SG_LIFF_CHANNEL_ID") ?? "";
+// LIFF 所在的 LINE Login 頻道(AIbot_focus)。頻道 ID 是公開資訊,直接寫死,
+// 避免 secret 填成 Messaging API 頻道而出現「Invalid IdToken Audience」。
+const LIFF_CHANNEL_ID = "2011684838";
 const LINE_TOKEN = Deno.env.get("SG_LINE_CHANNEL_ACCESS_TOKEN") ?? "";
 const LIFF_URL = Deno.env.get("SG_LIFF_URL") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MAX_STATE_BYTES = 200_000;
+const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
+const TEXT_MODEL = Deno.env.get("OPENAI_TEXT_MODEL") || "gpt-5-mini";
+const AI_DAILY_LIMIT = 5;
+const ENERGY_NAMES = ["創造力", "生產力", "制約力", "解析力", "群眾力"];
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -77,6 +83,79 @@ async function saveState(uid: string, s: any) {
     }),
   });
   if (!res.ok) throw new Error(`SB_UPSERT_${res.status}:${(await res.text()).slice(0, 160)}`);
+}
+
+// ---- AI 整理立誓選項 ----
+function todayTaipei(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+function rank(E: number[]) {
+  const idx = [0, 1, 2, 3, 4].sort((a, b) => E[a] - E[b]);
+  return { s: idx[4], w: idx[0], w2: idx[1] };
+}
+
+const OPTION_TEXT = { type: "string" }; // 長度由 pick() 截斷(嚴格模式不一定支援 minLength/maxLength)
+const SUGGEST_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["oaths", "precepts", "bonds"],
+  properties: {
+    oaths: { type: "array", items: { type: "object", additionalProperties: false, required: ["text", "energy"], properties: { text: OPTION_TEXT, energy: { type: "string", enum: ENERGY_NAMES } } } },
+    precepts: { type: "array", items: { type: "object", additionalProperties: false, required: ["text"], properties: { text: OPTION_TEXT } } },
+    bonds: { type: "array", items: { type: "object", additionalProperties: false, required: ["text"], properties: { text: OPTION_TEXT } } },
+  },
+};
+
+async function takeAiQuota(uid: string): Promise<boolean> {
+  const today = todayTaipei();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sg_users?sg_line_uid=eq.${encodeURIComponent(uid)}&select=sg_ai_date,sg_ai_count`, { headers: sbHeaders() });
+  const [row] = res.ok ? await res.json() : [];
+  if (!row) throw new Error("NO_USER");
+  const count = row.sg_ai_date === today ? row.sg_ai_count : 0;
+  if (count >= AI_DAILY_LIMIT) return false;
+  await fetch(`${SUPABASE_URL}/rest/v1/sg_users?sg_line_uid=eq.${encodeURIComponent(uid)}`, {
+    method: "PATCH", headers: sbHeaders("return=minimal"), body: JSON.stringify({ sg_ai_date: today, sg_ai_count: count + 1 }),
+  });
+  return true;
+}
+
+async function suggestVows(body: any) {
+  const E = Array.isArray(body.energies) && body.energies.length === 5 ? body.energies.map((v: unknown) => Number(v) || 0) : null;
+  if (!E) throw new Error("BAD_INPUT");
+  const oathWish = str(body.oath_wish, 200);
+  const preceptWish = str(body.precept_wish, 200);
+  if (oathWish.length < 2) throw new Error("BAD_INPUT");
+  const { s, w, w2 } = rank(E);
+  const system = `你是「十神修行錄」的修行教練。使用者的五種能量:${ENERGY_NAMES.map((n, i) => `${n} ${E[i].toFixed(2)}`).join("、")}。
+最旺:${ENERGY_NAMES[s]};最弱:${ENERGY_NAMES[w]};第二弱:${ENERGY_NAMES[w2]}。
+請產生三類選項,各剛好 3 個,使用繁體中文,每個 15–60 字,具體、可在日常執行、可被檢核:
+1. oaths(誓言):保留使用者誓言的原意,改寫成 30 天內可衡量的目標;energy 填這個誓言主要需要的能量。
+2. precepts(戒律,每日):參考使用者想遵守的戒律;寫法是「在${ENERGY_NAMES[s]}容易用過頭的情境,改用${ENERGY_NAMES[w]}的做法」,用最弱的能量節制最旺的能量。
+3. bonds(約束,7 天挑戰):補足「${ENERGY_NAMES[w2]}」,寫成 7 天內每天或累計可完成的具體挑戰。
+不要提八字、十神術語,不要醫療、投資或保證性承諾。`;
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: TEXT_MODEL, store: false,
+      input: [
+        { role: "system", content: [{ type: "input_text", text: system }] },
+        { role: "user", content: [{ type: "input_text", text: JSON.stringify({ 我想立下的誓言: oathWish, 我想遵守的戒律: preceptWish || "(未填)" }) }] },
+      ],
+      text: { format: { type: "json_schema", name: "sg_vow_options", strict: true, schema: SUGGEST_SCHEMA } },
+    }),
+  });
+  if (!res.ok) throw new Error(`OPENAI_${res.status}:${(await res.text()).slice(0, 200)}`);
+  const payload = await res.json();
+  let text = "";
+  for (const item of payload.output ?? []) for (const part of item.content ?? []) if (part.type === "output_text") text = part.text;
+  const out = JSON.parse(text);
+  const pick = (arr: any[]) => (Array.isArray(arr) ? arr : []).slice(0, 3).map((o) => ({ ...o, text: str(o.text, 80) })).filter((o) => o.text);
+  return {
+    s, w, w2,
+    oaths: pick(out.oaths).map((o: any) => ({ text: o.text, energy: Math.max(0, ENERGY_NAMES.indexOf(o.energy)) })),
+    precepts: pick(out.precepts).map((o: any) => ({ text: o.text })),
+    bonds: pick(out.bonds).map((o: any) => ({ text: o.text })),
+  };
 }
 
 // 立誓確認卡
@@ -144,6 +223,11 @@ Deno.serve(async (req) => {
       const pushed = body.notify === "vows" ? await pushVowCard(uid, body.state) : false;
       return json({ ok: true, pushed });
     }
+    if (body.action === "suggest") {
+      if (!OPENAI_KEY) return json({ error: "AI_UNAVAILABLE" }, 503);
+      if (!(await takeAiQuota(uid))) return json({ error: "AI_LIMIT" }, 429);
+      return json({ ok: true, options: await suggestVows(body) });
+    }
     if (body.action === "delete") {
       await fetch(`${SUPABASE_URL}/rest/v1/sg_users?sg_line_uid=eq.${encodeURIComponent(uid)}`, { method: "DELETE", headers: sbHeaders() });
       return json({ ok: true });
@@ -151,7 +235,8 @@ Deno.serve(async (req) => {
     return json({ error: "BAD_ACTION" }, 400);
   } catch (e) {
     console.error("sg-api", e);
-    const bad = e instanceof Error && e.message === "BAD_PROFILE";
-    return json({ error: bad ? "BAD_PROFILE" : "SERVER" }, bad ? 400 : 500);
+    const msg = e instanceof Error ? e.message : "";
+    const bad = ["BAD_PROFILE", "BAD_INPUT", "NO_USER"].includes(msg);
+    return json({ error: bad ? msg : "SERVER" }, bad ? 400 : 500);
   }
 });
