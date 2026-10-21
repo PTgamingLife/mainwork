@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/sg-style.css?v=20261021b">
+  <link rel="stylesheet" href="./css/sg-style.css?v=20261022a">
 </head>
 <body>
   <!-- 水墨筆觸濾鏡 -->
@@ -24,23 +24,31 @@
         <feDisplacementMap in="SourceGraphic" in2="n" scale="26"/>
         <feGaussianBlur stdDeviation="3"/>
       </filter>
-      <!-- 乾筆飛白:沿筆刷方向的條紋雜訊挖空,再讓邊緣破碎 -->
-      <filter id="sg-drybrush" x="-5%" y="-20%" width="110%" height="140%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.003 0.3" numOctaves="2" seed="7" result="n"/>
-        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.4 0 0 0 -0.6" result="m"/>
-        <feComposite in="SourceGraphic" in2="m" operator="in" result="c"/>
-        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="2" result="e"/>
-        <feDisplacementMap in="c" in2="e" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+      <!-- 墨入水:大尺度扭曲成雲團,小尺度扭曲成絲縷 -->
+      <filter id="sg-inkwater" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.007" numOctaves="3" seed="9" result="n1"/>
+        <feDisplacementMap in="SourceGraphic" in2="n1" scale="110" xChannelSelector="R" yChannelSelector="B" result="d1"/>
+        <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="2" seed="4" result="n2"/>
+        <feDisplacementMap in="d1" in2="n2" scale="18" xChannelSelector="G" yChannelSelector="R" result="d2"/>
+        <feGaussianBlur in="d2" stdDeviation="3.5"/>
       </filter>
+      <filter id="sg-inkwisp" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="21" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feGaussianBlur in="d" stdDeviation="2"/>
+      </filter>
+      <radialGradient id="sg-ink-d"><stop offset="0" stop-color="#1E1E1E"/><stop offset=".55" stop-color="#1E1E1E" stop-opacity=".6"/><stop offset="1" stop-color="#1E1E1E" stop-opacity="0"/></radialGradient>
+      <radialGradient id="sg-ink-l"><stop offset="0" stop-color="#9C9D99"/><stop offset=".55" stop-color="#9C9D99" stop-opacity=".6"/><stop offset="1" stop-color="#9C9D99" stop-opacity="0"/></radialGradient>
     </defs>
   </svg>
 
   <!-- 背景:遠山、近山、梅枝(參考煙雨水墨) -->
   <div class="sg-scene" aria-hidden="true">
     <div class="sg-sun"></div>
-    <!-- 濃淡雙墨刷痕:淡墨兩筆、濃墨一筆 -->
-    <svg class="sg-strokes" viewBox="0 0 400 800" preserveAspectRatio="none">
-      <g filter="url(#sg-drybrush)"><g transform="rotate(-8 195.0 150)" opacity=".5" fill="#C9CAC6" stroke="#C9CAC6" stroke-linecap="round" fill-opacity=".9"><ellipse cx="-4" cy="150" rx="22" ry="37"/><path d="M2 115 Q120 104 238 109" stroke-width="10.0"/><path d="M-1 120 Q118 107 237 110" stroke-width="10.1"/><path d="M-5 124 Q111 110 228 118" stroke-width="10.0"/><path d="M-9 129 Q127 120 263 120" stroke-width="10.7"/><path d="M-8 134 Q171 121 351 126" stroke-width="10.7"/><path d="M-15 138 Q159 125 333 133" stroke-width="7.9"/><path d="M-15 143 Q175 130 366 136" stroke-width="7.9"/><path d="M-11 148 Q193 135 397 140" stroke-width="9.2"/><path d="M-10 152 Q147 138 305 149" stroke-width="7.5"/><path d="M-8 157 Q156 146 321 153" stroke-width="8.7"/><path d="M-9 162 Q167 151 344 156" stroke-width="10.5"/><path d="M-13 166 Q142 156 298 160" stroke-width="8.0"/><path d="M-6 171 Q154 161 315 164" stroke-width="9.8"/><path d="M-5 176 Q130 165 265 169" stroke-width="10.1"/><path d="M-8 180 Q113 171 234 179" stroke-width="7.2"/><path d="M-2 185 Q96 175 195 183" stroke-width="7.7"/></g><g transform="rotate(-5 230.0 425)" opacity=".3" fill="#1E1E1E" stroke="#1E1E1E" stroke-linecap="round" fill-opacity=".9"><ellipse cx="46" cy="425" rx="22" ry="30"/><path d="M53 397 Q126 388 198 396" stroke-width="5.8"/><path d="M49 401 Q147 394 244 398" stroke-width="6.6"/><path d="M42 404 Q162 396 283 402" stroke-width="7.0"/><path d="M48 408 Q159 400 269 402" stroke-width="7.3"/><path d="M37 412 Q206 402 374 407" stroke-width="7.1"/><path d="M40 416 Q178 405 317 408" stroke-width="7.4"/><path d="M34 419 Q208 413 381 417" stroke-width="7.2"/><path d="M40 423 Q222 415 404 422" stroke-width="8.1"/><path d="M39 427 Q196 420 352 427" stroke-width="6.7"/><path d="M40 431 Q218 421 395 427" stroke-width="7.9"/><path d="M44 434 Q198 427 352 429" stroke-width="7.2"/><path d="M46 438 Q173 430 300 437" stroke-width="7.1"/><path d="M43 442 Q168 433 293 439" stroke-width="6.3"/><path d="M49 446 Q184 440 319 440" stroke-width="6.4"/><path d="M49 449 Q137 442 225 446" stroke-width="7.2"/><path d="M47 453 Q139 446 230 452" stroke-width="6.3"/></g><g transform="rotate(4 190.0 645)" opacity=".5" fill="#C9CAC6" stroke="#C9CAC6" stroke-linecap="round" fill-opacity=".9"><ellipse cx="-4" cy="645" rx="22" ry="35"/><path d="M-1 612 Q111 621 223 618" stroke-width="8.0"/><path d="M-8 616 Q130 624 267 619" stroke-width="9.7"/><path d="M-5 621 Q101 630 207 627" stroke-width="9.7"/><path d="M-5 625 Q152 635 309 632" stroke-width="9.8"/><path d="M-13 630 Q135 640 283 633" stroke-width="9.4"/><path d="M-7 634 Q177 646 360 642" stroke-width="8.4"/><path d="M-8 638 Q152 651 312 643" stroke-width="8.1"/><path d="M-10 643 Q146 652 303 645" stroke-width="7.0"/><path d="M-15 647 Q143 658 300 652" stroke-width="8.9"/><path d="M-14 652 Q165 663 343 660" stroke-width="8.8"/><path d="M-6 656 Q147 670 300 662" stroke-width="9.8"/><path d="M-5 660 Q162 673 330 666" stroke-width="10.2"/><path d="M-9 665 Q124 675 257 668" stroke-width="9.7"/><path d="M-1 669 Q146 676 293 676" stroke-width="10.3"/><path d="M-6 674 Q114 684 235 681" stroke-width="7.7"/><path d="M0 678 Q120 688 241 681" stroke-width="6.8"/></g></g>
+    <!-- 墨滴入水暈開:右上濃墨、左側淡墨 -->
+    <svg class="sg-ink" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+      <g class="sg-bloom sg-bloom-1"><g filter="url(#sg-inkwater)"><circle cx="310" cy="180" r="63" fill="url(#sg-ink-d)" opacity="0.30"/><circle cx="280" cy="274" r="51" fill="url(#sg-ink-d)" opacity="0.22"/><circle cx="243" cy="272" r="28" fill="url(#sg-ink-d)" opacity="0.16"/><circle cx="226" cy="215" r="54" fill="url(#sg-ink-d)" opacity="0.12"/><circle cx="316" cy="238" r="43" fill="url(#sg-ink-d)" opacity="0.17"/><circle cx="364" cy="193" r="35" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="277" cy="219" r="51" fill="url(#sg-ink-d)" opacity="0.12"/><circle cx="296" cy="226" r="27" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="324" cy="233" r="56" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="281" cy="293" r="43" fill="url(#sg-ink-d)" opacity="0.19"/><circle cx="342" cy="291" r="48" fill="url(#sg-ink-d)" opacity="0.22"/><circle cx="359" cy="142" r="38" fill="url(#sg-ink-d)" opacity="0.12"/></g><g filter="url(#sg-inkwisp)"><path d="M342 222 Q341 300 294 284" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="7.6" fill="none" stroke-linecap="round"/><path d="M296 129 Q327 58 364 90" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="6.0" fill="none" stroke-linecap="round"/><path d="M258 186 Q164 239 203 260" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="9.5" fill="none" stroke-linecap="round"/><path d="M277 221 Q194 260 196 217" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="4.2" fill="none" stroke-linecap="round"/><path d="M360 195 Q439 188 419 162" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="8.8" fill="none" stroke-linecap="round"/><path d="M259 192 Q165 157 204 115" stroke="#1E1E1E" stroke-opacity="0.03" stroke-width="8.4" fill="none" stroke-linecap="round"/><path d="M325 130 Q308 15 266 47" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="5.3" fill="none" stroke-linecap="round"/><path d="M258 176 Q174 208 206 236" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="7.3" fill="none" stroke-linecap="round"/><path d="M290 229 Q311 317 356 287" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="8.3" fill="none" stroke-linecap="round"/></g></g>
+      <g class="sg-bloom sg-bloom-2"><g filter="url(#sg-inkwater)"><circle cx="70" cy="460" r="50" fill="url(#sg-ink-l)" opacity="0.50"/><circle cx="134" cy="528" r="25" fill="url(#sg-ink-l)" opacity="0.32"/><circle cx="112" cy="479" r="46" fill="url(#sg-ink-l)" opacity="0.22"/><circle cx="49" cy="516" r="32" fill="url(#sg-ink-l)" opacity="0.27"/><circle cx="134" cy="516" r="24" fill="url(#sg-ink-l)" opacity="0.22"/><circle cx="116" cy="472" r="31" fill="url(#sg-ink-l)" opacity="0.36"/><circle cx="83" cy="495" r="28" fill="url(#sg-ink-l)" opacity="0.37"/><circle cx="136" cy="486" r="31" fill="url(#sg-ink-l)" opacity="0.31"/><circle cx="30" cy="524" r="34" fill="url(#sg-ink-l)" opacity="0.30"/><circle cx="126" cy="420" r="25" fill="url(#sg-ink-l)" opacity="0.19"/><circle cx="129" cy="439" r="26" fill="url(#sg-ink-l)" opacity="0.36"/><circle cx="1" cy="423" r="43" fill="url(#sg-ink-l)" opacity="0.23"/></g><g filter="url(#sg-inkwisp)"><path d="M44 493 Q15 581 49 571" stroke="#9C9D99" stroke-opacity="0.07" stroke-width="7.1" fill="none" stroke-linecap="round"/><path d="M54 499 Q-4 543 -12 507" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="5.0" fill="none" stroke-linecap="round"/><path d="M29 452 Q-45 486 -11 518" stroke="#9C9D99" stroke-opacity="0.08" stroke-width="9.4" fill="none" stroke-linecap="round"/><path d="M30 448 Q-40 459 -21 485" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="4.3" fill="none" stroke-linecap="round"/><path d="M69 502 Q41 564 24 540" stroke="#9C9D99" stroke-opacity="0.06" stroke-width="5.2" fill="none" stroke-linecap="round"/><path d="M48 424 Q-44 385 -45 444" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="4.9" fill="none" stroke-linecap="round"/><path d="M82 420 Q64 348 34 372" stroke="#9C9D99" stroke-opacity="0.08" stroke-width="5.0" fill="none" stroke-linecap="round"/><path d="M31 444 Q-43 454 -22 488" stroke="#9C9D99" stroke-opacity="0.06" stroke-width="4.8" fill="none" stroke-linecap="round"/><path d="M106 481 Q142 530 115 532" stroke="#9C9D99" stroke-opacity="0.09" stroke-width="7.0" fill="none" stroke-linecap="round"/></g></g>
     </svg>
     <svg class="sg-hills" viewBox="0 0 400 220" preserveAspectRatio="none">
       <path d="M0 150 C40 110 70 120 100 95 C130 70 160 115 200 100 C240 85 260 60 300 80 C340 100 370 90 400 105 L400 220 L0 220Z" fill="#C9CAC6" opacity=".55" filter="url(#sg-mist)"/>
@@ -72,6 +80,6 @@
 
   <div class="sg-toast" id="sg-toast" role="status" hidden></div>
 
-  <script type="module" src="./js/sg-app.js?v=20261021b"></script>
+  <script type="module" src="./js/sg-app.js?v=20261022a"></script>
 </body>
 </html>
