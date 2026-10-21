@@ -1,10 +1,10 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261021b";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261021b";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261022a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261022a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js?v=20261021b";
+} from "./sg-store.js?v=20261022a";
 
 export const sgEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const sgFmt = (v) => (Math.round(v * 100) / 100).toFixed(2);

@@ -1,8 +1,8 @@
 // 十神修行錄 — 狀態與規則(本機 localStorage;登入 LINE 時由 sg-app 同步到雲端)
-import { sgEnergyTotals } from "./sg-bazi.js?v=20261021b";
+import { sgEnergyTotals } from "./sg-bazi.js?v=20261022a";
 import {
   SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
-} from "./sg-data.js?v=20261021b";
+} from "./sg-data.js?v=20261022a";
 
 const SG_KEY = "sg_state_v2";
 export const SG_STEP = 0.1;        // 每天每完成一項任務,對應能量 +0.1(只加不扣)
