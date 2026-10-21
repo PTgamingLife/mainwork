@@ -1,8 +1,8 @@
 // 十神修行錄 — 畫面
 import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js";
-import { SG_GODS, SG_ENERGIES, SG_OATH_TYPES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js";
 import {
-  sgBaseEnergies, sgEnergies, sgInsight, sgPreceptOptions, sgBondSuggestion, sgOathDelta, sgTotalDelta,
+  sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, SG_WEEK_DAYS, SG_PASS_DAYS,
 } from "./sg-store.js";
 
@@ -110,6 +110,7 @@ export function sgViewChart(state, ui) {
     <p class="sg-muted">每種能量基礎值 1,再加上出生時的加成。${evolved ? "淡色 = 原始能量,深色 = 修行後的能量。" : "完成一週修行後,這裡會顯示能量的進化。"}</p>
   </div>
   <div class="sg-card"><h3>十格能量</h3>${sgGodBars(c.sg_scores)}</div>
+  <h2 class="sg-h">能量科學實證</h2>
   <div class="sg-card">
     <h3>過旺:${SG_ENERGIES[ins.s].sg_name}</h3><ul class="sg-research">${sgResearch(ins.s, "high")}</ul>
     <h3>過弱:${SG_ENERGIES[ins.w].sg_name}</h3><ul class="sg-research">${sgResearch(ins.w, "low")}</ul>
@@ -119,25 +120,34 @@ export function sgViewChart(state, ui) {
   <button class="sg-btn sg-ghost sg-small" data-sg-act="reset" style="margin-top:28px">清除全部資料、重新排盤</button>`;
 }
 
+// 立誓兩步驟:① 寫下想法 → AI 整理 ② 三類各選一個 → 落款
 function sgVowSetup(state, ui) {
-  const opts = sgPreceptOptions(state);
-  const bond = sgBondSuggestion(state);
-  const t = ui.oathType ?? 0;
-  return `
-  <h2 class="sg-h">立下戒律、約束、誓言</h2>
+  const { s, w, w2 } = sgStrongWeak(sgEnergies(state));
+  const n = (e) => SG_ENERGIES[e].sg_name;
+  const head = `<h2 class="sg-h">立下戒律、約束、誓言</h2>`;
+  if (!ui.options) {
+    return `${head}
+  <form id="sg-form-wish">
+    <div class="sg-card"><p>寫下你的想法,AI 會依你的能量分布(最旺「${n(s)}」、最弱「${n(w)}」、第二弱「${n(w2)}」)整理出誓言、戒律、約束各三個選項。</p>
+      <label class="sg-field"><span>我想立下的誓言</span><textarea class="sg-input" name="sg_oath_wish" rows="2" maxlength="200" required placeholder="例如:靠 AI 每天多賺 500 元">${sgEsc(ui.oathWish || "")}</textarea></label>
+      <label class="sg-field"><span>我想遵守的戒律(選填)</span><input class="sg-input" name="sg_precept_wish" maxlength="200" placeholder="例如:不再衝動答應每個邀約" value="${sgEsc(ui.preceptWish || "")}"></label>
+      <button class="sg-btn" type="submit" ${ui.loading ? "disabled" : ""}>${ui.loading ? "AI 整理中…" : "請 AI 整理"}</button>
+      <p class="sg-muted">每天最多整理 5 次。</p></div>
+  </form>`;
+  }
+  const o = ui.options;
+  const group = (name, tag, title, items, chips) => `<div class="sg-card"><span class="sg-tag">${tag}</span><h3>${title}</h3>
+    ${items.map((it, i) => `<label class="sg-option"><input type="radio" name="${name}" value="${i}" ${i === 0 ? "checked" : ""}><span>${sgEsc(it.text)}
+      <span class="sg-chips">${sgDeltaChips(chips(it))}</span></span></label>`).join("")}</div>`;
+  return `${head}
   <form id="sg-form-vow">
-    <div class="sg-card"><span class="sg-tag">戒律・每日</span><h3>以弱制旺,選一條</h3>
-      ${opts.map((o, i) => `<label class="sg-option"><input type="radio" name="sg_precept" value="${i}" ${i === (ui.precept ?? 0) ? "checked" : ""}><span>${sgEsc(o.sg_text)}</span></label>`).join("")}
-      <div class="sg-chips">${sgDeltaChips(opts[0].sg_delta)}</div></div>
-    <div class="sg-card"><span class="sg-tag">約束・7 天</span><h3>補足「${SG_ENERGIES[bond.sg_energy].sg_name}」</h3>
-      <p>${bond.sg_text}</p><div class="sg-chips">${sgDeltaChips(bond.sg_delta)}</div></div>
-    <div class="sg-card"><span class="sg-tag">誓言</span><h3>你想達成什麼?</h3>
-      <div class="sg-seg">${SG_OATH_TYPES.map((o, i) => `<label><input type="radio" name="sg_oath_type" value="${i}" ${i === t ? "checked" : ""}><span>${o.sg_label}</span></label>`).join("")}</div>
-      <label class="sg-field"><span>寫下明確目標</span><textarea class="sg-input" name="sg_oath" rows="2" maxlength="80" required placeholder="${sgEsc(SG_OATH_TYPES[t].sg_example)}"></textarea></label>
-      <div class="sg-chips" id="sg-oath-chips">${sgDeltaChips(sgOathDelta(t))}</div>
-      <p class="sg-muted">以相生轉移能量:「${SG_ENERGIES[(SG_OATH_TYPES[t].sg_energy + 4) % 5].sg_name}」→「${SG_ENERGIES[SG_OATH_TYPES[t].sg_energy].sg_name}」</p></div>
-    <p class="sg-muted">每項任務一週做到 ${SG_PASS_DAYS} 天以上,週末結算時,上面的能量變化會加進你的能量表。</p>
+    ${o.fallback ? `<p class="sg-muted">AI 暫時無法使用(${sgEsc(o.fallback)}),以下為系統建議選項。</p>` : ""}
+    ${group("sg_oath", "誓言・30 天", "選一個誓言", o.oaths, (it) => sgUp(it.energy))}
+    ${group("sg_precept", "戒律・每日", `以「${n(o.w)}」節制「${n(o.s)}」`, o.precepts, () => sgUp(o.w))}
+    ${group("sg_bond", "約束・7 天", `補足「${n(o.w2)}」`, o.bonds, () => sgUp(o.w2))}
+    <p class="sg-muted">每項任務一週做到 ${SG_PASS_DAYS} 天以上,週末結算時,對應能量 +0.1 會加進你的能量表。</p>
     <button class="sg-btn" type="submit">落款立誓</button>
+    <button class="sg-btn sg-ghost sg-small" type="button" data-sg-act="rewish">修改想法、重新整理</button>
   </form>`;
 }
 
@@ -152,7 +162,8 @@ function sgWeekSummary(state) {
   ${row("戒律", wk.sg_precept, pr.sg_precept)}${row("約束", wk.sg_bond, pr.sg_bond)}${row("誓言", wk.sg_oath, pr.sg_oath)}
   <div class="sg-card sg-ink-card"><h3>本週全部完成時的能量變化</h3><div class="sg-chips">${sgDeltaChips(sgTotalDelta(wk))}</div></div>
   ${pr.sg_ended ? `<button class="sg-btn" data-sg-go="review">一週結束,填寫修行回顧</button>` : ""}
-  <button class="sg-btn sg-ghost sg-small" data-sg-act="share">分享誓言給 LINE 好友見證</button>`;
+  <button class="sg-btn sg-ghost sg-small" data-sg-act="share">分享誓言給 LINE 好友見證</button>
+  <button class="sg-btn sg-ghost sg-small" data-sg-act="revow">重新立誓</button>`;
 }
 
 export function sgViewToday(state) {
