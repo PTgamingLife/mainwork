@@ -1,7 +1,7 @@
 // 十神修行錄 — 每日推播(由 pg_cron → public.sg_push_call(mode) 呼叫)
 //   supabase functions deploy sg-push --no-verify-jwt
-//   morning(台北 07:30):今日戒律 + 約束提醒
-//   evening(台北 21:00):今天還沒打卡的人才推
+//   morning(台北 07:30):今日戒律、約束、誓言
+//   evening(台北 21:00):今天還沒打卡的人才推;一週結束後改推「填寫回顧」
 //
 // secrets:
 //   SG_LINE_CHANNEL_ACCESS_TOKEN  Messaging API channel access token
@@ -13,11 +13,8 @@ const LIFF_URL = Deno.env.get("SG_LIFF_URL") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-const SG_NAMES: Record<string, string> = {
-  bi_jian: "同好", jie_cai: "同盟", shi_shen: "匠心", shang_guan: "鋒芒", zheng_cai: "積累",
-  pian_cai: "獵機", zheng_guan: "自律", qi_sha: "掌局", zheng_yin: "學識", pian_yin: "閱歷",
-};
-const C = { gold: "#C9A227", goldDeep: "#9C7A14", ink: "#1B2440", paper: "#F5F0E6", muted: "#6B6458" };
+// 配色 A 煙雨水墨
+const C = { gold: "#E3BE2B", goldDeep: "#B8951A", ink: "#1E1E1E", paper: "#F4F4F2", muted: "#7A7A78" };
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -63,7 +60,7 @@ function card(title: string, lines: { tag: string; text: string }[], button: str
       },
       footer: LIFF_URL ? {
         type: "box", layout: "vertical",
-        contents: [{ type: "button", style: "primary", color: C.gold, action: { type: "uri", label: button, uri: LIFF_URL } }],
+        contents: [{ type: "button", style: "primary", color: C.ink, action: { type: "uri", label: button, uri: LIFF_URL } }],
       } : undefined,
     },
   };
@@ -95,28 +92,28 @@ Deno.serve(async (req) => {
   if (mode !== "morning" && mode !== "evening") return json({ error: "BAD_MODE" }, 400);
 
   const today = todayTaipei();
-  const users = await sbSelect("sg_users", "sg_push_on=eq.true&select=sg_id,sg_line_uid,sg_nickname");
-  if (!users.length) return json({ ok: true, sent: 0 });
-  const ids = users.map((u) => u.sg_id).join(",");
-  const vows = await sbSelect("sg_vows", `sg_user_id=in.(${ids})&sg_status=eq.active&select=sg_user_id,sg_kind,sg_god,sg_text,sg_end`);
-  const done = mode === "evening"
-    ? new Set((await sbSelect("sg_checkins", `sg_user_id=in.(${ids})&sg_date=eq.${today}&select=sg_user_id`)).map((r) => r.sg_user_id))
-    : new Set<string>();
-
+  // v2:遊戲狀態整份存在 sg_users.sg_state
+  const users = await sbSelect("sg_users", "sg_push_on=eq.true&select=sg_line_uid,sg_nickname,sg_state");
   let sent = 0, failed = 0;
   for (const u of users) {
-    const mine = vows.filter((v) => v.sg_user_id === u.sg_id);
-    const precept = mine.find((v) => v.sg_kind === "precept");
-    const bond = mine.find((v) => v.sg_kind === "bond");
-    const oath = mine.find((v) => v.sg_kind === "oath");
-    if (!precept || !oath) continue;
-    if (mode === "evening" && done.has(u.sg_id)) continue;
-    const lines = [{ tag: `戒律・${SG_NAMES[precept.sg_god] ?? ""}`, text: precept.sg_text }];
-    if (bond && (!bond.sg_end || bond.sg_end >= today)) lines.push({ tag: `約束・${SG_NAMES[bond.sg_god] ?? ""}`, text: bond.sg_text });
-    lines.push({ tag: "誓言", text: oath.sg_text });
-    const msg = mode === "morning"
-      ? card(`${u.sg_nickname},今日的修行`, lines, "開始今日修行")
-      : card(`${u.sg_nickname},今天還沒落印`, [{ tag: "提醒", text: "花 30 秒回報今天的戒律、約束與誓言進度,守住連續天數。" }, ...lines.slice(0, 1)], "落印打卡");
+    const wk = u.sg_state?.sg_week;
+    if (!wk?.sg_precept || !wk?.sg_oath) continue;
+    if (mode === "evening" && u.sg_state?.sg_checkins?.[today]) continue;
+    const ended = today > wk.sg_end;
+    let msg;
+    if (ended) {
+      // 一週到了:兩個時段都只提醒填回顧(結算能量)
+      msg = card(`${u.sg_nickname},一週修行結束`, [{ tag: "結算", text: "填寫一週回顧,完成的任務會讓你的能量進化。" }], "填寫修行回顧");
+    } else {
+      const lines = [
+        { tag: "戒律", text: wk.sg_precept.sg_text },
+        { tag: "約束", text: wk.sg_bond?.sg_text ?? "" },
+        { tag: "誓言", text: wk.sg_oath.sg_text },
+      ].filter((l) => l.text);
+      msg = mode === "morning"
+        ? card(`${u.sg_nickname},今日的修行`, lines, "開始今日修行")
+        : card(`${u.sg_nickname},今天還沒落印`, [{ tag: "提醒", text: "花 30 秒回報今天的戒律、約束、誓言,再給自己打個分數。" }, lines[0]], "落印打卡");
+    }
     (await push(u.sg_line_uid, [msg])) ? sent++ : failed++;
   }
   return json({ ok: true, mode, sent, failed });

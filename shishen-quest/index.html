@@ -4,35 +4,42 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>十神修行錄</title>
-  <meta name="description" content="用你的八字十神能量,給自己戒律、約束與誓言,每天看見成長。">
-  <meta name="theme-color" content="#1B2440">
+  <meta name="description" content="看見你的五種能量,立下戒律、約束、誓言,由守護天使陪你修行。">
+  <meta name="theme-color" content="#EEEEEC">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/sg-style.css">
+  <link rel="stylesheet" href="./css/sg-style.css?v=20261020b">
 </head>
 <body>
   <!-- 水墨筆觸濾鏡 -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <filter id="sg-brush" x="-10%" y="-40%" width="120%" height="180%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.04 0.9" numOctaves="3" seed="7" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
       <filter id="sg-brush-soft" x="-5%" y="-30%" width="110%" height="160%">
         <feTurbulence type="fractalNoise" baseFrequency="0.03 0.6" numOctaves="2" seed="11" result="n"/>
         <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
       </filter>
-      <filter id="sg-wash" x="-30%" y="-30%" width="160%" height="160%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="3" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="40"/>
-        <feGaussianBlur stdDeviation="6"/>
+      <filter id="sg-mist" x="-10%" y="-30%" width="120%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.02" numOctaves="3" seed="5" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="26"/>
+        <feGaussianBlur stdDeviation="3"/>
       </filter>
     </defs>
   </svg>
 
-  <div class="sg-ink sg-ink-a" aria-hidden="true"></div>
-  <div class="sg-ink sg-ink-b" aria-hidden="true"></div>
+  <!-- 背景:遠山、近山、梅枝(參考煙雨水墨) -->
+  <div class="sg-scene" aria-hidden="true">
+    <div class="sg-sun"></div>
+    <svg class="sg-hills" viewBox="0 0 400 220" preserveAspectRatio="none">
+      <path d="M0 150 C40 110 70 120 100 95 C130 70 160 115 200 100 C240 85 260 60 300 80 C340 100 370 90 400 105 L400 220 L0 220Z" fill="#C9CAC6" opacity=".55" filter="url(#sg-mist)"/>
+      <path d="M0 185 C50 150 90 170 140 145 C190 120 220 165 270 150 C320 135 360 160 400 145 L400 220 L0 220Z" fill="#9C9D99" opacity=".45" filter="url(#sg-mist)"/>
+      <path d="M0 205 C70 190 120 200 190 188 C260 176 330 198 400 190 L400 220 L0 220Z" fill="#5E5F5C" opacity=".35" filter="url(#sg-mist)"/>
+    </svg>
+    <svg class="sg-plum" viewBox="0 0 160 200">
+      <path d="M0 200 C30 160 40 130 70 110 C95 92 110 70 150 40 M70 110 C80 90 76 70 90 52 M45 140 C30 120 26 100 10 88" stroke="#2A2A28" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#sg-brush-soft)"/>
+      <g fill="#E3BE2B"><circle cx="150" cy="40" r="6"/><circle cx="138" cy="50" r="5"/><circle cx="90" cy="52" r="6"/><circle cx="100" cy="64" r="4"/><circle cx="10" cy="88" r="5"/><circle cx="70" cy="110" r="5"/><circle cx="26" cy="100" r="4"/></g>
+    </svg>
+  </div>
 
   <header class="sg-top">
     <div class="sg-seal" aria-hidden="true">修</div>
@@ -46,13 +53,13 @@
 
   <nav class="sg-nav" id="sg-nav" hidden>
     <button data-sg-tab="chart" aria-label="命盤"><span>盤</span>命盤</button>
-    <button data-sg-tab="vows" aria-label="三誓"><span>誓</span>三誓</button>
     <button data-sg-tab="today" aria-label="今日"><span>今</span>今日</button>
+    <button data-sg-tab="angel" aria-label="天使"><span>護</span>天使</button>
     <button data-sg-tab="growth" aria-label="修行"><span>行</span>修行</button>
   </nav>
 
   <div class="sg-toast" id="sg-toast" role="status" hidden></div>
 
-  <script type="module" src="./js/sg-app.js"></script>
+  <script type="module" src="./js/sg-app.js?v=20261020b"></script>
 </body>
 </html>

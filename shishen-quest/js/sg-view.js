@@ -1,29 +1,30 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgEnergyTotals } from "./sg-bazi.js";
-import { SG_GODS, SG_ENERGIES, SG_ASSESS, SG_OATH_EXAMPLES, SG_INK_WORDS } from "./sg-data.js";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js";
+import { SG_GODS, SG_ENERGIES, SG_OATH_TYPES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js";
 import {
-  sgAssessToScores, sgBlendedScores, sgRankGods, sgStreak, sgRealm, sgBondProgress,
-  sgDateStr, sgAddDays, sgGodLabel,
+  sgBaseEnergies, sgEnergies, sgInsight, sgPreceptOptions, sgBondSuggestion, sgOathDelta, sgTotalDelta,
+  sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, SG_WEEK_DAYS, SG_PASS_DAYS,
 } from "./sg-store.js";
 
 export const sgEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sgFmt = (v) => (Math.round(v * 100) / 100).toFixed(2);
 
 export function sgViewOnboard() {
   return `
   <h2 class="sg-h">入門</h2>
   <div class="sg-card">
-    <p>輸入生辰,排出你的十神能量。系統會依能量分布,給你三道修行:<b>戒律</b>、<b>約束</b>與<b>誓言</b>。</p>
+    <p>輸入生辰,看見你的五種能量。接著立下<b>戒律、約束、誓言</b>,由守護天使陪你修行一週。</p>
     <form id="sg-form-birth" novalidate>
       <label class="sg-field"><span>暱稱</span><input class="sg-input" name="sg_nickname" maxlength="12" required placeholder="例如:小墨"></label>
       <label class="sg-field"><span>出生日期(國曆)</span><input class="sg-input" type="date" name="sg_birth_date" min="1900-01-01" max="2100-12-31" required></label>
       <label class="sg-field"><span>出生時間</span><input class="sg-input" type="time" name="sg_birth_time" value="12:00"></label>
-      <label class="sg-check"><input type="checkbox" name="sg_hour_unknown"> 不知道出生時辰(只排三柱)</label>
-      <p class="sg-muted">以台灣時區(UTC+8)計算;23:00 後出生算隔日子時。</p>
+      <label class="sg-check"><input type="checkbox" name="sg_hour_unknown"> 不知道出生時辰</label>
+      <p class="sg-muted">以台灣時區(UTC+8)計算;23:00 後出生算隔日。</p>
       <details class="sg-consent"><summary>個人資料蒐集說明</summary>
-        <p>1. 蒐集項目:暱稱、出生日期與時間、LINE 使用者 ID、自評與打卡紀錄。</p>
-        <p>2. 用途:排盤、產生修行任務、每日 LINE 提醒與成長紀錄,不做其他用途,不提供第三方。</p>
-        <p>3. 期間:至你刪除資料為止。可隨時在「命盤」頁按「重新排盤(清除資料)」刪除全部紀錄。</p>
-        <p>4. 性質:命理內容為自我覺察與娛樂參考,不構成醫療、心理或財務建議。</p>
+        <p>1. 蒐集項目:暱稱、出生日期與時間、LINE 使用者 ID、每日打卡與每週問卷。</p>
+        <p>2. 用途:計算能量、產生修行任務、LINE 提醒與成長紀錄,不做其他用途,不提供第三方。</p>
+        <p>3. 期間:至你刪除資料為止。可隨時在「命盤」頁最下方清除全部紀錄。</p>
+        <p>4. 性質:內容為自我覺察與娛樂參考,不構成醫療、心理或財務建議。</p>
       </details>
       <label class="sg-check"><input type="checkbox" name="sg_consent" required> 我已閱讀並同意上述個人資料蒐集與使用</label>
       <button class="sg-btn" type="submit">排盤</button>
@@ -31,139 +32,178 @@ export function sgViewOnboard() {
   </div>`;
 }
 
-function sgRadarSvg(series) {
-  const cx = 150, cy = 140, r = 105;
-  const pt = (i, v) => {
-    const a = (-90 + i * 72) * Math.PI / 180;
-    return [cx + Math.cos(a) * r * v, cy + Math.sin(a) * r * v];
-  };
-  const rings = [0.25, 0.5, 0.75, 1].map((s) =>
-    `<polygon points="${[0, 1, 2, 3, 4].map((i) => pt(i, s).join(",")).join(" ")}" fill="none" stroke="rgba(35,32,28,.15)"/>`).join("");
+// 五角雷達:多組數列
+function sgRadar(series, label = "五能量雷達圖") {
+  const cx = 150, cy = 142, r = 100;
+  const pt = (i, v) => { const a = (-90 + i * 72) * Math.PI / 180; return [cx + Math.cos(a) * r * v, cy + Math.sin(a) * r * v]; };
+  const rings = [0.25, 0.5, 0.75, 1].map((k) => `<polygon points="${[0, 1, 2, 3, 4].map((i) => pt(i, k).join(",")).join(" ")}" fill="none" class="sg-ring"/>`).join("");
   const axes = [0, 1, 2, 3, 4].map((i) => {
-    const [x, y] = pt(i, 1); const [lx, ly] = pt(i, 1.2);
-    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(35,32,28,.15)"/>
-      <text x="${lx}" y="${ly + 7}" text-anchor="middle" font-size="20" font-family="var(--sg-font-brush)" fill="#1B2440">${SG_ENERGIES[i].sg_name}</text>`;
+    const [x, y] = pt(i, 1), [lx, ly] = pt(i, 1.24);
+    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="sg-ring"/><text x="${lx}" y="${ly + 6}" text-anchor="middle" class="sg-axis">${SG_ENERGIES[i].sg_name}</text>`;
   }).join("");
-  const max = Math.max(40, ...series.flatMap((s) => s.values));
-  const polys = series.map((s) => `<polygon points="${s.values.map((v, i) => pt(i, v / max).join(",")).join(" ")}"
-      fill="${s.fill}" stroke="${s.stroke}" stroke-width="2.5" stroke-linejoin="round" filter="url(#sg-brush-soft)"/>`).join("");
-  return `<svg class="sg-radar" viewBox="0 0 300 290" role="img" aria-label="五能量雷達圖">${rings}${axes}${polys}</svg>`;
+  const max = Math.max(...series.flatMap((s) => s.values));
+  const polys = series.map((s) => `<polygon points="${s.values.map((v, i) => pt(i, v / max).join(",")).join(" ")}" class="${s.cls}" filter="url(#sg-brush-soft)"/>`).join("");
+  return `<svg class="sg-radar" viewBox="0 0 300 290" role="img" aria-label="${label}">${rings}${axes}${polys}</svg>`;
 }
 
-function sgBars(scores) {
-  return `<div class="sg-bars">${SG_GOD_KEYS.map((k) => {
-    const g = SG_GODS[k];
-    return `<div class="sg-bar"><span>${g.sg_name}<small class="sg-muted"> ${g.sg_trad}</small></span>
-      <div class="sg-bar-track"><div class="sg-bar-fill ${g.sg_inner ? "" : "sg-outer"}" style="width:${Math.min(100, scores[k] * 2.5)}%"></div></div>
-      <em>${scores[k].toFixed(1)}%</em></div>`;
-  }).join("")}</div>
-  <p class="sg-muted" style="margin-top:8px">金色 = 內(調節自己)、墨色 = 外(作用環境)</p>`;
+// 原始 vs 進化後
+function sgEnergyBars(base, now) {
+  const max = Math.max(...base, ...now);
+  const pct = sgPercent(now);
+  return `<div class="sg-bars">${now.map((v, i) => {
+    const d = Math.round((v - base[i]) * 100) / 100;
+    return `<div class="sg-bar"><span>${SG_ENERGIES[i].sg_name}</span>
+      <div class="sg-bar-track"><div class="sg-bar-base" style="width:${base[i] / max * 100}%"></div><div class="sg-bar-fill" style="width:${v / max * 100}%"></div></div>
+      <em>${sgFmt(v)}${d ? `<b class="${d > 0 ? "sg-up" : "sg-down"}">${d > 0 ? "+" : ""}${d.toFixed(1)}</b>` : ""}<small>${pct[i]}%</small></em></div>`;
+  }).join("")}</div>`;
 }
 
-export function sgViewChart(state) {
-  const c = state.sg_chart;
-  const p = c.sg_pillars;
+function sgGodBars(gods) {
+  const max = Math.max(...Object.values(gods));
+  return `<div class="sg-gods">${SG_GOD_KEYS.map((k) => `<div class="sg-god"><span>${SG_GODS[k].sg_name}</span>
+    <div class="sg-bar-track"><div class="sg-bar-fill sg-e${SG_GODS[k].sg_energy}" style="width:${gods[k] / max * 100}%"></div></div><em>${sgFmt(gods[k])}</em></div>`).join("")}</div>`;
+}
+
+export function sgDeltaChips(delta) {
+  const items = delta.map((v, i) => (v ? `<span class="sg-chip ${v > 0 ? "sg-up" : "sg-down"}">${SG_ENERGIES[i].sg_name} ${v > 0 ? "↑" : "↓"}${Math.abs(v).toFixed(1)}</span>` : "")).join("");
+  return items || `<span class="sg-chip">無變化</span>`;
+}
+
+function sgResearch(e, kind) {
+  const E = SG_ENERGIES[e];
+  const a = kind === "high" ? [E.sg_high, E.sg_high2] : [E.sg_low, E.sg_low2];
+  return a.map((r) => `<li>${r.sg_text}<cite>${r.sg_cite}</cite></li>`).join("");
+}
+
+function sgAngelCard(state, compact) {
+  const a = sgAngel(state);
+  return `<div class="sg-card sg-angel">
+    <img class="sg-angel-img" src="${a.sg_img}" alt="守護天使${a.sg_name}" width="84" height="84" loading="lazy">
+    <div><span class="sg-tag">守護天使</span><h3>${a.sg_name}</h3>
+      <p class="sg-muted">${a.sg_trait}・最強的是「${SG_ENERGIES[a.sg_energy].sg_name}」</p>
+      <p class="sg-say">「${a.sg_line}」</p>
+      ${compact ? "" : `<button class="sg-btn sg-ghost sg-small" data-sg-go="angel">認識我的天使</button>`}</div></div>`;
+}
+
+export function sgViewChart(state, ui) {
+  const c = state.sg_chart, p = c.sg_pillars;
   const cols = [["時", p.hour], ["日", p.day], ["月", p.month], ["年", p.year]];
-  const scores = sgBlendedScores(state);
-  const ranked = sgRankGods(scores);
-  const hi = SG_GODS[ranked[0]], lo = SG_GODS[ranked[9]];
-  const series = [{ values: sgEnergyTotals(c.sg_scores), fill: "rgba(201,162,39,.30)", stroke: "#B8901C" }];
-  if (state.sg_assess) series.push({ values: sgEnergyTotals(sgAssessToScores(state.sg_assess)), fill: "rgba(27,36,64,.18)", stroke: "#1B2440" });
+  const base = sgBaseEnergies(state), now = sgEnergies(state);
+  const ins = sgInsight(state);
+  const evolved = now.some((v, i) => v !== base[i]);
   return `
   <h2 class="sg-h">命盤</h2>
   <div class="sg-card">
-    <div class="sg-pillars">${cols.map(([n, x], i) => `<div class="sg-pillar ${i === 1 ? "sg-me" : ""}"><small>${n}柱</small><b>${x ? `${x.text[0]}<br>${x.text[1]}` : "?<br>?"}</b></div>`).join("")}</div>
-    <p class="sg-muted" style="text-align:center">日主(你)為「${p.day.text[0]}」</p>
-    ${c.sg_near_jie ? `<p class="sg-muted">⚠️ 出生時間接近節氣交界(1 小時內),月柱可能有誤差。</p>` : ""}
-    ${!c.sg_hour_known ? `<p class="sg-muted">未提供時辰,能量分布只依三柱計算。</p>` : ""}
+    <div class="sg-pillars">${cols.map(([n, x], i) => `<div class="sg-pillar ${i === 1 ? "sg-me" : ""}"><small>${n}</small><b>${x ? `${x.text[0]}<br>${x.text[1]}` : "?<br>?"}</b></div>`).join("")}</div>
+    ${c.sg_near_jie ? `<p class="sg-muted">出生時間接近節氣交界(1 小時內),月份可能有誤差。</p>` : ""}
+    ${!c.sg_hour_known ? `<p class="sg-muted">未提供時辰,只依年月日計算。</p>` : ""}
+  </div>
+  <div class="sg-card sg-insight">
+    <h3>你的命盤狀態</h3>
+    <div class="sg-state sg-good"><b>發揮最好時</b><p>${ins.sg_best}</p><p class="sg-muted">結果:${ins.sg_best_result}</p></div>
+    <div class="sg-state sg-bad"><b>發揮最差時</b><p>${ins.sg_worst}</p><p class="sg-muted">結果:${ins.sg_worst_result}</p></div>
   </div>
   <div class="sg-card">
-    <h3>五能量</h3>
-    ${sgRadarSvg(series)}
-    <div class="sg-legend"><span><i style="background:#C9A227"></i>先天(命盤)</span>${state.sg_assess ? `<span><i style="background:#1B2440"></i>現況(自評)</span>` : ""}</div>
+    <h3>五種能量</h3>
+    ${sgRadar(evolved ? [{ values: base, cls: "sg-poly-base" }, { values: now, cls: "sg-poly" }] : [{ values: now, cls: "sg-poly" }])}
+    ${sgEnergyBars(base, now)}
+    <p class="sg-muted">每種能量基礎值 1,再加上出生時的加成。${evolved ? "淡色 = 原始能量,深色 = 修行後的能量。" : "完成一週修行後,這裡會顯示能量的進化。"}</p>
   </div>
+  <div class="sg-card"><h3>十格能量</h3>${sgGodBars(c.sg_scores)}</div>
   <div class="sg-card">
-    <h3>十格能量</h3>
-    ${sgBars(c.sg_scores)}
+    <h3>過旺:${SG_ENERGIES[ins.s].sg_name}</h3><ul class="sg-research">${sgResearch(ins.s, "high")}</ul>
+    <h3>過弱:${SG_ENERGIES[ins.w].sg_name}</h3><ul class="sg-research">${sgResearch(ins.w, "low")}</ul>
   </div>
-  <div class="sg-card sg-ink-card">
-    <h3>最旺:${hi.sg_name}</h3><p>${hi.sg_desc}</p><p class="sg-muted">過旺時:${hi.sg_high}</p>
-    <h3 style="margin-top:12px">最弱:${lo.sg_name}</h3><p class="sg-muted">不足時:${lo.sg_low}</p>
-  </div>
-  ${c.sg_yima.length ? `<div class="sg-card"><h3>行旅星</h3><p>傳統說法:你的命盤帶驛馬(${c.sg_yima.join("、")}),主奔波、遷動、外出。</p><p class="sg-muted">這是依地支推算的傳統神煞,目前沒有科學驗證。</p></div>` : ""}
-  <button class="sg-btn sg-ghost" data-sg-go="assess">${state.sg_assess ? "重新自評現況" : "做 10 題自評,比對現況"}</button>
-  ${state.sg_vows ? "" : `<button class="sg-btn" data-sg-go="vows">立下三誓</button>`}
-  <button class="sg-btn sg-ghost" data-sg-act="reset" style="margin-top:22px;font-size:14px">重新排盤(清除資料)</button>`;
+  ${sgAngelCard(state, false)}
+  ${state.sg_week ? sgWeekSummary(state) : sgVowSetup(state, ui)}
+  <button class="sg-btn sg-ghost sg-small" data-sg-act="reset" style="margin-top:28px">清除全部資料、重新排盤</button>`;
 }
 
-export function sgViewAssess(state) {
-  const a = state.sg_assess || {};
+function sgVowSetup(state, ui) {
+  const opts = sgPreceptOptions(state);
+  const bond = sgBondSuggestion(state);
+  const t = ui.oathType ?? 0;
   return `
-  <h2 class="sg-h">現況自評</h2>
-  <p class="sg-muted">依最近一個月的你作答。1 = 完全不符合,5 = 非常符合。</p>
-  <form id="sg-form-assess">
-    ${SG_ASSESS.map(([k, q], i) => `<div class="sg-card"><p><b>${i + 1}.</b> ${q}</p>
-      <div class="sg-scale" role="radiogroup" aria-label="第 ${i + 1} 題">${[1, 2, 3, 4, 5].map((v) =>
-        `<label><input type="radio" name="${k}" value="${v}" ${a[k] === v ? "checked" : ""} required><span>${v}</span></label>`).join("")}</div></div>`).join("")}
-    <button class="sg-btn" type="submit">完成自評</button>
-  </form>`;
-}
-
-export function sgViewVowSetup(state, sug) {
-  const pg = SG_GODS[sug.sg_precept.sg_god], bg = SG_GODS[sug.sg_bond.sg_god];
-  return `
-  <h2 class="sg-h">立下三誓</h2>
-  <div class="sg-card"><span class="sg-tag">戒律・每日</span><span class="sg-tag">${pg.sg_name}${["最旺", "次旺", "第三旺"][sug.sg_rank]}</span>
-    <h3>${sug.sg_precept.sg_mode === "sg_drain" ? "引流" : "節制"}「${pg.sg_name}」</h3><p>${sug.sg_precept.sg_text}</p>
-    <p class="sg-muted">${pg.sg_high}</p></div>
-  <div class="sg-card"><span class="sg-tag">約束・7 天</span><span class="sg-tag">${bg.sg_name}${["最弱", "次弱", "第三弱"][sug.sg_rank]}</span>
-    <h3>補足「${bg.sg_name}」</h3><p>${sug.sg_bond.sg_text}</p></div>
-  <button class="sg-btn sg-ghost" data-sg-act="reroll">換一組建議</button>
-  <form id="sg-form-oath" class="sg-card">
-    <span class="sg-tag">誓言・30 天</span>
-    <label class="sg-field"><span>寫下你 30 天內要達成的一個明確目標</span>
-      <textarea class="sg-input sg-textarea" name="sg_oath" rows="2" maxlength="80" required placeholder="${sgEsc(SG_OATH_EXAMPLES[0])}"></textarea></label>
-    <p class="sg-muted">範例:${SG_OATH_EXAMPLES.map(sgEsc).join(" / ")}</p>
+  <h2 class="sg-h">立下戒律、約束、誓言</h2>
+  <form id="sg-form-vow">
+    <div class="sg-card"><span class="sg-tag">戒律・每日</span><h3>以弱制旺,選一條</h3>
+      ${opts.map((o, i) => `<label class="sg-option"><input type="radio" name="sg_precept" value="${i}" ${i === (ui.precept ?? 0) ? "checked" : ""}><span>${sgEsc(o.sg_text)}</span></label>`).join("")}
+      <div class="sg-chips">${sgDeltaChips(opts[0].sg_delta)}</div></div>
+    <div class="sg-card"><span class="sg-tag">約束・7 天</span><h3>補足「${SG_ENERGIES[bond.sg_energy].sg_name}」</h3>
+      <p>${bond.sg_text}</p><div class="sg-chips">${sgDeltaChips(bond.sg_delta)}</div></div>
+    <div class="sg-card"><span class="sg-tag">誓言</span><h3>你想達成什麼?</h3>
+      <div class="sg-seg">${SG_OATH_TYPES.map((o, i) => `<label><input type="radio" name="sg_oath_type" value="${i}" ${i === t ? "checked" : ""}><span>${o.sg_label}</span></label>`).join("")}</div>
+      <label class="sg-field"><span>寫下明確目標</span><textarea class="sg-input" name="sg_oath" rows="2" maxlength="80" required placeholder="${sgEsc(SG_OATH_TYPES[t].sg_example)}"></textarea></label>
+      <div class="sg-chips" id="sg-oath-chips">${sgDeltaChips(sgOathDelta(t))}</div>
+      <p class="sg-muted">以相生轉移能量:「${SG_ENERGIES[(SG_OATH_TYPES[t].sg_energy + 4) % 5].sg_name}」→「${SG_ENERGIES[SG_OATH_TYPES[t].sg_energy].sg_name}」</p></div>
+    <p class="sg-muted">每項任務一週做到 ${SG_PASS_DAYS} 天以上,週末結算時,上面的能量變化會加進你的能量表。</p>
     <button class="sg-btn" type="submit">落款立誓</button>
   </form>`;
 }
 
-export function sgViewVows(state) {
-  const v = state.sg_vows;
-  const bp = sgBondProgress(state);
-  const daysLeft = Math.max(0, Math.round((new Date(v.sg_oath.sg_end) - new Date(sgDateStr())) / 864e5));
+function sgWeekSummary(state) {
+  const wk = state.sg_week, pr = sgWeekProgress(state);
+  const row = (tag, v, done) => `<div class="sg-card"><span class="sg-tag">${tag}</span><p>${sgEsc(v.sg_text)}</p>
+    <div class="sg-progress"><div style="width:${done / SG_WEEK_DAYS * 100}%"></div></div>
+    <p class="sg-muted">${done} / ${SG_WEEK_DAYS} 天・完成可得</p><div class="sg-chips">${sgDeltaChips(v.sg_delta)}</div></div>`;
   return `
-  <h2 class="sg-h">我的三誓</h2>
-  <div class="sg-card"><span class="sg-tag">戒律</span><span class="sg-tag">${sgGodLabel(v.sg_precept.sg_god)}</span><p>${sgEsc(v.sg_precept.sg_text)}</p></div>
-  <div class="sg-card"><span class="sg-tag">約束</span><span class="sg-tag">${sgGodLabel(v.sg_bond.sg_god)}</span><p>${sgEsc(v.sg_bond.sg_text)}</p>
-    <div class="sg-progress"><div style="width:${bp.done / 7 * 100}%"></div></div>
-    <p class="sg-muted">${bp.done} / 7 天${bp.ended ? "・已結算" : `・${v.sg_bond.sg_end} 截止`}</p></div>
-  <div class="sg-card sg-ink-card"><span class="sg-tag">誓言</span><p style="font-size:18px">${sgEsc(v.sg_oath.sg_text)}</p>
-    <div class="sg-progress"><div style="width:${v.sg_oath.sg_pct}%"></div></div>
-    <p class="sg-muted">進度 ${v.sg_oath.sg_pct}%・剩 ${daysLeft} 天</p></div>
-  ${bp.ended ? `<button class="sg-btn" data-sg-act="renew">約束已結算,重立三誓</button>` : ""}
-  <button class="sg-btn sg-ghost" data-sg-act="share">分享誓言給 LINE 好友見證</button>`;
+  <h2 class="sg-h">本週的戒律、約束、誓言</h2>
+  <p class="sg-muted">第 ${pr.sg_day} / ${SG_WEEK_DAYS} 天(${wk.sg_start} – ${wk.sg_end})</p>
+  ${row("戒律", wk.sg_precept, pr.sg_precept)}${row("約束", wk.sg_bond, pr.sg_bond)}${row("誓言", wk.sg_oath, pr.sg_oath)}
+  <div class="sg-card sg-ink-card"><h3>本週全部完成時的能量變化</h3><div class="sg-chips">${sgDeltaChips(sgTotalDelta(wk))}</div></div>
+  ${pr.sg_ended ? `<button class="sg-btn" data-sg-go="review">一週結束,填寫修行回顧</button>` : ""}
+  <button class="sg-btn sg-ghost sg-small" data-sg-act="share">分享誓言給 LINE 好友見證</button>`;
 }
 
 export function sgViewToday(state) {
   const today = sgDateStr();
   const done = state.sg_checkins[today];
-  const v = state.sg_vows;
+  const wk = state.sg_week;
   const word = SG_INK_WORDS[Number(today.replaceAll("-", "")) % SG_INK_WORDS.length];
-  if (!v) return `<h2 class="sg-h">今日</h2><div class="sg-card"><p>還沒立下三誓。</p><button class="sg-btn" data-sg-go="vows">立下三誓</button></div>`;
+  if (!wk) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>還沒立下戒律、約束、誓言。</p><button class="sg-btn" data-sg-go="chart">前往命盤立誓</button></div>`;
+  const pr = sgWeekProgress(state);
+  if (pr.sg_ended) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>這週的修行已結束,先完成回顧,能量才會結算。</p><button class="sg-btn" data-sg-go="review">填寫修行回顧</button></div>`;
+  const chk = (name, tag, text) => `<div class="sg-card"><label class="sg-toggle"><span><span class="sg-tag">${tag}</span>${sgEsc(text)}</span>
+    <input type="checkbox" name="${name}" ${done?.[name] ? "checked" : ""}></label></div>`;
+  const score = done?.sg_score ?? 7;
   return `
-  <h2 class="sg-h">今日修行</h2>
+  <h2 class="sg-h">今日修行・第 ${pr.sg_day} 天</h2>
   <p class="sg-quote">「${word}」</p>
+  ${sgAngelCard(state, true)}
   <form id="sg-form-checkin">
-    <div class="sg-card"><label class="sg-toggle"><span><span class="sg-tag">戒律</span>${sgEsc(v.sg_precept.sg_text)}</span>
-      <input type="checkbox" name="sg_precept_ok" ${done?.sg_precept_ok ? "checked" : ""}></label></div>
-    <div class="sg-card"><label class="sg-toggle"><span><span class="sg-tag">約束</span>${sgEsc(v.sg_bond.sg_text)}</span>
-      <input type="checkbox" name="sg_bond_ok" ${done?.sg_bond_ok ? "checked" : ""}></label></div>
-    <div class="sg-card"><span class="sg-tag">誓言</span><p>${sgEsc(v.sg_oath.sg_text)}</p>
-      <label class="sg-field"><span>目前進度 <output id="sg-pct-out">${done?.sg_oath_pct ?? v.sg_oath.sg_pct}</output>%</span>
-      <input class="sg-range" type="range" name="sg_oath_pct" min="0" max="100" step="5" value="${done?.sg_oath_pct ?? v.sg_oath.sg_pct}"></label></div>
-    <label class="sg-field"><span>一句心得(選填)</span><input class="sg-input" name="sg_note" maxlength="60" value="${sgEsc(done?.sg_note || "")}"></label>
+    ${chk("sg_precept_ok", "戒律", wk.sg_precept.sg_text)}${chk("sg_bond_ok", "約束", wk.sg_bond.sg_text)}${chk("sg_oath_ok", "誓言", `今天有推進:${wk.sg_oath.sg_text}`)}
+    <div class="sg-card"><label class="sg-field"><span>誓言進度 <output id="sg-pct-out">${done?.sg_oath_pct ?? wk.sg_oath.sg_pct}</output>%</span>
+      <input class="sg-range" type="range" name="sg_oath_pct" min="0" max="100" step="5" value="${done?.sg_oath_pct ?? wk.sg_oath.sg_pct}"></label>
+      <label class="sg-field"><span>給今天的自己打分數 <output id="sg-score-out">${score}</output> / 10</span>
+      <input class="sg-range" type="range" name="sg_score" min="1" max="10" step="1" value="${score}"></label>
+      <label class="sg-field"><span>一句心得(選填)</span><input class="sg-input" name="sg_note" maxlength="60" value="${sgEsc(done?.sg_note || "")}"></label></div>
     <button class="sg-btn" type="submit">${done ? "更新今日打卡" : "落印打卡"}</button>
+  </form>`;
+}
+
+export function sgViewAngel(state) {
+  const a = sgAngel(state);
+  return `
+  <h2 class="sg-h">守護天使</h2>
+  ${sgAngelCard(state, true)}
+  <div class="sg-card"><img class="sg-angel-hero" src="${a.sg_img}" alt="守護天使${a.sg_name}"></div>
+  <div class="sg-card"><h3>${a.sg_name}的能量</h3>
+    <p class="sg-muted">天使的能量與你完全相反:你最弱的,正是它最強的。它會用自己的強項,陪你補上你的弱項、完成誓言。</p>
+    ${sgRadar([{ values: sgEnergies(state), cls: "sg-poly-base" }, { values: a.sg_values, cls: "sg-poly-angel" }], "你與天使的能量")}
+    <div class="sg-legend"><span><i class="sg-k-base"></i>你</span><span><i class="sg-k-angel"></i>${a.sg_name}</span></div></div>`;
+}
+
+export function sgViewReview(state) {
+  const pr = sgWeekProgress(state);
+  return `
+  <h2 class="sg-h">一週修行回顧</h2>
+  <div class="sg-card"><p>戒律 ${pr.sg_precept} 天・約束 ${pr.sg_bond} 天・誓言 ${pr.sg_oath} 天・平均自評 ${pr.sg_avg ?? "—"} 分</p>
+    <p class="sg-muted">做到 ${SG_PASS_DAYS} 天以上的任務,能量變化會加進你的能量表。</p></div>
+  <form id="sg-form-review">
+    ${SG_WEEKLY_QUESTIONS.map((q, i) => `<div class="sg-card"><p><b>${i + 1}.</b> ${q}</p>
+      <div class="sg-scale" role="radiogroup" aria-label="第 ${i + 1} 題">${[1, 2, 3, 4, 5].map((v) =>
+        `<label><input type="radio" name="q${i}" value="${v}" required><span>${v}</span></label>`).join("")}</div></div>`).join("")}
+    <button class="sg-btn" type="submit">送出並結算能量</button>
   </form>`;
 }
 
@@ -173,19 +213,18 @@ export function sgViewGrowth(state) {
   const today = sgDateStr();
   const cells = Array.from({ length: 14 }, (_, i) => sgAddDays(today, i - 13)).map((d) =>
     `<i class="${state.sg_checkins[d] ? "sg-on" : state.sg_amulet_used.includes(d) ? "sg-amulet" : ""}" title="${d}"></i>`).join("");
-  const logs = Object.entries(state.sg_checkins).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+  const hist = [...state.sg_history].reverse();
   return `
   <h2 class="sg-h">修行</h2>
-  <div class="sg-card sg-ink-card">
-    <div class="sg-stats">
+  <div class="sg-card sg-ink-card"><div class="sg-stats">
       <div class="sg-stat"><b>${streak}</b><small>連續天數</small></div>
       <div class="sg-stat"><b>${cur.sg_name}</b><small>境界</small></div>
-      <div class="sg-stat"><b>${state.sg_amulets}</b><small>護符</small></div>
-    </div>
-    <p class="sg-muted" style="text-align:center">累積 ${days} 天${next ? `・再 ${next.sg_min - days} 天晉升「${next.sg_name}」` : "・已達最高境界"}</p>
-  </div>
+      <div class="sg-stat"><b>${state.sg_amulets}</b><small>護符</small></div></div>
+    <p class="sg-muted" style="text-align:center">累積 ${days} 天${next ? `・再 ${next.sg_min - days} 天晉升「${next.sg_name}」` : "・已達最高境界"}</p></div>
   <div class="sg-card"><h3>近 14 天</h3><div class="sg-heat">${cells}</div>
-    <p class="sg-muted">金 = 打卡、墨 = 護符補上。每連續 7 天得 1 枚護符,斷一天時自動使用。</p></div>
-  <div class="sg-card"><h3>歷程</h3>${logs.length ? logs.map(([d, e]) =>
-    `<p><b>${d}</b> ${e.sg_precept_ok ? "戒✓" : "戒✗"} ${e.sg_bond_ok ? "約✓" : "約✗"} 誓${e.sg_oath_pct ?? 0}%${e.sg_note ? `<br><span class="sg-muted">${sgEsc(e.sg_note)}</span>` : ""}</p>`).join("") : `<p class="sg-muted">還沒有紀錄。</p>`}</div>`;
+    <p class="sg-muted">梅黃 = 打卡、墨 = 護符補上。連續 7 天得 1 枚護符,斷一天時自動使用。</p></div>
+  <div class="sg-card"><h3>每週結算</h3>${hist.length ? hist.map((h) => `<div class="sg-week">
+    <b>${h.sg_start} – ${h.sg_end}</b>・平均自評 ${h.sg_avg ?? "—"}
+    <p class="sg-muted">戒律${h.sg_passed.sg_precept ? "✓" : "✗"} 約束${h.sg_passed.sg_bond ? "✓" : "✗"} 誓言${h.sg_passed.sg_oath ? "✓" : "✗"}</p>
+    <div class="sg-chips">${sgDeltaChips(h.sg_applied)}</div></div>`).join("") : `<p class="sg-muted">完成第一週後,這裡會記錄你的能量進化。</p>`}</div>`;
 }
