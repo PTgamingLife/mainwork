@@ -1,13 +1,13 @@
 // 十神修行錄 — 控制器
-import { sgCalcChart } from "./sg-bazi.js?v=20261021a";
+import { sgCalcChart } from "./sg-bazi.js?v=20261021b";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
   sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
-} from "./sg-store.js?v=20261021a";
+} from "./sg-store.js?v=20261021b";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
-} from "./sg-view.js?v=20261021a";
-import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261021a";
+} from "./sg-view.js?v=20261021b";
+import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261021b";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";

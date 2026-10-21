@@ -2,7 +2,7 @@
 :root {
   --sg-mist-1: #F4F4F2;
   --sg-mist-2: #E6E7E4;
-  --sg-paper: rgba(250, 250, 248, 0.86);
+  --sg-paper: rgba(250, 250, 248, 0.78);
   --sg-ink: #1E1E1E;
   --sg-ink-2: #3A3A38;
   --sg-gray: #7A7A78;
@@ -175,3 +175,10 @@ body {
 
 .sg-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 9; background: var(--sg-ink);
   color: #F4F4F2; padding: 10px 18px; border-radius: 999px; font-size: 14px; max-width: calc(100% - 32px); }
+
+/* 濃淡雙墨刷痕(B):背景三筆、卡片左側一道細刷痕、標題下一筆 */
+.sg-strokes { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sg-card { position: relative; }
+.sg-card:not(.sg-ink-card)::before { content: ""; position: absolute; left: 4px; top: 14px; bottom: 14px; width: 9px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 200' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='f' x='-10%' y='-10%' width='120%' height='120%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.3 0.01' numOctaves='2' seed='4' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.8 0 0 0 -0.8' result='m'/%3E%3CfeComposite in='SourceGraphic' in2='m' operator='in'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M6 2 C10 30 10 120 8 170 C7 186 6 194 5 198 C3 170 2 90 3 40 C3 20 4 8 6 2Z' fill='%231E1E1E' fill-opacity='.35' filter='url(%23f)'/%3E%3C/svg%3E") no-repeat center / 100% 100%; pointer-events: none; }
+.sg-h { padding-bottom: 14px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 16' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='f' x='-10%' y='-10%' width='120%' height='120%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.3' numOctaves='2' seed='4' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.8 0 0 0 -0.8' result='m'/%3E%3CfeComposite in='SourceGraphic' in2='m' operator='in'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M2 9 C30 3 90 2 150 4 C175 5 190 7 198 9 C180 12 140 14 90 14 C50 14 20 13 2 9Z' fill='%231E1E1E' fill-opacity='.75' filter='url(%23f)'/%3E%3Cpath d='M10 11 C60 8 120 8 170 10 C140 13 80 14 10 11Z' fill='%23C9CAC6' fill-opacity='.6' filter='url(%23f)'/%3E%3C/svg%3E") no-repeat left bottom / 170px 16px; }
