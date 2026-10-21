@@ -1,13 +1,13 @@
 // 十神修行錄 — 控制器
-import { sgCalcChart } from "./sg-bazi.js";
+import { sgCalcChart } from "./sg-bazi.js?v=20261021a";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
   sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
-} from "./sg-store.js";
+} from "./sg-store.js?v=20261021a";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
-} from "./sg-view.js";
-import { SG_WEEKLY_QUESTIONS } from "./sg-data.js";
+} from "./sg-view.js?v=20261021a";
+import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261021a";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";
@@ -116,7 +116,7 @@ async function sgHandleWish(form) {
     if (!(o?.oaths?.length && o?.precepts?.length && o?.bonds?.length)) throw new Error("AI 回傳不完整");
     sgUi.options = o;
   } catch (e) {
-    sgUi.options = { ...sgFallbackOptions(sgState, sgUi.oathWish), fallback: e.message === "AI_LIMIT" ? "今天的 5 次已用完" : e.message };
+    sgUi.options = { ...sgFallbackOptions(sgState, sgUi.oathWish, sgUi.preceptWish), fallback: e.message === "AI_LIMIT" ? "今天的 5 次已用完" : e.message };
   }
   sgUi.loading = false;
   sgRender();
@@ -126,7 +126,10 @@ async function sgHandleWish(form) {
 function sgHandleVow(form) {
   const fd = new FormData(form);
   const pick = { oath: Number(fd.get("sg_oath")) || 0, precept: Number(fd.get("sg_precept")) || 0, bond: Number(fd.get("sg_bond")) || 0 };
-  sgStartWeek(sgState, sgUi.options, pick);
+  const edits = { oath: fd.get("sg_oath_text"), precept: fd.get("sg_precept_text"), bond: fd.get("sg_bond_text") };
+  for (const k in edits) edits[k] = String(edits[k] || "").trim().slice(0, 80);
+  if (!edits.oath || !edits.precept || !edits.bond) return sgToast("誓言、戒律、約束的文字都不能空白");
+  sgStartWeek(sgState, sgUi.options, pick, edits);
   sgUi.options = null;
   sgPersist("vows");
   sgToast("已落款立誓,第一週修行開始");
@@ -208,6 +211,15 @@ $main.addEventListener("submit", (e) => {
 $main.addEventListener("input", (e) => {
   const out = { sg_oath_pct: "sg-pct-out", sg_score: "sg-score-out" }[e.target.name];
   if (out) document.getElementById(out).textContent = e.target.value;
+});
+
+// 換選項時,把該選項文字帶進下方的微調欄
+$main.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.type !== "radio" || !sgUi.options) return;
+  const list = { sg_oath: sgUi.options.oaths, sg_precept: sgUi.options.precepts, sg_bond: sgUi.options.bonds }[t.name];
+  const box = t.form?.querySelector(`[data-sg-edit="${t.name}"]`);
+  if (list && box) box.value = list[Number(t.value)]?.text || "";
 });
 
 $main.addEventListener("click", (e) => {

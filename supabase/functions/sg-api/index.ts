@@ -129,7 +129,7 @@ async function suggestVows(body: any) {
 最旺:${ENERGY_NAMES[s]};最弱:${ENERGY_NAMES[w]};第二弱:${ENERGY_NAMES[w2]}。
 請產生三類選項,各剛好 3 個,使用繁體中文,每個 15–60 字,具體、可在日常執行、可被檢核:
 1. oaths(誓言):保留使用者誓言的原意,改寫成 30 天內可衡量的目標;energy 填這個誓言主要需要的能量。
-2. precepts(戒律,每日):參考使用者想遵守的戒律;寫法是「在${ENERGY_NAMES[s]}容易用過頭的情境,改用${ENERGY_NAMES[w]}的做法」,用最弱的能量節制最旺的能量。
+2. precepts(戒律,每日):${preceptWish ? "使用者已寫下想遵守的戒律,三個選項都必須以它為主體改寫,保留其中的關鍵行為、對象與數字;再融入" : "寫法是"}「在${ENERGY_NAMES[s]}容易用過頭的情境,改用${ENERGY_NAMES[w]}的做法」,用最弱的能量節制最旺的能量。
 3. bonds(約束,7 天挑戰):補足「${ENERGY_NAMES[w2]}」,寫成 7 天內每天或累計可完成的具體挑戰。
 不要提八字、十神術語,不要醫療、投資或保證性承諾。`;
   const res = await fetch("https://api.openai.com/v1/responses", {
@@ -149,6 +149,7 @@ async function suggestVows(body: any) {
   let text = "";
   for (const item of payload.output ?? []) for (const part of item.content ?? []) if (part.type === "output_text") text = part.text;
   const out = JSON.parse(text);
+  console.log("sg-api suggest", JSON.stringify({ oaths: out.oaths?.length, precepts: out.precepts?.length, bonds: out.bonds?.length }));
   const pick = (arr: any[]) => (Array.isArray(arr) ? arr : []).slice(0, 3).map((o) => ({ ...o, text: str(o.text, 80) })).filter((o) => o.text);
   return {
     s, w, w2,

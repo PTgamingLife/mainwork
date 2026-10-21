@@ -1,10 +1,10 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261021a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261021a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js";
+} from "./sg-store.js?v=20261021a";
 
 export const sgEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const sgFmt = (v) => (Math.round(v * 100) / 100).toFixed(2);
@@ -138,7 +138,8 @@ function sgVowSetup(state, ui) {
   const o = ui.options;
   const group = (name, tag, title, items, chips) => `<div class="sg-card"><span class="sg-tag">${tag}</span><h3>${title}</h3>
     ${items.map((it, i) => `<label class="sg-option"><input type="radio" name="${name}" value="${i}" ${i === 0 ? "checked" : ""}><span>${sgEsc(it.text)}
-      <span class="sg-chips">${sgDeltaChips(chips(it))}</span></span></label>`).join("")}</div>`;
+      <span class="sg-chips">${sgDeltaChips(chips(it))}</span></span></label>`).join("")}
+    <label class="sg-field"><span>選好後可再微調文字</span><textarea class="sg-input" name="${name}_text" data-sg-edit="${name}" rows="2" maxlength="80" required>${sgEsc(items[0]?.text || "")}</textarea></label></div>`;
   return `${head}
   <form id="sg-form-vow">
     ${o.fallback ? `<p class="sg-muted">AI 暫時無法使用(${sgEsc(o.fallback)}),以下為系統建議選項。</p>` : ""}
