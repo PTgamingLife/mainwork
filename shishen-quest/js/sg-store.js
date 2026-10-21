@@ -5,7 +5,8 @@ import {
 } from "./sg-data.js";
 
 const SG_KEY = "sg_state_v2";
-export const SG_STEP = 0.1;        // 每項任務完成一週,對應能量 +0.1(只加不扣)
+export const SG_STEP = 0.1;        // 每天每完成一項任務,對應能量 +0.1(只加不扣)
+export const SG_WISH_COST = 2;     // 每次許願消耗的修行能量
 export const SG_WEEK_DAYS = 7;
 export const SG_PASS_DAYS = 5;     // 7 天內做到 5 天算完成
 const sgMother = (e) => (e + 4) % 5;   // 生 e 的能量
@@ -15,7 +16,7 @@ const sgVictim = (e) => (e + 2) % 5;   // e 剋的能量
 export function sgEmptyState() {
   return {
     sg_profile: null, sg_chart: null, sg_evolved: [0, 0, 0, 0, 0], sg_week: null,
-    sg_checkins: {}, sg_history: [], sg_amulets: 0, sg_amulet_used: [],
+    sg_checkins: {}, sg_history: [], sg_amulets: 0, sg_amulet_used: [], sg_wishes: [],
   };
 }
 
@@ -123,20 +124,40 @@ export function sgStreak(state, today = sgDateStr()) {
   return n;
 }
 
+// 任務對應的能量(舊版存檔沒有 sg_energy,從正的 delta 推回)
+const sgTaskEnergy = (v) => (Number.isInteger(v?.sg_energy) ? v.sg_energy : (v?.sg_delta || []).findIndex((x) => x > 0));
+
+// 當天打卡帶來的能量:每完成一項任務,對應能量 +0.1
+export function sgDayGain(state, entry) {
+  const wk = state.sg_week;
+  const g = [0, 0, 0, 0, 0];
+  if (!wk) return g;
+  [["sg_precept_ok", wk.sg_precept], ["sg_bond_ok", wk.sg_bond], ["sg_oath_ok", wk.sg_oath]].forEach(([k, v]) => {
+    const e = sgTaskEnergy(v);
+    if (entry[k] && e >= 0) g[e] = sgRound(g[e] + SG_STEP);
+  });
+  return g;
+}
+
 export function sgCheckin(state, entry, today = sgDateStr()) {
   const yesterday = sgAddDays(today, -1);
-  const isNew = !state.sg_checkins[today];
+  const prev = state.sg_checkins[today];
+  const isNew = !prev;
   if (isNew && !state.sg_checkins[yesterday] && !state.sg_amulet_used.includes(yesterday)
       && state.sg_checkins[sgAddDays(today, -2)] && state.sg_amulets > 0) {
     state.sg_amulets -= 1;
     state.sg_amulet_used.push(yesterday);
   }
-  state.sg_checkins[today] = { ...entry, sg_at: new Date().toISOString() };
+  // 同一天重複打卡:先扣回上次的加成,再加這次的(不會重複累積)
+  const gain = sgDayGain(state, entry);
+  const old = prev?.sg_gain || [0, 0, 0, 0, 0];
+  state.sg_evolved = state.sg_evolved.map((v, i) => sgRound(v + gain[i] - old[i]));
+  state.sg_checkins[today] = { ...entry, sg_gain: gain, sg_at: new Date().toISOString() };
   if (state.sg_week) state.sg_week.sg_oath.sg_pct = Math.max(state.sg_week.sg_oath.sg_pct, entry.sg_oath_pct || 0);
   const streak = sgStreak(state, today);
   const earnedAmulet = isNew && streak > 0 && streak % 7 === 0;
   if (earnedAmulet) state.sg_amulets += 1;
-  return { streak, earnedAmulet };
+  return { streak, earnedAmulet, gain };
 }
 
 // 本週進度
@@ -155,7 +176,7 @@ export function sgWeekProgress(state, today = sgDateStr()) {
   };
 }
 
-// 週問卷送出:完成的任務把能量變化加進能量表
+// 週問卷送出:能量已在每天打卡時加上,這裡只做本週結算紀錄
 export function sgSubmitReview(state, answers) {
   const wk = state.sg_week;
   const pr = sgWeekProgress(state);
@@ -165,19 +186,57 @@ export function sgSubmitReview(state, answers) {
     sg_oath: pr.sg_oath >= SG_PASS_DAYS,
   };
   const applied = [0, 0, 0, 0, 0];
-  for (const k of Object.keys(passed)) {
-    // 只加不扣(舊版存檔可能含負值,一律略過)
-    if (passed[k]) wk[k].sg_delta.forEach((v, i) => { if (v > 0) applied[i] = sgRound(applied[i] + v); });
+  for (let i = 0; i < SG_WEEK_DAYS; i++) {
+    (state.sg_checkins[sgAddDays(wk.sg_start, i)]?.sg_gain || []).forEach((v, k) => { applied[k] = sgRound(applied[k] + v); });
   }
-  const before = sgEnergies(state);
-  state.sg_evolved = state.sg_evolved.map((v, i) => sgRound(v + applied[i]));
   state.sg_history.push({
     sg_start: wk.sg_start, sg_end: wk.sg_end, sg_answers: answers, sg_passed: passed,
-    sg_applied: applied, sg_before: before, sg_after: sgEnergies(state), sg_avg: pr.sg_avg,
-    sg_oath_text: wk.sg_oath.sg_text,
+    sg_applied: applied, sg_after: sgEnergies(state), sg_avg: pr.sg_avg, sg_oath_text: wk.sg_oath.sg_text,
   });
   state.sg_week = null;
   return { passed, applied };
+}
+
+// ---- 許願:只能用修行後多出來的能量,每次共消耗 2 ----
+export function sgWishPool(state) {
+  const pool = (state.sg_evolved || [0, 0, 0, 0, 0]).map((v) => sgRound(Math.max(0, v)));
+  return { pool, total: sgRound(pool.reduce((a, b) => a + b, 0)) };
+}
+
+// 把 AI 給的比例修正成「每格不超過可用量、總和剛好 2」
+export function sgFitCost(raw, pool) {
+  const cost = pool.map((p, i) => Math.min(p, Math.max(0, Number(raw?.[i]) || 0)));
+  let sum = cost.reduce((a, b) => a + b, 0);
+  if (sum > SG_WISH_COST) cost.forEach((c, i) => { cost[i] = c * SG_WISH_COST / sum; });
+  sum = cost.reduce((a, b) => a + b, 0);
+  // 不足 2:依剩餘可用量由多到少補齊
+  [0, 1, 2, 3, 4].sort((a, b) => (pool[b] - cost[b]) - (pool[a] - cost[a])).forEach((i) => {
+    const need = SG_WISH_COST - sum;
+    if (need <= 1e-9) return;
+    const add = Math.min(need, pool[i] - cost[i]);
+    cost[i] += add; sum += add;
+  });
+  return cost.map(sgRound);
+}
+
+export function sgMakeWish(state, text, result) {
+  const { pool, total } = sgWishPool(state);
+  if (total < SG_WISH_COST) throw new Error("NOT_ENOUGH");
+  const cost = sgFitCost(result.cost, pool);
+  state.sg_evolved = state.sg_evolved.map((v, i) => sgRound(v - cost[i]));
+  const wish = { sg_date: sgDateStr(), sg_text: text.slice(0, 120), sg_cost: cost, sg_blessing: result.blessing, sg_action: result.action };
+  state.sg_wishes = [...(state.sg_wishes || []), wish];
+  return wish;
+}
+
+// AI 無法使用時:依可用量比例扣除,祝福用天使台詞
+export function sgFallbackWish(state, text) {
+  const a = sgAngel(state);
+  return {
+    cost: sgWishPool(state).pool,
+    blessing: `${a.sg_name}收下了你的願望:「${text.slice(0, 40)}」。${a.sg_lines[2]}`,
+    action: "今天就為這個願望做一件 10 分鐘內能完成的小事,做完回來打卡。",
+  };
 }
 
 // ---- 守護天使:與使用者完全相反的能量分布 ----

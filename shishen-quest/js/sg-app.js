@@ -2,7 +2,7 @@
 import { sgCalcChart } from "./sg-bazi.js";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
-  sgFallbackOptions, sgEnergies,
+  sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
 } from "./sg-store.js";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
@@ -18,7 +18,7 @@ const $nav = document.getElementById("sg-nav");
 const $toast = document.getElementById("sg-toast");
 let sgState = sgLoad();
 let sgView = "chart";
-const sgUi = { options: null, oathWish: "", preceptWish: "", loading: false };
+const sgUi = { options: null, oathWish: "", preceptWish: "", loading: false, wishing: false, wishResult: null };
 let sgLiff = null;
 let sgSyncTimer = 0;
 
@@ -68,7 +68,7 @@ function sgRender() {
   const views = {
     chart: () => sgViewChart(sgState, sgUi),
     today: () => sgViewToday(sgState),
-    angel: () => sgViewAngel(sgState),
+    angel: () => sgViewAngel(sgState, sgUi),
     review: () => (sgState.sg_week ? sgViewReview(sgState) : sgViewGrowth(sgState)),
     growth: () => sgViewGrowth(sgState),
   };
@@ -136,7 +136,7 @@ function sgHandleVow(form) {
 function sgHandleCheckin(form) {
   const fd = new FormData(form);
   const before = sgRealm(sgState).cur.sg_name;
-  const { streak, earnedAmulet } = sgCheckin(sgState, {
+  const { streak, earnedAmulet, gain } = sgCheckin(sgState, {
     sg_precept_ok: fd.get("sg_precept_ok") === "on",
     sg_bond_ok: fd.get("sg_bond_ok") === "on",
     sg_oath_ok: fd.get("sg_oath_ok") === "on",
@@ -146,7 +146,8 @@ function sgHandleCheckin(form) {
   });
   sgPersist();
   const after = sgRealm(sgState).cur.sg_name;
-  sgToast(after !== before ? `境界晉升:${after}!` : earnedAmulet ? `連續 ${streak} 天,獲得護符一枚` : `已落印,連續 ${streak} 天`);
+  const got = gain.reduce((a, b) => a + b, 0);
+  sgToast(after !== before ? `境界晉升:${after}!` : earnedAmulet ? `連續 ${streak} 天,獲得護符一枚` : `已落印,連續 ${streak} 天${got ? `・能量 +${got.toFixed(1)}` : ""}`);
   sgGo("growth");
 }
 
@@ -159,6 +160,29 @@ function sgHandleReview(form) {
   const n = Object.values(passed).filter(Boolean).length;
   sgToast(n ? `${n} 項任務完成,能量已進化!` : "這週沒有任務達標,下週再來");
   sgGo("chart");
+}
+
+// 許願:AI 依願望決定消耗比例並回應;未登入 LINE 或 AI 失敗時用固定回應
+async function sgHandleAngelWish(form) {
+  const text = String(new FormData(form).get("sg_wish") || "").trim();
+  if (text.length < 2) return sgToast("請寫下你的願望");
+  const { pool, total } = sgWishPool(sgState);
+  if (total < 2) return sgToast("修行能量還不夠 2");
+  const a = sgAngel(sgState);
+  sgUi.wishing = true; sgRender();
+  let result;
+  try {
+    if (!sgLiff) throw new Error("離線模式");
+    const r = await sgApi("wish", { wish: text, pool, angel_name: a.sg_name, angel_trait: a.sg_trait });
+    result = r.wish;
+  } catch (e) {
+    result = sgFallbackWish(sgState, text);
+    if (e.message === "AI_LIMIT") sgToast("今天的 AI 次數已用完,由天使先給你一段祝福");
+  }
+  sgUi.wishResult = sgMakeWish(sgState, text, result);
+  sgUi.wishing = false;
+  sgPersist();
+  sgRender();
 }
 
 async function sgShare() {
@@ -177,7 +201,7 @@ async function sgShare() {
 
 $main.addEventListener("submit", (e) => {
   e.preventDefault();
-  const handlers = { "sg-form-birth": sgHandleBirth, "sg-form-wish": sgHandleWish, "sg-form-vow": sgHandleVow, "sg-form-checkin": sgHandleCheckin, "sg-form-review": sgHandleReview };
+  const handlers = { "sg-form-birth": sgHandleBirth, "sg-form-wish": sgHandleWish, "sg-form-vow": sgHandleVow, "sg-form-checkin": sgHandleCheckin, "sg-form-wish-angel": sgHandleAngelWish, "sg-form-review": sgHandleReview };
   handlers[e.target.id]?.(e.target);
 });
 

@@ -6,7 +6,7 @@
 // secrets:
 //   SG_LINE_CHANNEL_ACCESS_TOKEN  推立誓確認訊息
 //   SG_LIFF_URL                   確認訊息上的按鈕連結
-//   OPENAI_API_KEY / OPENAI_TEXT_MODEL  AI 整理立誓選項(每人每天 5 次)
+//   OPENAI_API_KEY / OPENAI_TEXT_MODEL  AI 整理立誓選項、許願(合計每人每天 5 次)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 由 Supabase 自動注入
 
 // LIFF 所在的 LINE Login 頻道(AIbot_focus)。頻道 ID 是公開資訊,直接寫死,
@@ -158,6 +158,68 @@ async function suggestVows(body: any) {
   };
 }
 
+// ---- 許願:AI 依願望內容決定消耗哪些能量(每格不超過可用量、總和 2),並由天使回應 ----
+const WISH_COST = 2;
+const WISH_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["cost", "blessing", "action"],
+  properties: {
+    cost: { type: "object", additionalProperties: false, required: ENERGY_NAMES, properties: Object.fromEntries(ENERGY_NAMES.map((n) => [n, { type: "number" }])) },
+    blessing: { type: "string" },
+    action: { type: "string" },
+  },
+};
+
+function fitCost(raw: number[], pool: number[]) {
+  const cost = pool.map((p, i) => Math.min(p, Math.max(0, Number(raw[i]) || 0)));
+  let sum = cost.reduce((a, b) => a + b, 0);
+  if (sum > WISH_COST) cost.forEach((c, i) => { cost[i] = c * WISH_COST / sum; });
+  sum = cost.reduce((a, b) => a + b, 0);
+  [0, 1, 2, 3, 4].sort((a, b) => (pool[b] - cost[b]) - (pool[a] - cost[a])).forEach((i) => {
+    const need = WISH_COST - sum;
+    if (need <= 1e-9) return;
+    const add = Math.min(need, pool[i] - cost[i]);
+    cost[i] += add; sum += add;
+  });
+  return cost.map((v) => Math.round(v * 100) / 100);
+}
+
+async function makeWish(body: any) {
+  const pool = Array.isArray(body.pool) && body.pool.length === 5 ? body.pool.map((v: unknown) => Math.max(0, Number(v) || 0)) : null;
+  const wish = str(body.wish, 120);
+  if (!pool || wish.length < 2) throw new Error("BAD_INPUT");
+  if (pool.reduce((a: number, b: number) => a + b, 0) < WISH_COST - 1e-9) throw new Error("NOT_ENOUGH");
+  const angel = str(body.angel_name, 8) || "守護天使";
+  const trait = str(body.angel_trait, 60);
+  const system = `你是守護天使「${angel}」,個性:${trait}。使用者用修行累積的能量向你許願。
+可用的修行能量:${ENERGY_NAMES.map((n, i) => `${n} ${pool[i].toFixed(2)}`).join("、")}。
+1. cost:依願望內容判斷實現它最需要哪些能量,分配消耗量,總和必須剛好 ${WISH_COST},每一項不得超過該能量的可用量,用不到的填 0。
+2. blessing:用你的個性回應這個願望,40–80 字,溫暖具體,不保證結果。
+3. action:給一個今天就能做、10–30 分鐘內完成的具體小行動,20–50 字。
+使用繁體中文,不要提八字、十神術語,不給醫療、投資或法律建議。`;
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: TEXT_MODEL, store: false,
+      input: [
+        { role: "system", content: [{ type: "input_text", text: system }] },
+        { role: "user", content: [{ type: "input_text", text: wish }] },
+      ],
+      text: { format: { type: "json_schema", name: "sg_wish", strict: true, schema: WISH_SCHEMA } },
+    }),
+  });
+  if (!res.ok) throw new Error(`OPENAI_${res.status}:${(await res.text()).slice(0, 200)}`);
+  const payload = await res.json();
+  let text = "";
+  for (const item of payload.output ?? []) for (const part of item.content ?? []) if (part.type === "output_text") text = part.text;
+  const out = JSON.parse(text);
+  return {
+    cost: fitCost(ENERGY_NAMES.map((n) => out.cost?.[n]), pool),
+    blessing: str(out.blessing, 160),
+    action: str(out.action, 100),
+  };
+}
+
 // 立誓確認卡
 function vowCard(s: any) {
   const wk = s.sg_week;
@@ -228,6 +290,11 @@ Deno.serve(async (req) => {
       if (!(await takeAiQuota(uid))) return json({ error: "AI_LIMIT" }, 429);
       return json({ ok: true, options: await suggestVows(body) });
     }
+    if (body.action === "wish") {
+      if (!OPENAI_KEY) return json({ error: "AI_UNAVAILABLE" }, 503);
+      if (!(await takeAiQuota(uid))) return json({ error: "AI_LIMIT" }, 429);
+      return json({ ok: true, wish: await makeWish(body) });
+    }
     if (body.action === "delete") {
       await fetch(`${SUPABASE_URL}/rest/v1/sg_users?sg_line_uid=eq.${encodeURIComponent(uid)}`, { method: "DELETE", headers: sbHeaders() });
       return json({ ok: true });
@@ -236,7 +303,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("sg-api", e);
     const msg = e instanceof Error ? e.message : "";
-    const bad = ["BAD_PROFILE", "BAD_INPUT", "NO_USER"].includes(msg);
+    const bad = ["BAD_PROFILE", "BAD_INPUT", "NO_USER", "NOT_ENOUGH"].includes(msg);
     return json({ error: bad ? msg : "SERVER" }, bad ? 400 : 500);
   }
 });
