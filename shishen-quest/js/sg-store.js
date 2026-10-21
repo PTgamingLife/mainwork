@@ -1,8 +1,8 @@
 // 十神修行錄 — 狀態與規則(本機 localStorage;登入 LINE 時由 sg-app 同步到雲端)
-import { sgEnergyTotals } from "./sg-bazi.js";
+import { sgEnergyTotals } from "./sg-bazi.js?v=20261021a";
 import {
   SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
-} from "./sg-data.js";
+} from "./sg-data.js?v=20261021a";
 
 const SG_KEY = "sg_state_v2";
 export const SG_STEP = 0.1;        // 每天每完成一項任務,對應能量 +0.1(只加不扣)
@@ -83,28 +83,31 @@ export function sgOathEnergy(text, fallback) {
 }
 
 // AI 無法使用時的固定選項(格式與 AI 回傳相同)
-export function sgFallbackOptions(state, oathWish) {
+export function sgFallbackOptions(state, oathWish, preceptWish = "") {
   const { s, w, w2 } = sgStrongWeak(sgEnergies(state));
   const t = oathWish.trim().slice(0, 50);
   const e = sgOathEnergy(t, w);
   return {
     s, w, w2,
     oaths: [`30 天內完成:${t}`, `30 天內每週推進一步:${t}`, `30 天內完成第一個可驗收的成果:${t}`].map((text) => ({ text, energy: e })),
-    precepts: SG_WEAK_METHODS[w].map((m) => ({ text: `${SG_OVERUSE_SCENE[s]},${m}。` })),
+    precepts: [
+      ...(preceptWish ? [{ text: preceptWish.trim().slice(0, 80) }] : []),
+      ...SG_WEAK_METHODS[w].map((m) => ({ text: `${SG_OVERUSE_SCENE[s]},${m}。` })),
+    ].slice(0, 3),
     bonds: SG_BONDS[w2].map((text) => ({ text })),
   };
 }
 
 // 依選擇開始一週;opts 為 AI 或備案選項,pick = { oath, precept, bond } 索引
-export function sgStartWeek(state, opts, pick) {
+export function sgStartWeek(state, opts, pick, edits = {}) {
   const today = sgDateStr();
   const oath = opts.oaths[pick.oath];
   state.sg_week = {
     sg_start: today,
     sg_end: sgAddDays(today, SG_WEEK_DAYS - 1),
-    sg_precept: { sg_text: opts.precepts[pick.precept].text, sg_energy: opts.w, sg_delta: sgUp(opts.w) },
-    sg_bond: { sg_text: opts.bonds[pick.bond].text, sg_energy: opts.w2, sg_delta: sgUp(opts.w2) },
-    sg_oath: { sg_text: oath.text.slice(0, 80), sg_energy: oath.energy, sg_delta: sgUp(oath.energy), sg_pct: 0 },
+    sg_precept: { sg_text: edits.precept || opts.precepts[pick.precept].text, sg_energy: opts.w, sg_delta: sgUp(opts.w) },
+    sg_bond: { sg_text: edits.bond || opts.bonds[pick.bond].text, sg_energy: opts.w2, sg_delta: sgUp(opts.w2) },
+    sg_oath: { sg_text: (edits.oath || oath.text).slice(0, 80), sg_energy: oath.energy, sg_delta: sgUp(oath.energy), sg_pct: 0 },
   };
 }
 
