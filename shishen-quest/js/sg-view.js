@@ -78,7 +78,7 @@ function sgResearch(e, kind) {
 function sgAngelCard(state, compact) {
   const a = sgAngel(state);
   return `<div class="sg-card sg-angel">
-    <div class="sg-angel-img" aria-hidden="true"><span>${a.sg_name[0]}</span></div>
+    <img class="sg-angel-img" src="${a.sg_img}" alt="守護天使${a.sg_name}" width="84" height="84" loading="lazy">
     <div><span class="sg-tag">守護天使</span><h3>${a.sg_name}</h3>
       <p class="sg-muted">${a.sg_trait}・最強的是「${SG_ENERGIES[a.sg_energy].sg_name}」</p>
       <p class="sg-say">「${a.sg_line}」</p>
@@ -186,6 +186,7 @@ export function sgViewAngel(state) {
   return `
   <h2 class="sg-h">守護天使</h2>
   ${sgAngelCard(state, true)}
+  <div class="sg-card"><img class="sg-angel-hero" src="${a.sg_img}" alt="守護天使${a.sg_name}"></div>
   <div class="sg-card"><h3>${a.sg_name}的能量</h3>
     <p class="sg-muted">天使的能量與你完全相反:你最弱的,正是它最強的。它會用自己的強項,陪你補上你的弱項、完成誓言。</p>
     ${sgRadar([{ values: sgEnergies(state), cls: "sg-poly-base" }, { values: a.sg_values, cls: "sg-poly-angel" }], "你與天使的能量")}
