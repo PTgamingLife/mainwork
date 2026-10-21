@@ -4,12 +4,13 @@
 // v2:整份遊戲狀態存在 sg_users.sg_state(jsonb);立誓時(notify=vows)推一則 LINE 確認訊息。
 //
 // secrets:
-//   SG_LIFF_CHANNEL_ID            LINE Login channel ID(驗 ID token 的 aud)
 //   SG_LINE_CHANNEL_ACCESS_TOKEN  推立誓確認訊息
 //   SG_LIFF_URL                   確認訊息上的按鈕連結
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 由 Supabase 自動注入
 
-const LIFF_CHANNEL_ID = Deno.env.get("SG_LIFF_CHANNEL_ID") ?? "";
+// LIFF 所在的 LINE Login 頻道(AIbot_focus)。頻道 ID 是公開資訊,直接寫死,
+// 避免 secret 填成 Messaging API 頻道而出現「Invalid IdToken Audience」。
+const LIFF_CHANNEL_ID = "2011684838";
 const LINE_TOKEN = Deno.env.get("SG_LINE_CHANNEL_ACCESS_TOKEN") ?? "";
 const LIFF_URL = Deno.env.get("SG_LIFF_URL") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
