@@ -53,18 +53,19 @@ const igpAuth = {
     return data;
   },
 
-  // 寄出驗證信:信裡有魔術連結,若 Email 範本有 {{ .Token }} 也會有 6 位數驗證碼
-  async sendCode(email) {
-    const redirect = encodeURIComponent(location.origin + location.pathname);
-    await this.call(`otp?redirect_to=${redirect}`, { email, create_user: true });
+  redirectTo() { return encodeURIComponent(location.origin + location.pathname); },
+
+  // Google 登入:整頁跳到 Supabase,登入完帶著 #access_token 回來
+  google() {
+    location.href = `${IGP_SB_URL}/auth/v1/authorize?provider=google&redirect_to=${this.redirectTo()}`;
   },
 
-  async verifyCode(email, token) {
-    const s = await this.call('verify', { type: 'email', email, token });
-    this.save(s);
+  // 寄出 Email 魔術連結
+  async sendLink(email) {
+    await this.call(`otp?redirect_to=${this.redirectTo()}`, { email, create_user: true });
   },
 
-  // 點魔術連結回來時,token 在網址 # 後面
+  // Google / 魔術連結回來時,token 在網址 # 後面
   async fromUrlHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     const access = h.get('access_token');

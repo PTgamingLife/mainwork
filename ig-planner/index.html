@@ -185,15 +185,15 @@
   <!-- 登入 -->
   <section class="igp-login igp-hidden" id="igp-login">
     <h2>登入</h2>
-    <p>輸入 Email,收信後點信中的連結,或輸入信裡的 6 位數驗證碼。手機與電腦登入同一個 Email,內容就會同步。</p>
-    <form id="igp-email-form">
-      <input type="email" id="igp-email" placeholder="you@example.com" autocomplete="email" required>
-      <button class="igp-btn igp-primary" type="submit">寄送登入信</button>
-    </form>
-    <form id="igp-code-form" class="igp-hidden" style="margin-top:14px">
-      <input type="text" id="igp-code" inputmode="numeric" autocomplete="one-time-code" placeholder="6 位數驗證碼" maxlength="10">
-      <button class="igp-btn" type="submit">用驗證碼登入</button>
-    </form>
+    <p>手機與電腦登入同一個 Google 帳號,內容就會同步。</p>
+    <button class="igp-btn igp-primary" id="igp-google" type="button">用 Google 帳號登入</button>
+    <details style="margin-top:16px">
+      <summary style="font-size:.8rem;color:var(--igp-muted);cursor:pointer">改用 Email 登入連結</summary>
+      <form id="igp-email-form" style="margin-top:10px">
+        <input type="email" id="igp-email" placeholder="you@example.com" autocomplete="email" required>
+        <button class="igp-btn" type="submit">寄送登入信</button>
+      </form>
+    </details>
     <div class="igp-msg" id="igp-login-msg"></div>
   </section>
 
