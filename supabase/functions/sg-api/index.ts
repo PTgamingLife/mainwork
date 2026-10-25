@@ -323,6 +323,16 @@ Deno.serve(async (req) => {
       if (!(await takeAiQuota(uid))) return json({ error: "AI_LIMIT" }, 429);
       return json({ ok: true, wish: await makeWish(body) });
     }
+    if (body.action === "hexagram") {
+      // 今日卜卦:依本卦 / 變卦的爻象(由下而上,1=陽)回傳卦辭、爻辭、白話
+      const bits = [body.bits, body.changed].filter((b) => typeof b === "string" && /^[01]{6}$/.test(b));
+      if (!bits.length) return json({ error: "BAD_INPUT" }, 400);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/sg_iching?sg_bits=in.(${bits.join(",")})&select=sg_no,sg_name,sg_full_name,sg_bits,sg_judgment,sg_plain,sg_lines,sg_extra`, { headers: sbHeaders() });
+      if (!res.ok) throw new Error(`SB_SELECT_${res.status}`);
+      const rows = await res.json();
+      const find = (b: string) => rows.find((r: any) => r.sg_bits === b) ?? null;
+      return json({ ok: true, main: find(body.bits), changed: body.changed ? find(body.changed) : null });
+    }
     if (body.action === "delete") {
       await fetch(`${SUPABASE_URL}/rest/v1/sg_users?sg_line_uid=eq.${encodeURIComponent(uid)}`, { method: "DELETE", headers: sbHeaders() });
       return json({ ok: true });

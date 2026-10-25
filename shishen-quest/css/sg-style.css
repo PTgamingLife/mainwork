@@ -175,3 +175,32 @@ body {
 .sg-bloom-2 { animation-delay: .6s; }
 @keyframes sg-bloom { from { transform: scale(.15); opacity: 0; } 40% { opacity: 1; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .sg-bloom { animation: none; } }
+
+/* 五行轉化型態標籤 */
+.sg-transform { display: inline-block; font-size: 12px; padding: 1px 9px; margin: 0 6px 6px 0; border-radius: 999px;
+  background: rgba(227,190,43,.18); color: var(--sg-plum-deep); border: 1px solid rgba(184,149,26,.45); }
+.sg-option .sg-transform { margin: 6px 6px 0 0; }
+
+/* 今日卜卦 */
+.sg-divine { text-align: center; }
+.sg-turtle { display: block; margin: 8px auto; padding: 0; border: 0; background: none; width: min(240px, 70vw);
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sg-turtle img { width: 100%; border-radius: 50%; display: block; pointer-events: none;
+  box-shadow: 0 14px 30px -18px rgba(30,30,30,.6); }
+.sg-turtle.sg-shaking { animation: sg-shake .16s linear infinite; }
+@keyframes sg-shake { 0%,100% { transform: rotate(0) translateX(0); } 25% { transform: rotate(-5deg) translateX(-4px); } 75% { transform: rotate(5deg) translateX(4px); } }
+.sg-divine-step { font-family: var(--sg-font-brush); font-size: 18px; margin: 4px 0 10px; }
+.sg-yaos { display: flex; flex-direction: column; gap: 8px; margin: 10px auto 14px; max-width: 300px; }
+.sg-yao { display: grid; grid-template-columns: 44px 1fr 1fr 74px; align-items: center; gap: 8px; font-size: 13px; }
+.sg-yao small { color: var(--sg-gray); text-align: right; }
+.sg-yao em { font-style: normal; color: var(--sg-gray); text-align: left; }
+.sg-yao i { height: 12px; background: var(--sg-ink); border-radius: 2px 4px 3px 2px; }
+.sg-yang i:first-of-type { border-radius: 2px 0 0 3px; margin-right: -8px; }
+.sg-yang i:last-of-type { border-radius: 0 4px 3px 0; margin-left: -8px; }
+.sg-yin i:first-of-type { margin-right: 10px; }
+.sg-yin i:last-of-type { margin-left: 10px; }
+.sg-moving i { background: var(--sg-plum-deep); }
+.sg-moving em { color: var(--sg-plum-deep); font-weight: 700; }
+.sg-hex { text-align: left; border-top: 1px dashed var(--sg-line); padding-top: 10px; margin-top: 10px; }
+.sg-hex-judg { font-family: var(--sg-font-brush); font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .sg-turtle.sg-shaking { animation-duration: .5s; } }

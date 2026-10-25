@@ -9,6 +9,7 @@ import {
 } from "./sg-view.js?v=20261024a";
 import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261024a";
 import { SG_TRANSFORMS, sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261024a";
+import { sgCastYao, sgAddYao, sgTodayDivine, sgSetDivineText } from "./sg-divine.js?v=20261024a";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";
@@ -18,7 +19,7 @@ const $main = document.getElementById("sg-main");
 const $toast = document.getElementById("sg-toast");
 let sgState = sgLoad();
 let sgView = "chart";
-const sgUi = { options: null, oathWish: "", preceptWish: "", loading: false, wishing: false, wishResult: null };
+const sgUi = { options: null, oathWish: "", preceptWish: "", loading: false, wishing: false, wishResult: null, divineError: "" };
 let sgLiff = null;
 let sgSyncTimer = 0;
 
@@ -65,12 +66,15 @@ function sgRender() {
   document.getElementById("sg-greet").textContent = `${sgState.sg_profile.sg_nickname},以命為墨,以行為筆`;
   const views = {
     chart: () => sgViewChart(sgState, sgUi),
-    today: () => sgViewToday(sgState),
+    today: () => sgViewToday(sgState, sgUi),
     angel: () => sgViewAngel(sgState, sgUi),
     review: () => (sgState.sg_week ? sgViewReview(sgState) : sgViewGrowth(sgState)),
     growth: () => sgViewGrowth(sgState),
   };
   $main.innerHTML = (views[sgView] || views.chart)();
+  // 今天已成卦但還沒有卦辭(例如上次離線):進到今日頁時自動補抓
+  const d = sgTodayDivine(sgState);
+  if (sgView === "today" && d?.sg_bits && !d.sg_text && !sgUi.divineError) setTimeout(sgFetchDivineText, 0);
 }
 
 function sgHandleBirth(form) {
@@ -146,9 +150,6 @@ function sgHandleCheckin(form) {
     sg_precept_ok: fd.get("sg_precept_ok") === "on",
     sg_bond_ok: fd.get("sg_bond_ok") === "on",
     sg_oath_ok: fd.get("sg_oath_ok") === "on",
-    sg_oath_pct: Math.min(100, Math.max(0, Number(fd.get("sg_oath_pct")) || 0)),
-    sg_score: Math.min(10, Math.max(1, Number(fd.get("sg_score")) || 1)),
-    sg_note: String(fd.get("sg_note") || "").trim().slice(0, 60),
   });
   sgPersist();
   const after = sgRealm(sgState).cur.sg_name;
@@ -212,8 +213,94 @@ $main.addEventListener("submit", (e) => {
 });
 
 $main.addEventListener("input", (e) => {
-  const out = { sg_oath_pct: "sg-pct-out", sg_score: "sg-score-out" }[e.target.name];
+  const out = { sg_score: "sg-score-out" }[e.target.name];
   if (out) document.getElementById(out).textContent = e.target.value;
+});
+
+// ---- 今日卜卦:按住龜殼約 1 秒(或實際搖手機約 1 秒)得一爻 ----
+const SG_SHAKE_MS = 1000;
+let sgHoldTimer = 0;
+let sgShakeMs = 0;
+let sgLastMotion = 0;
+
+function sgTurtle(on) {
+  document.getElementById("sg-turtle")?.classList.toggle("sg-shaking", on);
+}
+
+function sgYao() {
+  clearTimeout(sgHoldTimer); sgHoldTimer = 0; sgShakeMs = 0;
+  const d = sgTodayDivine(sgState);
+  if (d?.sg_lines?.length >= 6) return;
+  const yao = sgCastYao();
+  const done = sgAddYao(sgState, yao);
+  sgToast(`得一爻:${yao.coins.map((c) => (c === 3 ? "正" : "反")).join("、")} → ${yao.value}`);
+  sgPersist();
+  sgRender();
+  if (done) sgFetchDivineText();
+}
+
+async function sgFetchDivineText() {
+  const d = sgTodayDivine(sgState);
+  if (!d?.sg_bits || d.sg_text || sgUi.divineLoading) return;
+  sgUi.divineError = "";
+  sgUi.divineLoading = true;
+  try {
+    if (!sgLiff) throw new Error("離線模式");
+    const r = await sgApi("hexagram", { bits: d.sg_bits, changed: d.sg_changed || "" });
+    if (!r?.main) throw new Error("查無此卦");
+    sgSetDivineText(sgState, r);
+    sgPersist();
+  } catch (e) {
+    sgUi.divineError = e.message;
+  }
+  sgUi.divineLoading = false;
+  if (sgView === "today") sgRender();
+}
+
+// iOS 需在使用者手勢內請求動作感測權限
+let sgMotionAsked = false;
+function sgAskMotion() {
+  if (sgMotionAsked) return;
+  sgMotionAsked = true;
+  const DM = window.DeviceMotionEvent;
+  if (DM && typeof DM.requestPermission === "function") DM.requestPermission().catch(() => {});
+}
+
+$main.addEventListener("pointerdown", (e) => {
+  if (!e.target.closest("#sg-turtle")) return;
+  e.preventDefault();
+  sgAskMotion();
+  sgTurtle(true);
+  clearTimeout(sgHoldTimer);
+  sgHoldTimer = setTimeout(sgYao, SG_SHAKE_MS);
+});
+const sgHoldEnd = () => {
+  if (!sgHoldTimer) return;
+  clearTimeout(sgHoldTimer); sgHoldTimer = 0;
+  sgTurtle(false);
+  sgToast("再按久一點,搖滿約 1 秒才會出爻");
+};
+["pointerup", "pointercancel", "pointerleave"].forEach((t) => $main.addEventListener(t, (e) => {
+  if (e.target.closest?.("#sg-turtle")) sgHoldEnd();
+}));
+$main.addEventListener("contextmenu", (e) => { if (e.target.closest("#sg-turtle")) e.preventDefault(); });
+
+// 實際搖手機:加速度明顯變化累積約 1 秒就出一爻
+window.addEventListener("devicemotion", (e) => {
+  if (sgView !== "today" || !document.getElementById("sg-turtle")) return;
+  const a = e.acceleration || e.accelerationIncludingGravity;
+  if (!a) return;
+  const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0) - (e.acceleration ? 0 : 9.8);
+  const now = Date.now();
+  if (Math.abs(mag) > 6) {
+    sgShakeMs += Math.min(100, now - (sgLastMotion || now));
+    sgTurtle(true);
+    if (sgShakeMs >= SG_SHAKE_MS) sgYao();
+  } else if (now - sgLastMotion > 400) {
+    sgShakeMs = 0;
+    if (!sgHoldTimer) sgTurtle(false);
+  }
+  sgLastMotion = now;
 });
 
 // 換選項時,把該選項文字帶進下方的微調欄
@@ -231,6 +318,7 @@ $main.addEventListener("click", (e) => {
   const act = e.target.closest("[data-sg-act]")?.dataset.sgAct;
   if (act === "share") sgShare();
   if (act === "rewish") { sgUi.options = null; sgRender(); }
+  if (act === "divine-text") sgFetchDivineText();
   if (act === "revow" && confirm("重新立誓會結束本週的戒律、約束、誓言(已打卡紀錄保留),確定嗎?")) {
     sgResetWeek(sgState); sgUi.options = null; sgPersist(); sgGo("chart");
     setTimeout(() => document.getElementById("sg-form-wish")?.scrollIntoView({ behavior: "smooth" }), 100);
