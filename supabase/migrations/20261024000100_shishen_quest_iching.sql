@@ -1,5 +1,5 @@
 -- 十神修行錄:今日卜卦用的《周易》64 卦(卦辭、爻辭、白話說明)
--- 資料來源:supabase/seed/sg_iching.json(依通行本整理;sg_verified=false 表示尚待逐字核對原典)
+-- 資料來源:supabase/seed/sg_iching.json;卦辭、爻辭依維基文庫《周易》各卦頁(使用者提供之整理檔,〔〕校注已移除)
 create table if not exists public.sg_iching (
   sg_no        int primary key check (sg_no between 1 and 64),
   sg_name      text not null,
