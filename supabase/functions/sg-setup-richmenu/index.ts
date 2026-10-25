@@ -1,12 +1,15 @@
 // 十神修行錄 — 一次性設定 OA 圖文選單(會刪除該 OA 現有的所有圖文選單)
 //   supabase functions deploy sg-setup-richmenu --no-verify-jwt
 //   POST { image_b64 } + header x-sg-key(= sg_push_auth.token)
-// 圖片:2500x843 PNG,整張一個按鈕 → SG_LIFF_URL
+// 圖片:2500x843 PNG,四格按鈕 → SG_LIFF_URL?view=chart|today|angel|growth(各開對應頁面)
 
 const LINE_TOKEN = Deno.env.get("SG_LINE_CHANNEL_ACCESS_TOKEN") ?? "";
 const LIFF_URL = Deno.env.get("SG_LIFF_URL") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// 四格:左到右
+const SG_MENU: [string, string][] = [["chart", "命盤"], ["today", "今日"], ["angel", "天使"], ["growth", "修行"]];
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -48,7 +51,10 @@ Deno.serve(async (req) => {
         selected: true,
         name: "sg-main",
         chatBarText: "十神修行錄",
-        areas: [{ bounds: { x: 0, y: 0, width: 2500, height: 843 }, action: { type: "uri", label: "開始修行", uri: LIFF_URL } }],
+        areas: SG_MENU.map(([view, label], i) => ({
+          bounds: { x: i * 625, y: 0, width: 625, height: 843 },
+          action: { type: "uri", label, uri: `${LIFF_URL}${LIFF_URL.includes("?") ? "&" : "?"}view=${view}` },
+        })),
       }),
     });
     await line(`richmenu/${richMenuId}/content`, { method: "POST", headers: { "Content-Type": "image/png" }, body: png }, "api-data.line.me");

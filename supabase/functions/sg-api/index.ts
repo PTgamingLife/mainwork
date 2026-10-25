@@ -21,6 +21,26 @@ const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const TEXT_MODEL = Deno.env.get("OPENAI_TEXT_MODEL") || "gpt-5-mini";
 const AI_DAILY_LIMIT = 5;
 const ENERGY_NAMES = ["創造力", "生產力", "制約力", "解析力", "群眾力"];
+// 五行轉化型態(與前端 sg-wuxing.js 相同)
+const ELEMENTS = ["木", "火", "土", "金", "水"];
+const TRANSFORMS: Record<string, string> = {
+  "木剋土": "掌握吸收:用目標、規則、計畫,收束並消化過度膨脹的部分",
+  "土剋水": "築堤設限:用制度、界線、承諾,把四散的能量圍起來",
+  "水剋火": "降溫沉澱:用冷靜、反思、暫停,澆熄衝動",
+  "火剋金": "熔鑄重塑:用更高的熱情與表現,改變舊的行為模式",
+  "金剋木": "修剪刪減:用更嚴的規則、紀律,修整、刪去多餘",
+  "木生火": "點燃引火:用新的開始、新的學習,點燃行動熱度",
+  "火生土": "沉澱成形:把熱情化為穩定、可累積的成果",
+  "土生金": "淬鍊萃取:從穩定的基礎裡,提煉出規則與精華",
+  "金生水": "化剛為柔:從規則與決斷中,生出智慧與彈性",
+  "水生木": "滋養生長:用知識和資源,持續灌溉新的嘗試",
+};
+const TRANSFORM_KEYS = Object.keys(TRANSFORMS);
+const elemOf = (dm: number, e: number) => (Math.floor(dm / 2) + e + 1) % 5;
+function transformKey(dm: number, from: number, to: number) {
+  const a = elemOf(dm, from), b = elemOf(dm, to);
+  return `${ELEMENTS[a]}${(b - a + 5) % 5 === 1 ? "生" : "剋"}${ELEMENTS[b]}`;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -99,7 +119,7 @@ const OPTION_TEXT = { type: "string" }; // 長度由 pick() 截斷(嚴格模式�
 const SUGGEST_SCHEMA = {
   type: "object", additionalProperties: false, required: ["oaths", "precepts", "bonds"],
   properties: {
-    oaths: { type: "array", items: { type: "object", additionalProperties: false, required: ["text", "energy"], properties: { text: OPTION_TEXT, energy: { type: "string", enum: ENERGY_NAMES } } } },
+    oaths: { type: "array", items: { type: "object", additionalProperties: false, required: ["text", "energy", "transform"], properties: { text: OPTION_TEXT, energy: { type: "string", enum: ENERGY_NAMES }, transform: { type: "string", enum: TRANSFORM_KEYS } } } },
     precepts: { type: "array", items: { type: "object", additionalProperties: false, required: ["text"], properties: { text: OPTION_TEXT } } },
     bonds: { type: "array", items: { type: "object", additionalProperties: false, required: ["text"], properties: { text: OPTION_TEXT } } },
   },
@@ -125,12 +145,18 @@ async function suggestVows(body: any) {
   const preceptWish = str(body.precept_wish, 200);
   if (oathWish.length < 2) throw new Error("BAD_INPUT");
   const { s, w, w2 } = rank(E);
-  const system = `你是「十神修行錄」的修行教練。使用者的五種能量:${ENERGY_NAMES.map((n, i) => `${n} ${E[i].toFixed(2)}`).join("、")}。
-最旺:${ENERGY_NAMES[s]};最弱:${ENERGY_NAMES[w]};第二弱:${ENERGY_NAMES[w2]}。
+  const dm = Math.max(0, Math.min(9, Math.floor(Number(body.day_master)) || 0));
+  const c = (s + 3) % 5, m = (w2 + 4) % 5; // 剋最強者、生第二弱者
+  const pKey = transformKey(dm, c, s), bKey = transformKey(dm, m, w2);
+  const en = (e: number) => `${ENERGY_NAMES[e]}(${ELEMENTS[elemOf(dm, e)]})`;
+  const system = `你是「十神修行錄」的修行教練。使用者的五種能量(括號為五行):${ENERGY_NAMES.map((n, i) => `${en(i)} ${E[i].toFixed(2)}`).join("、")}。
+最旺:${en(s)};最弱:${en(w)};第二弱:${en(w2)}。
+每個選項都要用「五行轉化型態」決定行動的形式。十種型態:
+${TRANSFORM_KEYS.map((k) => `- ${k}・${TRANSFORMS[k]}`).join("\n")}
 請產生三類選項,各剛好 3 個,使用繁體中文,每個 15–60 字,具體、可在日常執行、可被檢核:
-1. oaths(誓言):保留使用者誓言的原意,改寫成 30 天內可衡量的目標;energy 填這個誓言主要需要的能量。
-2. precepts(戒律,每日):${preceptWish ? "使用者已寫下想遵守的戒律,三個選項都必須以它為主體改寫,保留其中的關鍵行為、對象與數字;再融入" : "寫法是"}「在${ENERGY_NAMES[s]}容易用過頭的情境,改用${ENERGY_NAMES[w]}的做法」,用最弱的能量節制最旺的能量。
-3. bonds(約束,7 天挑戰):補足「${ENERGY_NAMES[w2]}」,寫成 7 天內每天或累計可完成的具體挑戰。
+1. oaths(誓言):保留使用者誓言的原意,改寫成 30 天內可衡量的目標;energy 填這個誓言主要需要的能量;transform 從十種型態中選最符合誓言內容的一種,並讓行動形式符合該型態。
+2. precepts(戒律,每日):型態固定為「${pKey}」——以${en(c)}剋制過旺的${en(s)}。${preceptWish ? "使用者已寫下想遵守的戒律,三個選項都必須以它為主體改寫,保留其中的關鍵行為、對象與數字,再依此型態寫出行動形式。" : "寫出在最旺能量容易用過頭的情境,依此型態約束自己的做法。"}
+3. bonds(約束,7 天挑戰):型態固定為「${bKey}」——以${en(m)}生${en(w2)},寫成 7 天內每天或累計可完成的具體挑戰。
 不要提八字、十神術語,不要醫療、投資或保證性承諾。`;
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -153,7 +179,8 @@ async function suggestVows(body: any) {
   const pick = (arr: any[]) => (Array.isArray(arr) ? arr : []).slice(0, 3).map((o) => ({ ...o, text: str(o.text, 80) })).filter((o) => o.text);
   return {
     s, w, w2,
-    oaths: pick(out.oaths).map((o: any) => ({ text: o.text, energy: Math.max(0, ENERGY_NAMES.indexOf(o.energy)) })),
+    c, m, precept_key: pKey, bond_key: bKey,
+    oaths: pick(out.oaths).map((o: any) => ({ text: o.text, energy: Math.max(0, ENERGY_NAMES.indexOf(o.energy)), transform: TRANSFORMS[o.transform] ? o.transform : "" })),
     precepts: pick(out.precepts).map((o: any) => ({ text: o.text })),
     bonds: pick(out.bonds).map((o: any) => ({ text: o.text })),
   };

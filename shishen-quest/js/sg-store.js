@@ -1,8 +1,9 @@
 // 十神修行錄 — 狀態與規則(本機 localStorage;登入 LINE 時由 sg-app 同步到雲端)
-import { sgEnergyTotals } from "./sg-bazi.js?v=20261022a";
+import { sgEnergyTotals } from "./sg-bazi.js?v=20261024a";
 import {
   SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
-} from "./sg-data.js?v=20261022a";
+} from "./sg-data.js?v=20261024a";
+import { sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261024a";
 
 const SG_KEY = "sg_state_v2";
 export const SG_STEP = 0.1;        // 每天每完成一項任務,對應能量 +0.1(只加不扣)
@@ -85,14 +86,17 @@ export function sgOathEnergy(text, fallback) {
 // AI 無法使用時的固定選項(格式與 AI 回傳相同)
 export function sgFallbackOptions(state, oathWish, preceptWish = "") {
   const { s, w, w2 } = sgStrongWeak(sgEnergies(state));
+  const dm = state.sg_chart.sg_day_master;
+  const plan = sgVowPlan(dm, s, w2);
   const t = oathWish.trim().slice(0, 50);
   const e = sgOathEnergy(t, w);
+  const key = sgOathDefaultKey(dm, e);
   return {
-    s, w, w2,
-    oaths: [`30 天內完成:${t}`, `30 天內每週推進一步:${t}`, `30 天內完成第一個可驗收的成果:${t}`].map((text) => ({ text, energy: e })),
+    s, w, w2, ...plan,
+    oaths: [`30 天內完成:${t}`, `30 天內每週推進一步:${t}`, `30 天內完成第一個可驗收的成果:${t}`].map((text) => ({ text, energy: e, transform: key })),
     precepts: [
       ...(preceptWish ? [{ text: preceptWish.trim().slice(0, 80) }] : []),
-      ...SG_WEAK_METHODS[w].map((m) => ({ text: `${SG_OVERUSE_SCENE[s]},${m}。` })),
+      ...SG_WEAK_METHODS[plan.c].map((m) => ({ text: `${SG_OVERUSE_SCENE[s]},${m}。` })),
     ].slice(0, 3),
     bonds: SG_BONDS[w2].map((text) => ({ text })),
   };
@@ -105,9 +109,10 @@ export function sgStartWeek(state, opts, pick, edits = {}) {
   state.sg_week = {
     sg_start: today,
     sg_end: sgAddDays(today, SG_WEEK_DAYS - 1),
-    sg_precept: { sg_text: edits.precept || opts.precepts[pick.precept].text, sg_energy: opts.w, sg_delta: sgUp(opts.w) },
-    sg_bond: { sg_text: edits.bond || opts.bonds[pick.bond].text, sg_energy: opts.w2, sg_delta: sgUp(opts.w2) },
-    sg_oath: { sg_text: (edits.oath || oath.text).slice(0, 80), sg_energy: oath.energy, sg_delta: sgUp(oath.energy), sg_pct: 0 },
+    // 戒律:完成時加「剋最強者」的能量;約束:加第二弱;誓言:加誓言所需能量
+    sg_precept: { sg_text: edits.precept || opts.precepts[pick.precept].text, sg_energy: opts.c, sg_delta: sgUp(opts.c), sg_transform: opts.precept_key },
+    sg_bond: { sg_text: edits.bond || opts.bonds[pick.bond].text, sg_energy: opts.w2, sg_delta: sgUp(opts.w2), sg_transform: opts.bond_key },
+    sg_oath: { sg_text: (edits.oath || oath.text).slice(0, 80), sg_energy: oath.energy, sg_delta: sgUp(oath.energy), sg_pct: 0, sg_transform: oath.transform },
   };
 }
 

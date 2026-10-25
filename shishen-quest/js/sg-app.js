@@ -1,20 +1,20 @@
 // 十神修行錄 — 控制器
-import { sgCalcChart } from "./sg-bazi.js?v=20261022a";
+import { sgCalcChart } from "./sg-bazi.js?v=20261024a";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
   sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
-} from "./sg-store.js?v=20261022a";
+} from "./sg-store.js?v=20261024a";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
-} from "./sg-view.js?v=20261022a";
-import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261022a";
+} from "./sg-view.js?v=20261024a";
+import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261024a";
+import { SG_TRANSFORMS, sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261024a";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";
 const SG_API_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/sg-api";
 
 const $main = document.getElementById("sg-main");
-const $nav = document.getElementById("sg-nav");
 const $toast = document.getElementById("sg-toast");
 let sgState = sgLoad();
 let sgView = "chart";
@@ -59,11 +59,9 @@ function sgGo(view) {
 
 function sgRender() {
   if (!sgState.sg_chart) {
-    $nav.hidden = true;
     $main.innerHTML = sgViewOnboard();
     return;
   }
-  $nav.hidden = false;
   document.getElementById("sg-greet").textContent = `${sgState.sg_profile.sg_nickname},以命為墨,以行為筆`;
   const views = {
     chart: () => sgViewChart(sgState, sgUi),
@@ -73,10 +71,6 @@ function sgRender() {
     growth: () => sgViewGrowth(sgState),
   };
   $main.innerHTML = (views[sgView] || views.chart)();
-  const tab = sgView === "review" ? "growth" : sgView;
-  $nav.querySelectorAll("button").forEach((b) => {
-    if (b.dataset.sgTab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
-  });
 }
 
 function sgHandleBirth(form) {
@@ -111,15 +105,24 @@ async function sgHandleWish(form) {
     if (!sgLiff) throw new Error("離線模式");
     clearTimeout(sgSyncTimer);
     await sgApi("save", { state: sgState }); // 確保雲端已有資料列(AI 次數記在上面)
-    const r = await sgApi("suggest", { oath_wish: sgUi.oathWish, precept_wish: sgUi.preceptWish, energies: sgEnergies(sgState) });
+    const r = await sgApi("suggest", { oath_wish: sgUi.oathWish, precept_wish: sgUi.preceptWish, energies: sgEnergies(sgState), day_master: sgState.sg_chart.sg_day_master });
     const o = r.options;
     if (!(o?.oaths?.length && o?.precepts?.length && o?.bonds?.length)) throw new Error("AI 回傳不完整");
-    sgUi.options = o;
+    sgUi.options = sgWithPlan(o);
   } catch (e) {
     sgUi.options = { ...sgFallbackOptions(sgState, sgUi.oathWish, sgUi.preceptWish), fallback: e.message === "AI_LIMIT" ? "今天的 5 次已用完" : e.message };
   }
   sgUi.loading = false;
   sgRender();
+}
+
+// 轉化型態一律由前端依命盤計算(舊版伺服器回傳沒有這些欄位也能用)
+function sgWithPlan(o) {
+  const dm = sgState.sg_chart.sg_day_master;
+  return {
+    ...o, ...sgVowPlan(dm, o.s, o.w2),
+    oaths: o.oaths.map((x) => ({ ...x, transform: SG_TRANSFORMS[x.transform] ? x.transform : sgOathDefaultKey(dm, x.energy) })),
+  };
 }
 
 // ② 三類各選一個 → 落款
@@ -238,12 +241,19 @@ $main.addEventListener("click", (e) => {
   }
 });
 
-$nav.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-sg-tab]");
-  if (b) sgGo(b.dataset.sgTab);
-});
+// LINE 圖文選單四格各自開 LIFF:…?view=chart|today|angel|growth
+// (LIFF 首次開啟時參數會包在 liff.state 裡,init 後才還原到網址)
+const SG_VIEWS = ["chart", "today", "angel", "growth"];
+function sgRequestedView() {
+  const q = new URLSearchParams(location.search);
+  let v = q.get("view");
+  if (!v && q.get("liff.state")) v = new URLSearchParams(q.get("liff.state").replace(/^[^?]*\?/, "")).get("view");
+  return SG_VIEWS.includes(v) ? v : "";
+}
 
 function sgDefaultView() {
+  const asked = sgRequestedView();
+  if (asked) return asked === "growth" && sgState.sg_week && sgWeekProgress(sgState).sg_ended ? "review" : asked;
   if (!sgState.sg_week) return "chart";
   return sgWeekProgress(sgState).sg_ended ? "review" : "today";
 }
