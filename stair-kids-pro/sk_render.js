@@ -236,6 +236,7 @@
       const px = sx(p.x), py = sy(p.y, s);
       const w = C.PLAYER_W * scale, h = C.PLAYER_H * scale;
       if (p.invuln > 0 && Math.floor(t * 20) % 2 === 0) return;
+      if (ch.sk_sprites && ch.sk_sprites.ready) { drawSpriteKid(s, ch, t); return; }
       let stretch = 1;
       if (!p.onStep) stretch = 1 + Math.max(-0.12, Math.min(0.15, p.vy * 0.012));
       const land = Math.max(0, 0.18 - (t - (p.landT || -9))) * 1.2;
@@ -290,6 +291,43 @@
       }
       ctx.fillStyle = 'rgba(255,122,107,0.5)';
       ctx.beginPath(); ctx.ellipse(hr * 0.75, hy + hr * 0.32, hr * 0.14, hr * 0.08, 0, 0, 6.283); ctx.fill();
+      ctx.restore();
+    }
+
+    /* ---------- AI 生成的黏土角色（sk_assets/<id>/*.png，idle 高度 256 為基準） ---------- */
+    const SK_RUN_FPS = 12;
+    function pickFrame(s, p, t) {
+      if (s.time - p.lastHurt < 0.4) return 'hurt';
+      if (!p.onStep) return p.vy < 0 ? 'run3' : 'fall';
+      if (t - (p.landT || -9) < 0.12) return 'land';
+      if (p.moving) return 'run' + (Math.floor(t * SK_RUN_FPS) % 4);
+      return 'idle';
+    }
+    function drawSpriteKid(s, ch, t) {
+      const p = s.player;
+      const name = pickFrame(s, p, t);
+      const img = ch.sk_sprites.frames[name] || ch.sk_sprites.frames.idle;
+      const target = C.PLAYER_H * scale * 1.35;             /* idle 的畫面高度：比判定框略高，頭大比較可愛 */
+      const k = target / 256;
+      let dw = img.naturalWidth * k, dh = img.naturalHeight * k;
+      /* 擠壓拉伸：落地壓扁、彈起拉長；站著時微微呼吸 */
+      let sq = 1;
+      if (!p.onStep) sq = 1 + Math.max(-0.08, Math.min(0.1, -p.vy * 0.008));
+      sq -= Math.max(0, 0.16 - (t - (p.landT || -9))) * 0.9;
+      if (name === 'idle') sq += Math.sin(t * 3) * 0.015;
+      dw *= 2 - sq; dh *= sq;
+      const running = name.indexOf('run') === 0 && p.onStep;
+      const bob = running ? Math.abs(Math.sin(t * SK_RUN_FPS * Math.PI / 2)) * scale * 0.1 : 0;
+      ctx.save();
+      ctx.translate(sx(p.x), sy(p.y, s));
+      if (p.onStep) {
+        ctx.fillStyle = 'rgba(0,20,40,0.3)';
+        ctx.beginPath(); ctx.ellipse(0, 2, (running ? 0.55 : 0.6) * scale, scale * 0.13, 0, 0, 6.283); ctx.fill();
+      }
+      ctx.translate(0, -bob);
+      if (p.dir < 0) ctx.scale(-1, 1);
+      if (running) ctx.rotate(0.07);                        /* 跑步前傾 */
+      ctx.drawImage(img, -dw / 2, -dh, dw, dh);
       ctx.restore();
     }
 
@@ -351,11 +389,11 @@
     }
 
     /* 選角畫面的小預覽 */
-    function preview(ch, t) {
+    function preview(ch, t, moving) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       scale = H / 2.9; ox = W / 2; oy = H - 4;
-      const fake = { cameraTop: 0, time: 0, player: { x: 0, y: 0, dir: 1, onStep: {}, vx: 0, vy: 0, invuln: 0, lastHurt: -9 } };
+      const fake = { cameraTop: 0, time: 0, player: { x: 0, y: 0, dir: 1, onStep: {}, vx: 0, vy: 0, invuln: 0, lastHurt: -9, moving: !!moving } };
       drawKid(fake, ch, t);
     }
 

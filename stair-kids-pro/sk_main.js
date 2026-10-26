@@ -10,6 +10,20 @@
     { id: 'frost', name: '冰冰', style: 'bun', skin: '#F7CBA5', hair: '#1F1B2E', body: '#9DB8FF', bodyDark: '#6A86E0', scarf: '#C8F4FF', shoe: '#2D3A6B' },
     { id: 'tide', name: '阿潮', style: 'cap', skin: '#D9A074', hair: '#2E1F1A', body: '#FFD36B', bodyDark: '#E0A83A', scarf: '#2BB3A3', shoe: '#3A2A1A' }
   ];
+  /* 載入黏土角色圖；載不到就維持程式繪製的版本 */
+  const sk_FRAMES = ['run0', 'run1', 'run2', 'run3', 'idle', 'fall', 'hurt', 'land'];
+  const sk_SPRITE_IDS = ['aurora', 'coral', 'tide'];   /* 有 sk_assets/<id>/ 的角色；冰冰尚未生成 */
+  for (const ch of sk_CHARS) {
+    if (sk_SPRITE_IDS.indexOf(ch.id) < 0) continue;
+    const sp = { frames: {}, ready: false, left: sk_FRAMES.length };
+    ch.sk_sprites = sp;
+    for (const f of sk_FRAMES) {
+      const img = new Image();
+      img.onload = () => { sp.frames[f] = img; if (--sp.left === 0) sp.ready = true; };
+      img.onerror = () => { sp.left = -99; };
+      img.src = `sk_assets/${ch.id}/${f}.png`;
+    }
+  }
   const sk_DIFF_ORDER = ['baby', 'easy', 'normal', 'hard'];
   const sk_DIFF_HINT = { baby: '不會失敗', easy: '輕鬆', normal: '標準', hard: '高手' };
 
@@ -240,7 +254,7 @@
         G.sk_fill(sk_demo);
         sk_renderer.draw(sk_demo, ch, t, dt);
       }
-      for (const pv of sk_previews) pv.r.preview(pv.ch, t);
+      for (const pv of sk_previews) pv.r.preview(pv.ch, t, pv.ch.id === sk_settings.char);
     }
     requestAnimationFrame(sk_frame);
   }
