@@ -15,6 +15,8 @@
     x.globalCompositeOperation = 'source-atop'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
     return c;
   }
+  load('assets/cb_bg.webp').then((im) => { CB_SP.bg = im; });
+  load('assets/cb_wall.webp').then((im) => { CB_SP.wall = im; });
   Promise.all(['assets/cb_cat.webp', 'assets/cb_dog.webp', 'assets/cb_box.webp'].map(load)).then(([cat, dog, box]) => {
     if (!cat || !dog || !box) return;   // 任一張失敗 → 維持向量畫法
     Object.assign(CB_SP, { cat, dog, box, catHurt: tint(cat, 'rgba(120,40,40,.4)'), boxBurnt: tint(box, 'rgba(50,25,15,.75)'), ready: true });

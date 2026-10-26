@@ -22,16 +22,24 @@
     const W = CB_COLS * s, H = CB_ROWS * s;
     cb_now = now;
     ctx.fillStyle = CB_COLOR.bg; ctx.fillRect(0, 0, W, H);
+    const sp = SP() && SP().CB_SP;
+    if (sp && sp.bg) {   // 背景圖 cover 鋪滿
+      const k = Math.max(W / sp.bg.width, H / sp.bg.height), bw = sp.bg.width * k, bh = sp.bg.height * k;
+      ctx.drawImage(sp.bg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    }
     ctx.save();
     if (now < cb_shakeUntil) ctx.translate((Math.random() - 0.5) * s * 0.9, (Math.random() - 0.5) * s * 0.9);
-    ctx.fillStyle = CB_COLOR.dot;
-    for (let y = 2; y < CB_ROWS; y += 4) for (let x = (y % 8 ? 2 : 4); x < CB_COLS; x += 4) {
-      ctx.beginPath(); ctx.arc(x * s, y * s, s * 0.25, 0, 7); ctx.fill();
+    if (!(sp && sp.bg)) {
+      ctx.fillStyle = CB_COLOR.dot;
+      for (let y = 2; y < CB_ROWS; y += 4) for (let x = (y % 8 ? 2 : 4); x < CB_COLS; x += 4) {
+        ctx.beginPath(); ctx.arc(x * s, y * s, s * 0.25, 0, 7); ctx.fill();
+      }
     }
+    const wallFill = cbWallPattern(ctx, sp, s);
     drawParticles(ctx, g, s, now);
     g.wallRects.forEach(([x, y, w, h]) => {
       rr(ctx, x * s, y * s, w * s, h * s, Math.min(w, h) * s * 0.45);
-      ctx.fillStyle = CB_COLOR.wall; ctx.fill();
+      ctx.fillStyle = wallFill; ctx.fill();
       ctx.lineWidth = Math.max(1, s * 0.18); ctx.strokeStyle = CB_COLOR.wallEdge; ctx.stroke();
     });
     g.pins.forEach((p) => drawPin(ctx, p, s));
@@ -54,6 +62,19 @@
     drawFx(ctx, s, now);
     ctx.restore();
     if (g.state === 'win' && hiding >= 1) drawHearts(ctx, box, s, now - (g.winAt || (g.winAt = now)));
+  }
+
+  // 磚牆貼圖:一排磚約 0.9 格高;沒圖就用純色
+  let cb_pat = null, cb_patS = 0;
+  function cbWallPattern(ctx, sp, s) {
+    if (!sp || !sp.wall || typeof DOMMatrix === 'undefined') return CB_COLOR.wall;
+    if (!cb_pat || cb_patS !== s) {
+      cb_pat = ctx.createPattern(sp.wall, 'repeat');
+      const k = (s * 0.9) / (sp.wall.height / 10);
+      if (cb_pat.setTransform) cb_pat.setTransform(new DOMMatrix().scaleSelf(k, k));
+      cb_patS = s;
+    }
+    return cb_pat;
   }
 
   function drawParticles(ctx, g, s, now) {
