@@ -12,7 +12,7 @@
   ];
   /* 載入黏土角色圖；載不到就維持程式繪製的版本 */
   const sk_FRAMES = ['run0', 'run1', 'run2', 'run3', 'idle', 'fall', 'hurt', 'land'];
-  const sk_SPRITE_IDS = ['aurora', 'coral', 'tide'];   /* 有 sk_assets/<id>/ 的角色；冰冰尚未生成 */
+  const sk_SPRITE_IDS = ['aurora', 'coral', 'frost', 'tide'];   /* 有 sk_assets/<id>/ 的角色 */
   for (const ch of sk_CHARS) {
     if (sk_SPRITE_IDS.indexOf(ch.id) < 0) continue;
     const sp = { frames: {}, ready: false, left: sk_FRAMES.length };
