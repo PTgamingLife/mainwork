@@ -166,27 +166,18 @@ $('igp-email-form').addEventListener('submit', async e => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return igpLoginMsg('Email 格式不對', true);
   igpLoginMsg('寄送中…');
   try {
-    await igpAuth.sendCode(email);
+    await igpAuth.sendLink(email);
     igpStore.set('igp_last_email', email);
-    $('igp-code-form').classList.remove('igp-hidden');
-    igpLoginMsg('已寄出!請到信箱點登入連結,或輸入信中的驗證碼。');
+    igpLoginMsg('已寄出!請用同一個瀏覽器打開信中的登入連結。');
   } catch (err) {
     igpLoginMsg(err.message, true);
   }
 });
 
-$('igp-code-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const code = $('igp-code').value.trim();
-  if (!/^\d{6,10}$/.test(code)) return igpLoginMsg('驗證碼是數字', true);
-  igpLoginMsg('驗證中…');
-  try {
-    await igpAuth.verifyCode($('igp-email').value.trim(), code);
-    await igpStart();
-  } catch (err) {
-    igpLoginMsg(err.message, true);
-  }
-});
+$('igp-google').onclick = () => {
+  igpLoginMsg('前往 Google…');
+  igpAuth.google();
+};
 
 $('igp-logout').onclick = async () => {
   if (!confirm('確定登出?')) return;
@@ -242,6 +233,12 @@ async function igpStart() {
 
 (async function igpInit() {
   $('igp-email').value = igpStore.get('igp_last_email', '');
+  const hashErr = new URLSearchParams(location.hash.slice(1)).get('error_description');
+  if (hashErr) {
+    history.replaceState(null, '', location.pathname + location.search);
+    igpShowLogin();
+    return igpLoginMsg(`登入失敗:${hashErr}`, true);
+  }
   try {
     await igpAuth.fromUrlHash();
   } catch { /* 連結失效就回登入頁 */ }
