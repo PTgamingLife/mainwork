@@ -36,6 +36,7 @@ button:active{background:var(--ms_open)}
 .ms_c.ms_o{background:var(--ms_open)}
 .ms_c.ms_h{background:var(--ms_hl)}
 .ms_c.ms_x{background:var(--ms_bad)}
+.ms_ic{width:75%;height:75%;display:block;pointer-events:none}
 .ms_n1{color:#8fc1ff}.ms_n2{color:#9fe39a}.ms_n3{color:#ff9a8f}.ms_n4{color:#c9a2ff}
 .ms_n5{color:#ffcf7a}.ms_n6{color:#7ff0e6}.ms_n7{color:#fff}.ms_n8{color:#d0d0d0}
 #ms_bar{display:flex;gap:10px;justify-content:center;margin-top:18px}
@@ -181,13 +182,27 @@ function ms_toggleFlag(c){
   $('ms_bombs').textContent=ms_mode.b-ms_flags;
   if(navigator.vibrate)navigator.vibrate(15);
 }
+// ===== 像素圖示(12x12,字元對應顏色) =====
+function ms_icon(rows,pal){
+  let r='';
+  rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(pal[ch])r+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+pal[ch]+'"/>'}));
+  return '<svg class="ms_ic" viewBox="0 0 12 12" shape-rendering="crispEdges">'+r+'</svg>';
+}
+const ms_bombSvg=ms_icon([
+  '..........f.','.........f..','........f...','....####....','...######...','..#hh#####..',
+  '..#h######..','..########..','..########..','...######...','....####....','............'
+],{'#':'#1b1a1d',h:'#ffffff',f:'#2e2c31'});
+const ms_flagSvg=ms_icon([
+  '............','....rrp.....','..rrrrp.....','rrrrrrp.....','..rrrrp.....','....rrp.....',
+  '......p.....','......p.....','......p.....','....ppppp...','..ppppppppp.','............'
+],{r:'#e04848',p:'#2e2c31'});
 function ms_paint(c){
   const el=c.el;el.className='ms_c';el.textContent='';
   if(c.open){
     el.classList.add('ms_o');
-    if(c.bomb)el.textContent='*';
+    if(c.bomb)el.innerHTML=ms_bombSvg;
     else if(c.n){el.textContent=c.n;el.classList.add('ms_n'+c.n)}
-  }else if(c.flag)el.textContent='F';
+  }else if(c.flag)el.innerHTML=ms_flagSvg;
 }
 function ms_checkWin(){
   if(ms_over)return;
