@@ -1,10 +1,19 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261022a";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261022a";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261024a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261024a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js?v=20261022a";
+} from "./sg-store.js?v=20261024a";
+import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261024a";
+import { sgDivineCard } from "./sg-divine-view.js?v=20261024a";
+
+// 轉化型態標籤:「木剋土・掌握吸收」+ 行動方向
+function sgTransformTag(key, withDir = false) {
+  const t = SG_TRANSFORMS[key];
+  if (!t) return "";
+  return `<span class="sg-transform">${key}・${t.sg_name}</span>${withDir ? `<p class="sg-muted">行動方向:${t.sg_dir}</p>` : ""}`;
+}
 
 export const sgEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const sgFmt = (v) => (Math.round(v * 100) / 100).toFixed(2);
@@ -136,16 +145,18 @@ function sgVowSetup(state, ui) {
   </form>`;
   }
   const o = ui.options;
-  const group = (name, tag, title, items, chips) => `<div class="sg-card"><span class="sg-tag">${tag}</span><h3>${title}</h3>
+  const dm = state.sg_chart.sg_day_master;
+  const ne = (e) => `「${n(e)}」(${SG_ELEMENTS[sgElemOf(dm, e)]})`;
+  const group = (name, tag, title, items, chips, intro = "") => `<div class="sg-card"><span class="sg-tag">${tag}</span><h3>${title}</h3>${intro}
     ${items.map((it, i) => `<label class="sg-option"><input type="radio" name="${name}" value="${i}" ${i === 0 ? "checked" : ""}><span>${sgEsc(it.text)}
-      <span class="sg-chips">${sgDeltaChips(chips(it))}</span></span></label>`).join("")}
+      ${name === "sg_oath" ? sgTransformTag(it.transform) : ""}<span class="sg-chips">${sgDeltaChips(chips(it))}</span></span></label>`).join("")}
     <label class="sg-field"><span>選好後可再微調文字</span><textarea class="sg-input" name="${name}_text" data-sg-edit="${name}" rows="2" maxlength="80" required>${sgEsc(items[0]?.text || "")}</textarea></label></div>`;
   return `${head}
   <form id="sg-form-vow">
     ${o.fallback ? `<p class="sg-muted">AI 暫時無法使用(${sgEsc(o.fallback)}),以下為系統建議選項。</p>` : ""}
     ${group("sg_oath", "誓言・30 天", "選一個誓言", o.oaths, (it) => sgUp(it.energy))}
-    ${group("sg_precept", "戒律・每日", `以「${n(o.w)}」節制「${n(o.s)}」`, o.precepts, () => sgUp(o.w))}
-    ${group("sg_bond", "約束・7 天", `補足「${n(o.w2)}」`, o.bonds, () => sgUp(o.w2))}
+    ${group("sg_precept", "戒律・每日", `以${ne(o.c)}剋${ne(o.s)}`, o.precepts, () => sgUp(o.c), sgTransformTag(o.precept_key, true))}
+    ${group("sg_bond", "約束・7 天", `以${ne(o.m)}生${ne(o.w2)}`, o.bonds, () => sgUp(o.w2), sgTransformTag(o.bond_key, true))}
     <p class="sg-muted">每天每完成一項任務,對應能量就 +0.1,立刻加進你的能量表。</p>
     <button class="sg-btn" type="submit">落款立誓</button>
     <button class="sg-btn sg-ghost sg-small" type="button" data-sg-act="rewish">修改想法、重新整理</button>
@@ -154,7 +165,7 @@ function sgVowSetup(state, ui) {
 
 function sgWeekSummary(state) {
   const wk = state.sg_week, pr = sgWeekProgress(state);
-  const row = (tag, v, done) => `<div class="sg-card"><span class="sg-tag">${tag}</span><p>${sgEsc(v.sg_text)}</p>
+  const row = (tag, v, done) => `<div class="sg-card"><span class="sg-tag">${tag}</span>${sgTransformTag(v.sg_transform)}<p>${sgEsc(v.sg_text)}</p>
     <div class="sg-progress"><div style="width:${done / SG_WEEK_DAYS * 100}%"></div></div>
     <p class="sg-muted">${done} / ${SG_WEEK_DAYS} 天・每天完成</p><div class="sg-chips">${sgDeltaChips(v.sg_delta)}</div></div>`;
   return `
@@ -167,31 +178,26 @@ function sgWeekSummary(state) {
   <button class="sg-btn sg-ghost sg-small" data-sg-act="revow">重新立誓</button>`;
 }
 
-export function sgViewToday(state) {
+export function sgViewToday(state, ui = {}) {
   const today = sgDateStr();
   const done = state.sg_checkins[today];
   const wk = state.sg_week;
   const word = SG_INK_WORDS[Number(today.replaceAll("-", "")) % SG_INK_WORDS.length];
-  if (!wk) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>還沒立下戒律、約束、誓言。</p><button class="sg-btn" data-sg-go="chart">前往命盤立誓</button></div>`;
+  if (!wk) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>還沒立下戒律、約束、誓言。</p><button class="sg-btn" data-sg-go="chart">前往命盤立誓</button></div>${sgDivineCard(state, ui)}`;
   const pr = sgWeekProgress(state);
-  if (pr.sg_ended) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>這週的修行已結束,填寫回顧後就能立下新一週的誓言。</p><button class="sg-btn" data-sg-go="review">填寫修行回顧</button></div>`;
+  if (pr.sg_ended) return `<h2 class="sg-h">今日</h2>${sgAngelCard(state, true)}<div class="sg-card"><p>這週的修行已結束,填寫回顧後就能立下新一週的誓言。</p><button class="sg-btn" data-sg-go="review">填寫修行回顧</button></div>${sgDivineCard(state, ui)}`;
   const chk = (name, tag, text, v) => `<div class="sg-card"><label class="sg-toggle"><span><span class="sg-tag">${tag}</span>${sgEsc(text)}
     <span class="sg-chips">${sgDeltaChips(v.sg_delta.map((x) => Math.max(0, x)))}</span></span>
     <input type="checkbox" name="${name}" ${done?.[name] ? "checked" : ""}></label></div>`;
-  const score = done?.sg_score ?? 7;
   return `
   <h2 class="sg-h">今日修行・第 ${pr.sg_day} 天</h2>
   <p class="sg-quote">「${word}」</p>
   ${sgAngelCard(state, true)}
   <form id="sg-form-checkin">
     ${chk("sg_precept_ok", "戒律", wk.sg_precept.sg_text, wk.sg_precept)}${chk("sg_bond_ok", "約束", wk.sg_bond.sg_text, wk.sg_bond)}${chk("sg_oath_ok", "誓言", `今天有推進:${wk.sg_oath.sg_text}`, wk.sg_oath)}
-    <div class="sg-card"><label class="sg-field"><span>誓言進度 <output id="sg-pct-out">${done?.sg_oath_pct ?? wk.sg_oath.sg_pct}</output>%</span>
-      <input class="sg-range" type="range" name="sg_oath_pct" min="0" max="100" step="5" value="${done?.sg_oath_pct ?? wk.sg_oath.sg_pct}"></label>
-      <label class="sg-field"><span>給今天的自己打分數 <output id="sg-score-out">${score}</output> / 10</span>
-      <input class="sg-range" type="range" name="sg_score" min="1" max="10" step="1" value="${score}"></label>
-      <label class="sg-field"><span>一句心得(選填)</span><input class="sg-input" name="sg_note" maxlength="60" value="${sgEsc(done?.sg_note || "")}"></label></div>
     <button class="sg-btn" type="submit">${done ? "更新今日打卡" : "落印打卡"}</button>
-  </form>`;
+  </form>
+  ${sgDivineCard(state, ui)}`;
 }
 
 export function sgViewAngel(state, ui = {}) {

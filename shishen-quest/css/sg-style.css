@@ -22,7 +22,7 @@ html, body { margin: 0; }
 body {
   min-height: 100vh; font-family: var(--sg-font-body); color: var(--sg-ink);
   background: linear-gradient(180deg, var(--sg-mist-1) 0%, #EDEDEA 45%, var(--sg-mist-2) 100%) fixed;
-  padding-bottom: 92px; overflow-x: hidden;
+  padding-bottom: 32px; overflow-x: hidden;
 }
 
 /* 背景山水 */
@@ -164,16 +164,9 @@ body {
 .sg-quote { font-family: var(--sg-font-brush); font-size: 20px; text-align: center; color: var(--sg-ink-2); margin: 14px 0 4px; }
 
 /* 底部導覽 */
-.sg-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center;
-  background: rgba(244,244,242,.94); backdrop-filter: blur(6px); border-top: 1px solid var(--sg-line);
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
-.sg-nav[hidden] { display: none; }
-.sg-nav button { flex: 1; max-width: 140px; background: none; border: 0; color: var(--sg-gray); font: inherit; font-size: 12px; padding: 4px 0; cursor: pointer; }
-.sg-nav button span { display: block; font-family: var(--sg-font-brush); font-size: 22px; }
-.sg-nav button[aria-current="page"] { color: var(--sg-ink); }
-.sg-nav button[aria-current="page"] span { color: var(--sg-seal); }
 
-.sg-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 9; background: var(--sg-ink);
+.sg-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 9; background: var(--sg-ink);
   color: #F4F4F2; padding: 10px 18px; border-radius: 999px; font-size: 14px; max-width: calc(100% - 32px); }
 
 /* 墨滴入水暈開(B):右上濃墨、左側淡墨,進頁面 3 秒內暈開後靜止 */
@@ -182,3 +175,32 @@ body {
 .sg-bloom-2 { animation-delay: .6s; }
 @keyframes sg-bloom { from { transform: scale(.15); opacity: 0; } 40% { opacity: 1; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .sg-bloom { animation: none; } }
+
+/* 五行轉化型態標籤 */
+.sg-transform { display: inline-block; font-size: 12px; padding: 1px 9px; margin: 0 6px 6px 0; border-radius: 999px;
+  background: rgba(227,190,43,.18); color: var(--sg-plum-deep); border: 1px solid rgba(184,149,26,.45); }
+.sg-option .sg-transform { margin: 6px 6px 0 0; }
+
+/* 今日卜卦 */
+.sg-divine { text-align: center; }
+.sg-turtle { display: block; margin: 8px auto; padding: 0; border: 0; background: none; width: min(240px, 70vw);
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sg-turtle img { width: 100%; border-radius: 50%; display: block; pointer-events: none;
+  box-shadow: 0 14px 30px -18px rgba(30,30,30,.6); }
+.sg-turtle.sg-shaking { animation: sg-shake .16s linear infinite; }
+@keyframes sg-shake { 0%,100% { transform: rotate(0) translateX(0); } 25% { transform: rotate(-5deg) translateX(-4px); } 75% { transform: rotate(5deg) translateX(4px); } }
+.sg-divine-step { font-family: var(--sg-font-brush); font-size: 18px; margin: 4px 0 10px; }
+.sg-yaos { display: flex; flex-direction: column; gap: 8px; margin: 10px auto 14px; max-width: 300px; }
+.sg-yao { display: grid; grid-template-columns: 44px 1fr 1fr 74px; align-items: center; gap: 8px; font-size: 13px; }
+.sg-yao small { color: var(--sg-gray); text-align: right; }
+.sg-yao em { font-style: normal; color: var(--sg-gray); text-align: left; }
+.sg-yao i { height: 12px; background: var(--sg-ink); border-radius: 2px 4px 3px 2px; }
+.sg-yang i:first-of-type { border-radius: 2px 0 0 3px; margin-right: -8px; }
+.sg-yang i:last-of-type { border-radius: 0 4px 3px 0; margin-left: -8px; }
+.sg-yin i:first-of-type { margin-right: 10px; }
+.sg-yin i:last-of-type { margin-left: 10px; }
+.sg-moving i { background: var(--sg-plum-deep); }
+.sg-moving em { color: var(--sg-plum-deep); font-weight: 700; }
+.sg-hex { text-align: left; border-top: 1px dashed var(--sg-line); padding-top: 10px; margin-top: 10px; }
+.sg-hex-judg { font-family: var(--sg-font-brush); font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .sg-turtle.sg-shaking { animation-duration: .5s; } }
