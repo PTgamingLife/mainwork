@@ -1,7 +1,8 @@
-// cb-sprites.js — 角色圖片(Higgsfield 生成)+ 程式動作(呼吸/走路/落地壓扁/跳進紙箱/被打飛)
+// cb-sprites.js — 角色圖片(Higgsfield 生成,含姿勢關鍵圖)+ 程式動作(呼吸/走路/落地壓扁/跳進紙箱/暈倒)
 (function (cb_root) {
   const CB_SP = { ready: false, cat: null, catHurt: null, dog: null, box: null, boxBurnt: null };
-  const CB_DRAW_W = { cat: 6.6, dog: 7.2, box: 7.2 };   // 圖寬(格)
+  const CB_DRAW_W = { cat: 6.6, dog: 7.2, box: 7.2, inbox: 7.6 };   // 圖寬(格)
+  const CB_INBOX_AT = 0.65;   // 跳進紙箱動畫進度到這裡,換成「貓在箱子裡」整張圖
   const dust = [];
 
   function load(src) {
@@ -17,6 +18,9 @@
   }
   load('assets/cb_bg.webp').then((im) => { CB_SP.bg = im; });
   load('assets/cb_wall.webp').then((im) => { CB_SP.wall = im; });
+  // 姿勢關鍵圖(可選,缺圖就用基本圖)
+  [['catWalk1', 'cb_cat_walk1'], ['catWalk2', 'cb_cat_walk2'], ['catJump', 'cb_cat_jump'], ['catInbox', 'cb_cat_inbox'],
+    ['dogRun', 'cb_dog_run'], ['dogDizzy', 'cb_dog_dizzy']].forEach(([k, f]) => load(`assets/${f}.webp`).then((im) => { CB_SP[k] = im; }));
   Promise.all(['assets/cb_cat.webp', 'assets/cb_dog.webp', 'assets/cb_box.webp'].map(load)).then(([cat, dog, box]) => {
     if (!cat || !dog || !box) return;   // 任一張失敗 → 維持向量畫法
     Object.assign(CB_SP, { cat, dog, box, catHurt: tint(cat, 'rgba(120,40,40,.4)'), boxBurnt: tint(box, 'rgba(50,25,15,.75)'), ready: true });
@@ -65,6 +69,8 @@
     track(e, s, now);
     let ax = e.rx + e.w / 2, ay = e.ry + e.h + 0.15;
     let m = motion(e, now);
+    box._inbox = hiding >= CB_INBOX_AT && !!CB_SP.catInbox;
+    if (box._inbox) return true;   // 已換成「貓在箱子裡」圖,由 cbSpriteBox 畫
     if (hiding > 0) {   // 跳進紙箱:拋物線 + 縮小,最後只露出頭
       const tx = box.rx + box.w / 2, ty = box.ry + box.h - 2.4;
       ax += (tx - ax) * hiding; ay += (ty - ay) * hiding - Math.sin(hiding * Math.PI) * 4;
@@ -77,31 +83,47 @@
       const bw = CB_DRAW_W.box, bh = bw * CB_SP.box.height / CB_SP.box.width;
       const rim = box.ry + box.h + 0.1 - bh * 0.6;
       ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 1e4, rim * s); ctx.clip();
-      blit(ctx, CB_SP.cat, ax, ay, CB_DRAW_W.cat, s, m, e.face < 0);
+      blit(ctx, CB_SP.catJump || CB_SP.cat, ax, ay, CB_DRAW_W.cat, s, m, e.face < 0);
       ctx.restore();
       return true;
     }
-    blit(ctx, lost ? CB_SP.catHurt : CB_SP.cat, ax, ay, CB_DRAW_W.cat, s, m, e.face < 0);
+    let img = CB_SP.cat;
+    if (lost) img = CB_SP.catHurt;
+    else if (!e.grounded && CB_SP.catJump) img = CB_SP.catJump;
+    else if (e.walking && CB_SP.catWalk1 && CB_SP.catWalk2) img = Math.floor(now / 140) % 2 ? CB_SP.catWalk2 : CB_SP.catWalk1;
+    blit(ctx, img, ax, ay, CB_DRAW_W.cat, s, m, e.face < 0);
     return true;
   }
 
   function cbSpriteDog(ctx, e, s, now) {
     if (!CB_SP.ready) return false;
     const ax = e.rx + e.w / 2, ay = e.ry + e.h + 0.15;
-    if (!e.alive) {   // 被打飛:旋轉、縮小、淡出
+    if (!e.alive) {
       e._deadAt = e._deadAt || now;
-      const t = (now - e._deadAt) / 650;
-      if (t < 1) blit(ctx, CB_SP.dog, ax, ay - t * 3, CB_DRAW_W.dog, s, { dx: 0, dy: 0, sx: 1 - t * 0.4, sy: 1 - t * 0.4, rot: t * 4 }, e.face > 0, 1 - t);
+      const t = (now - e._deadAt) / 1300;
+      if (t >= 1) return true;
+      if (CB_SP.dogDizzy) {   // 暈倒:趴著轉圈圈眼,最後淡出
+        const wob = { dx: 0, dy: 0, sx: 1, sy: 1, rot: Math.sin(now / 90) * 0.06 };
+        blit(ctx, CB_SP.dogDizzy, ax, ay, CB_DRAW_W.dog, s, wob, e.face < 0, t < 0.7 ? 1 : (1 - t) / 0.3);
+      } else {   // 沒圖:旋轉、縮小、淡出
+        blit(ctx, CB_SP.dog, ax, ay - t * 3, CB_DRAW_W.dog, s, { dx: 0, dy: 0, sx: 1 - t * 0.4, sy: 1 - t * 0.4, rot: t * 4 }, e.face < 0, 1 - t);
+      }
       return true;
     }
     track(e, s, now);
-    blit(ctx, CB_SP.dog, ax, ay, CB_DRAW_W.dog, s, motion(e, now), e.face > 0);
+    const run = e.walking && CB_SP.dogRun && Math.floor(now / 120) % 2;
+    blit(ctx, run ? CB_SP.dogRun : CB_SP.dog, ax, ay, CB_DRAW_W.dog, s, motion(e, now), e.face < 0);
     return true;
   }
 
   function cbSpriteBox(ctx, e, s, now) {
     if (!CB_SP.ready) return false;
     if (!e.alive && !e.burnt) return true;
+    if (e._inbox) {   // 貓躲好了:整張「貓在箱子裡」圖,輕輕呼吸
+      const b = Math.sin(now / 380) * 0.03;
+      blit(ctx, CB_SP.catInbox, e.rx + e.w / 2, e.ry + e.h + 0.1, CB_DRAW_W.inbox, s, { dx: 0, dy: 0, sx: 1 - b, sy: 1 + b, rot: 0 }, false);
+      return true;
+    }
     track(e, s, now);
     const m = motion(e, now);
     m.rot = 0; m.dy = 0;

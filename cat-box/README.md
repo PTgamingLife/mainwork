@@ -13,7 +13,7 @@
 | `js/cb-levels.js` | 10 關關卡資料 |
 | `js/cb-draw.js` | Canvas 繪圖(場景、粒子、特效;圖片載入失敗時用向量角色備援) |
 | `js/cb-sprites.js` | 角色圖片 + 程式動作(呼吸、走路、落地壓扁、跳進紙箱、狗被打飛) |
-| `assets/cb_*.webp` | Higgsfield 生成圖:貓/狗/紙箱(去背)、背景、磚牆貼圖、Logo,共約 90KB |
+| `assets/cb_*.webp` | Higgsfield 生成圖:貓/狗/紙箱 + 姿勢圖(貓走路×2、跳、躲進箱;狗跑、暈倒)、背景、磚牆、Logo,共約 216KB |
 | `js/cb-net.js` | LIFF 登入/分享、排行榜 API |
 | `js/cb-app.js` | 畫面切換、進度、遊戲迴圈 |
 | `sql/cb_scores.sql` | 排行榜資料表 + RPC(**尚未套用**) |
