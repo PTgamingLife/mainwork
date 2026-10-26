@@ -9,6 +9,8 @@
     line: '#5A4A5E', pink: '#FF8FAB', dog: '#C99266', dogDark: '#8A5A3B',
   };
   const fx = [];
+  const SP = () => cb_root.CB_SPRITES;
+  let cb_now = 0, cb_shakeUntil = 0;
 
   function rr(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -18,7 +20,10 @@
 
   function cbDraw(ctx, g, s, now) {
     const W = CB_COLS * s, H = CB_ROWS * s;
+    cb_now = now;
     ctx.fillStyle = CB_COLOR.bg; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (now < cb_shakeUntil) ctx.translate((Math.random() - 0.5) * s * 0.9, (Math.random() - 0.5) * s * 0.9);
     ctx.fillStyle = CB_COLOR.dot;
     for (let y = 2; y < CB_ROWS; y += 4) for (let x = (y % 8 ? 2 : 4); x < CB_COLS; x += 4) {
       ctx.beginPath(); ctx.arc(x * s, y * s, s * 0.25, 0, 7); ctx.fill();
@@ -37,18 +42,27 @@
     const box = g.box, cat = g.cat;
     g.ents.filter((e) => e.kind === 'dog').forEach((e) => drawDog(ctx, e, s, now, g));
     const hiding = g.state === 'win' ? Math.min(1, (g.tick - g.winTick) / 25) : 0;
-    if (g.state === 'win') { drawCat(ctx, cat, s, now, g, hiding, box); drawBox(ctx, box, s, true); }
+    if (g.state === 'win' && SP() && SP().CB_SP.ready) { drawBox(ctx, box, s, true); drawCat(ctx, cat, s, now, g, hiding, box); }
+    else if (g.state === 'win') { drawCat(ctx, cat, s, now, g, hiding, box); drawBox(ctx, box, s, true); }
     else { drawBox(ctx, box, s, false); drawCat(ctx, cat, s, now, g, 0, box); }
     while (g.events.length) {
       const ev = g.events.shift();
+      if (ev.type === 'dogdie') cb_shakeUntil = now + 320;
       fx.push({ ...ev, born: now });
     }
+    if (SP()) SP().cbSpriteDust(ctx, s, now);
     drawFx(ctx, s, now);
+    ctx.restore();
     if (g.state === 'win' && hiding >= 1) drawHearts(ctx, box, s, now - (g.winAt || (g.winAt = now)));
   }
 
   function drawParticles(ctx, g, s, now) {
     const { grid } = g, k = s * 1.3, off = (k - s) / 2;
+    ctx.fillStyle = 'rgba(255,170,90,.18)';   // 岩漿光暈
+    for (let y = 1; y < CB_ROWS - 1; y++) for (let x = 1; x < CB_COLS - 1; x++) {
+      if (grid[y * CB_COLS + x] !== CB_T.LAVA || (x + y) % 2) continue;
+      ctx.beginPath(); ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * (1.6 + Math.sin(now / 300 + x) * 0.3), 0, 7); ctx.fill();
+    }
     for (let y = 1; y < CB_ROWS - 1; y++) for (let x = 1; x < CB_COLS - 1; x++) {
       const t = grid[y * CB_COLS + x];
       if (t !== CB_T.WATER && t !== CB_T.LAVA && t !== CB_T.ROCK) continue;
@@ -80,6 +94,7 @@
   }
 
   function drawBox(ctx, e, s, front) {
+    if (SP() && SP().cbSpriteBox(ctx, e, s, cb_now)) return;
     if (!e.alive && !e.burnt) return;
     const x = e.rx * s, y = e.ry * s, w = e.w * s, h = e.h * s;
     const body = e.burnt ? '#6B4A3A' : CB_COLOR.box, dark = e.burnt ? '#3E2A22' : CB_COLOR.boxDark;
@@ -98,6 +113,7 @@
   }
 
   function drawCat(ctx, e, s, now, g, hiding, box) {
+    if (SP() && SP().cbSpriteCat(ctx, e, s, now, g, hiding, box)) return;
     if (!e.alive) return;
     let cx = (e.rx + e.w / 2) * s, cy = (e.ry + e.h / 2) * s + s * 0.3;
     let sc = 1;
@@ -140,6 +156,7 @@
   }
 
   function drawDog(ctx, e, s, now, g) {
+    if (SP() && SP().cbSpriteDog(ctx, e, s, now)) return;
     if (!e.alive) return;
     const cx = (e.rx + e.w / 2) * s, cy = (e.ry + e.h / 2) * s + s * 0.3;
     const r = s * 2.4, bob = e.walking ? Math.sin(now / 60) * s * 0.3 : 0;
@@ -175,6 +192,7 @@
       heart(ctx, bx + Math.sin(k * 2 + t * 4) * s * 2.5, by - t * s * 8, s * (1 + k % 2 * 0.4));
     }
     ctx.globalAlpha = 1;
+    if (SP() && SP().CB_SP.ready) return;   // 有圖片時貓頭本身會露出來
     ctx.fillStyle = CB_COLOR.catPatch;   // 箱子裡露出的耳朵
     [-0.9, 0.9].forEach((ex) => {
       ctx.beginPath(); ctx.moveTo(bx + ex * s - s * 0.7, by + s * 0.3); ctx.lineTo(bx + ex * s, by - s * 0.9); ctx.lineTo(bx + ex * s + s * 0.7, by + s * 0.3); ctx.fill();
