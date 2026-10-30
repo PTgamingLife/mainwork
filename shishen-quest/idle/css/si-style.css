@@ -1,0 +1,94 @@
+/* 十神試煉場 — 配色 A 煙雨水墨 */
+:root {
+  --si-mist-1: #F4F4F2; --si-mist-2: #E6E7E4; --si-paper: rgba(250, 250, 248, .85);
+  --si-ink: #1E1E1E; --si-ink-2: #3A3A38; --si-gray: #7A7A78; --si-gray-2: #B9BAB6;
+  --si-line: rgba(30, 30, 30, .12); --si-plum: #E3BE2B; --si-plum-deep: #B8951A; --si-seal: #B23A2E;
+  --si-font-brush: "LXGW WenKai TC", "Kaiti TC", "STKaiti", "DFKai-SB", serif;
+  --si-font-body: "Noto Serif TC", "PMingLiU", serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; font-family: var(--si-font-body); color: var(--si-ink);
+  background: linear-gradient(180deg, var(--si-mist-1), #EDEDEA 45%, var(--si-mist-2)) fixed;
+  -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.si-app { max-width: 480px; margin: 0 auto; padding-bottom: 72px; }
+
+.si-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+.si-seal { width: 34px; height: 34px; flex: none; display: grid; place-items: center; background: var(--si-seal);
+  color: #FBF6F0; font-family: var(--si-font-brush); font-size: 20px; border-radius: 4px; transform: rotate(-4deg); }
+.si-stage { flex: 1; min-width: 0; }
+.si-stage b { font-family: var(--si-font-brush); font-size: 19px; letter-spacing: .04em; }
+.si-stage small { display: block; color: var(--si-gray); font-size: 11px; }
+.si-timer { text-align: right; font-size: 11px; color: var(--si-gray); white-space: nowrap; }
+.si-timer b { display: block; font-size: 20px; color: var(--si-ink); font-family: var(--si-font-brush); }
+.si-bar { margin: 0 12px; height: 6px; border-radius: 3px; background: var(--si-line); overflow: hidden; }
+.si-bar i { display: block; height: 100%; width: 0; background: var(--si-plum); transition: width .5s; }
+.si-pend { display: flex; gap: 4px; padding: 8px 12px 0; flex-wrap: wrap; font-size: 11px; min-height: 30px; }
+.si-pend span { padding: 2px 7px; border: 1px solid var(--si-line); border-radius: 10px; background: var(--si-paper); }
+.si-pend .si-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; }
+
+.si-field-wrap { position: relative; margin-top: 4px; }
+.si-field-wrap canvas { display: block; }
+.si-start { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); text-align: center; width: 92%; }
+.si-btn { border: 0; border-radius: 22px; padding: 10px 22px; font-family: var(--si-font-brush); font-size: 18px;
+  background: var(--si-ink); color: #FBF6F0; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.si-btn:disabled { background: var(--si-gray-2); box-shadow: none; cursor: default; }
+.si-btn.si-plum { background: var(--si-plum); color: var(--si-ink); }
+.si-hint { display: inline-block; font-size: 12px; color: var(--si-ink-2); background: var(--si-paper);
+  padding: 6px 12px; border-radius: 14px; border: 1px solid var(--si-line); }
+
+.si-week { margin: 6px 12px 0; padding: 8px 10px; font-size: 11.5px; line-height: 1.65;
+  border: 1px solid var(--si-line); border-radius: 8px; background: var(--si-paper); }
+.si-week em { font-style: normal; color: var(--si-seal); }
+.si-skills { display: flex; gap: 8px; padding: 10px 12px; }
+.si-skill { flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--si-line);
+  background: var(--si-paper); font-size: 11px; color: var(--si-gray); }
+.si-skill b { display: block; font-family: var(--si-font-brush); font-size: 17px; color: var(--si-ink); }
+.si-skill i { font-style: normal; color: var(--si-ink-2); }
+
+.si-panel { display: none; padding: 0 12px; }
+.si-panel.on { display: block; }
+.si-h { font-family: var(--si-font-brush); font-size: 20px; margin: 12px 0 8px; }
+.si-group { margin-bottom: 10px; border: 1px solid var(--si-line); border-radius: 10px; background: var(--si-paper); }
+.si-group-h { padding: 6px 10px; font-size: 12px; color: var(--si-gray); border-bottom: 1px solid var(--si-line); }
+.si-god { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.si-god + .si-god { border-top: 1px dashed var(--si-line); }
+.si-god .si-swatch { width: 26px; height: 26px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  color: #FBF6F0; font-size: 12px; font-family: var(--si-font-brush); }
+.si-god-info { flex: 1; min-width: 0; font-size: 12px; color: var(--si-gray); }
+.si-god-info b { color: var(--si-ink); font-size: 15px; font-family: var(--si-font-brush); margin-right: 4px; }
+.si-up { border: 1px solid var(--si-ink); background: transparent; border-radius: 14px; padding: 5px 10px; font-size: 12px; white-space: nowrap; }
+.si-up:disabled { border-color: var(--si-gray-2); color: var(--si-gray-2); cursor: default; }
+.si-skill-card { padding: 10px 12px; margin-bottom: 10px; border: 1px solid var(--si-line); border-radius: 10px;
+  background: var(--si-paper); font-size: 13px; line-height: 1.7; }
+.si-skill-card b { font-family: var(--si-font-brush); font-size: 18px; }
+.si-steps { display: flex; gap: 4px; margin-top: 4px; }
+.si-steps span { flex: 1; height: 5px; border-radius: 3px; background: var(--si-line); }
+.si-steps span.on { background: var(--si-plum); }
+
+.si-tabs { position: fixed; bottom: 0; left: 0; right: 0; display: flex; border-top: 1px solid var(--si-line);
+  background: rgba(250,250,248,.95); max-width: 480px; margin: 0 auto; z-index: 5; }
+.si-tabs button { flex: 1; border: 0; background: none; padding: 12px 0 16px; font-family: var(--si-font-brush);
+  font-size: 16px; color: var(--si-gray); }
+.si-tabs button.on { color: var(--si-ink); box-shadow: inset 0 2px 0 var(--si-plum); }
+
+.si-modal { position: fixed; inset: 0; background: rgba(30,30,30,.45); display: none; align-items: center;
+  justify-content: center; z-index: 10; padding: 16px; }
+.si-modal.on { display: flex; }
+.si-modal-box { width: 100%; max-width: 340px; background: #FAFAF8; border-radius: 14px; padding: 18px 16px 14px;
+  text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.si-modal-box h3 { font-family: var(--si-font-brush); font-size: 22px; margin: 0 0 6px; }
+.si-modal-box p { font-size: 13px; color: var(--si-ink-2); margin: 6px 0; line-height: 1.6; }
+.si-gains { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 10px 0; font-size: 11px; }
+.si-gains div { padding: 4px 0; border-radius: 6px; background: var(--si-mist-2); }
+.si-gains b { display: block; font-size: 13px; }
+.si-thief { margin: 8px 0; padding: 8px; border-radius: 8px; background: rgba(178,58,46,.08); color: var(--si-seal); font-size: 13px; }
+.si-toast { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: var(--si-ink); color: #FBF6F0;
+  padding: 8px 14px; border-radius: 16px; font-size: 13px; z-index: 20; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.si-toast.on { opacity: 1; }
+
+.si-mockbar { margin: 4px 12px 10px; padding: 8px; border: 1px dashed var(--si-seal); border-radius: 8px; font-size: 11px; }
+.si-mockbar div { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.si-mockbar button { border: 1px solid var(--si-line); background: #FFF; border-radius: 10px; padding: 4px 8px; font-size: 11px; }
+.si-empty { padding: 40px 20px; text-align: center; color: var(--si-ink-2); line-height: 1.8; }

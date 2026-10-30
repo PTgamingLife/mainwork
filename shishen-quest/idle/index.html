@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>十神試煉場</title>
+<link rel="stylesheet" href="css/si-style.css">
+</head>
+<body>
+<div class="si-app" id="si-app">
+  <div class="si-top">
+    <div class="si-seal">試</div>
+    <div class="si-stage"><b id="si-stage">Day-1 心神訓練</b><small id="si-sub"></small></div>
+    <div class="si-timer" id="si-timer"></div>
+  </div>
+  <div class="si-bar"><i id="si-bar"></i></div>
+  <div class="si-pend" id="si-pend"></div>
+
+  <section class="si-panel on" data-si-panel="field">
+    <div class="si-field-wrap" style="margin: 4px -12px 0;">
+      <canvas id="si-canvas"></canvas>
+      <div class="si-start" id="si-start"></div>
+    </div>
+    <div class="si-week" id="si-week" style="margin: 6px 0 0;"></div>
+    <div class="si-skills" id="si-skills" style="padding: 10px 0;"></div>
+  </section>
+  <section class="si-panel" data-si-panel="gods"><div class="si-h">十神</div><div id="si-gods"></div></section>
+  <section class="si-panel" data-si-panel="skills"><div class="si-h">技能</div><div id="si-skill-list"></div></section>
+
+  <div class="si-mockbar" id="si-mockbar" hidden></div>
+</div>
+
+<nav class="si-tabs" id="si-tabs">
+  <button data-si-tab="field" class="on">戰場</button>
+  <button data-si-tab="gods">十神</button>
+  <button data-si-tab="skills">技能</button>
+</nav>
+<div class="si-modal" id="si-modal"><div class="si-modal-box" id="si-modal-box"></div></div>
+<div class="si-toast" id="si-toast"></div>
+<script type="module" src="js/si-app.js"></script>
+</body>
+</html>
