@@ -6,12 +6,11 @@ const SI_ART_LIST = {
   si_bg: "img/si-bg-0.webp",
   si_wheel: "img/si-wheel-0.webp",
   si_gods: Object.fromEntries(["bi_jian", "jie_cai", "shi_shen", "shang_guan", "zheng_cai", "pian_cai",
-    "zheng_guan", "qi_sha", "zheng_yin", "pian_yin"].map((k) => [k, [0]])),
-  si_demons: Object.fromEntries([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [i, [0]])),
+    "zheng_guan", "qi_sha", "zheng_yin", "pian_yin"].map((k) => [k, [0, 1, 2, 3, 4]])),
+  // 心魔:各自已完成的階段圖(其餘階沿用最近一階圖,再疊程式效果)
+  si_demons: { 0: [0, 1, 2, 3, 4], 1: [0, 1, 2, 3, 4], 2: [0, 1, 2, 3], 3: [0], 4: [0], 5: [0], 6: [0],
+    7: [0, 1, 2, 3, 4], 8: [0], 9: [0] },
 };
-// 已有 5 階獨立圖的角色
-SI_ART_LIST.si_gods.bi_jian = [0, 1, 2, 3, 4];
-SI_ART_LIST.si_demons[7] = [0, 1, 2, 3, 4];
 
 const si_imgs = {};
 function siLoad(src) {
