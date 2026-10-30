@@ -151,20 +151,23 @@ export function siBossDrop(si, sg, dayNo) {
   return siRunDrop(si, sg, siDemonOf(dayNo).si_drop, SI_BOSS_DROP);
 }
 
+// 注意力小偷:戒律越高越少出現、偷得越少;直接從 gains 扣掉
+export function siThief(gains, sg, rnd = Math.random) {
+  const lv = siSkillLevels(sg).si_precept.si_level;
+  const keys = Object.keys(gains).filter((k) => gains[k] > 0);
+  if (!keys.length || rnd() >= SI_THIEF_CHANCE[lv]) return null;
+  const key = keys[Math.floor(rnd() * keys.length)];
+  const amount = Math.max(1, Math.floor(gains[key] * SI_THIEF_RATIO[lv]));
+  gains[key] -= amount;
+  return { si_key: key, si_amount: amount, si_ratio: SI_THIEF_RATIO[lv] };
+}
+
 // 結算:注意力小偷(戒律越高越少出現、偷得越少)→ 靈氣入帳
 export function siSettle(si, sg, rnd = Math.random) {
   const run = si.si_run;
   if (!run) return null;
   const gains = Object.fromEntries(Object.entries(run.si_pending).map(([k, v]) => [k, Math.floor(v)]));
-  const lv = siSkillLevels(sg).si_precept.si_level;
-  let thief = null;
-  const keys = Object.keys(gains).filter((k) => gains[k] > 0);
-  if (keys.length && rnd() < SI_THIEF_CHANCE[lv]) {
-    const key = keys[Math.floor(rnd() * keys.length)];
-    const amount = Math.max(1, Math.floor(gains[key] * SI_THIEF_RATIO[lv]));
-    gains[key] -= amount;
-    thief = { si_key: key, si_amount: amount, si_ratio: SI_THIEF_RATIO[lv] };
-  }
+  const thief = siThief(gains, sg, rnd);
   Object.entries(gains).forEach(([k, v]) => { si.si_aura[k] += v; });
   const day = (si.si_days[run.si_date] ||= { si_used: 0, si_penalty: 0 });
   day.si_used += run.si_units;
@@ -175,7 +178,7 @@ export function siSettle(si, sg, rnd = Math.random) {
 
 // ---- 離線收益 ----
 // 從 si_last_seen 到 now,依日期切段:有打卡 100%、沒打卡 1/5;只算上次完成試煉後 5 天內
-export function siOffline(si, sg, now) {
+export function siOffline(si, sg, now, rnd = Math.random) {
   const from = si.si_last_seen;
   if (!from || !si.si_last_done || now - from < 5 * SI_MIN) return null;
   const lastOk = siAddDays(si.si_last_done, SI_OFFLINE_DAYS);
@@ -192,7 +195,8 @@ export function siOffline(si, sg, now) {
   const bond = SI_BOND_MULT[siSkillLevels(sg).si_bond.si_level];
   const gains = {};
   SI_GODS.forEach((g) => { gains[g.si_key] = Math.floor(hours * SI_OFFLINE_PER_HOUR * bond); });
-  return { si_away_ms: now - from, si_hours: hours, si_gains: gains, si_expired: siDateStr(now) > lastOk };
+  const thief = siThief(gains, sg, rnd);
+  return { si_away_ms: now - from, si_hours: hours, si_gains: gains, si_thief: thief, si_expired: siDateStr(now) > lastOk };
 }
 
 export function siApplyGains(si, gains) {

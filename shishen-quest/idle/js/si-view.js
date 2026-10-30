@@ -76,11 +76,14 @@ function siGainsGrid(gains, dm) {
     `<div style="color:${siColorOf(dm, g.si_key)}">${g.si_name}<b>+${siFmt(gains[g.si_key] || 0)}</b></div>`).join("")}</div>`;
 }
 
-export function siViewSettle(res, demon, dm) {
-  const t = res.si_thief;
-  const thief = t
+function siThiefBox(t) {
+  return t
     ? `<div class="si-thief">注意力小偷出現!偷走 ${SI_GOD_BY_KEY[t.si_key].si_name} 靈氣 ${siFmt(t.si_amount)}(${Math.round(t.si_ratio * 100)}%)</div>`
     : `<div class="si-thief" style="color:var(--si-ink-2);background:var(--si-mist-2)">戒律守住心神,小偷沒有出現</div>`;
+}
+
+export function siViewSettle(res, demon, dm) {
+  const thief = siThiefBox(res.si_thief);
   return `<h3>擊退 ${demon.si_boss}</h3><p>${demon.si_trait}之心魔已退散${res.si_units > 1 ? `・本場領取 ${res.si_units} 場收益` : ""}</p>
     ${thief}${siGainsGrid(res.si_gains, dm)}<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
 }
@@ -89,7 +92,7 @@ export function siViewOffline(res, dm) {
   const h = Math.floor(res.si_away_ms / 3600000), m = Math.floor(res.si_away_ms / 60000) % 60;
   return `<h3>離線收益</h3><p>離開 ${h} 小時 ${m} 分・有效 ${res.si_hours.toFixed(1)} 小時</p>
     <p style="font-size:11.5px;color:var(--si-gray)">有打卡的日子全額、沒打卡 1/5;上次完成試煉後只算 5 天</p>
-    ${siGainsGrid(res.si_gains, dm)}
+    ${siThiefBox(res.si_thief)}${siGainsGrid(res.si_gains, dm)}
     ${res.si_expired ? `<p style="color:var(--si-seal)">已超過 5 天沒完成試煉,離線收益已停止</p>` : ""}
     <button class="si-btn si-plum" data-si-close>收下</button>`;
 }
