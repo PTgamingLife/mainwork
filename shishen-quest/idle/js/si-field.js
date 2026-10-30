@@ -1,7 +1,7 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
 import { siDrawDemon, siDemonHeight } from "./si-demons.js";
 import { siCounterMult } from "./si-data.js";
-import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_NAMES, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
+import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_SHORT, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
 const SI_W = 390, SI_H = 300, SI_GROUND = 266;
 const SI_CX = 128, SI_CY = 152, SI_R = 104, SI_FLOW_R = 68;
@@ -171,7 +171,7 @@ export function siCreateField(canvas, hooks) {
       ctx.fillStyle = "#FBF6F0"; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
       ctx.fillRect(hx - 8, hy - 1, 16, 9); ctx.strokeRect(hx - 8, hy - 1, 16, 9);
       ctx.fillStyle = c; ctx.font = "bold 7px serif"; ctx.textAlign = "center";
-      ctx.fillText(SI_POINT_NAMES[i], hx, hy + 6.5);
+      ctx.fillText(SI_POINT_SHORT[i], hx, hy + 6.5);
     }
     SI_GODS.forEach(drawGod);
   }

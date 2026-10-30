@@ -1,22 +1,23 @@
 // 十神試煉場 — 常數與對照表
 // 五能量:0 創造力 1 生產力 2 制約力 3 解析力 4 群眾力(與十神修行錄 sg_ 相同)
 
-// 十神:si_inner = 站五芒星點內側(正/陰),否則外側(偏)
+// 十神:si_name 用十神修行錄上線版的心理學用詞;si_inner = 站五芒星點內側(正/陰),否則外側(偏)
 export const SI_GODS = [
-  { si_key: "bi_jian", si_name: "比肩", si_energy: 4, si_inner: true },
-  { si_key: "jie_cai", si_name: "劫財", si_energy: 4, si_inner: false },
-  { si_key: "shi_shen", si_name: "食神", si_energy: 0, si_inner: true },
-  { si_key: "shang_guan", si_name: "傷官", si_energy: 0, si_inner: false },
-  { si_key: "zheng_cai", si_name: "正財", si_energy: 1, si_inner: true },
-  { si_key: "pian_cai", si_name: "偏財", si_energy: 1, si_inner: false },
-  { si_key: "zheng_guan", si_name: "正官", si_energy: 2, si_inner: true },
-  { si_key: "qi_sha", si_name: "七殺", si_energy: 2, si_inner: false },
-  { si_key: "zheng_yin", si_name: "正印", si_energy: 3, si_inner: true },
-  { si_key: "pian_yin", si_name: "偏印", si_energy: 3, si_inner: false },
+  { si_key: "bi_jian", si_name: "同好", si_energy: 4, si_inner: true },
+  { si_key: "jie_cai", si_name: "同盟", si_energy: 4, si_inner: false },
+  { si_key: "shi_shen", si_name: "匠心", si_energy: 0, si_inner: true },
+  { si_key: "shang_guan", si_name: "鋒芒", si_energy: 0, si_inner: false },
+  { si_key: "zheng_cai", si_name: "積累", si_energy: 1, si_inner: true },
+  { si_key: "pian_cai", si_name: "獵機", si_energy: 1, si_inner: false },
+  { si_key: "zheng_guan", si_name: "自律", si_energy: 2, si_inner: true },
+  { si_key: "qi_sha", si_name: "掌局", si_energy: 2, si_inner: false },
+  { si_key: "zheng_yin", si_name: "學識", si_energy: 3, si_inner: true },
+  { si_key: "pian_yin", si_name: "閱歷", si_energy: 3, si_inner: false },
 ];
 export const SI_GOD_BY_KEY = Object.fromEntries(SI_GODS.map((g) => [g.si_key, g]));
 
-export const SI_POINT_NAMES = ["比劫", "食傷", "財", "官殺", "印"];
+export const SI_POINT_NAMES = ["群眾力", "創造力", "生產力", "制約力", "解析力"];
+export const SI_POINT_SHORT = ["群", "創", "產", "制", "析"]; // 戰場殿閣牌匾
 // 五芒星五點(順時針、相生序),頂點為日主:群眾→創造→生產→制約→解析
 export const SI_POINT_ENERGIES = [4, 0, 1, 2, 3];
 
