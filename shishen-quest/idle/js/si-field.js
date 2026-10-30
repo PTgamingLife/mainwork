@@ -1,5 +1,6 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
 import { siDrawDemon, siDemonHeight } from "./si-demons.js";
+import { siArtBg, siArtGod, siArtDemon } from "./si-art.js";
 import { siCounterMult } from "./si-data.js";
 import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_SHORT, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
@@ -101,9 +102,20 @@ export function siCreateField(canvas, hooks) {
       }
       ctx.lineTo(SI_W, SI_H); ctx.fill();
     };
-    hill(28, 95, "#DFE0DC", 0.15, 70);
-    hill(22, 145, "#D2D4CF", 0.35, 50);
-    ctx.fillStyle = "#C3C6C0"; ctx.fillRect(0, SI_GROUND, SI_W, SI_H - SI_GROUND);
+    const bg = siArtBg();
+    if (bg) { // 水墨山水圖:左右鏡像交替平鋪,接縫不明顯
+      const w = SI_H * bg.width / bg.height, off = (f.si_scroll * 0.3) % (w * 2);
+      for (let x = -off, k = 0; x < SI_W; x += w, k++) {
+        ctx.save();
+        if (k % 2) { ctx.translate(x + w, 0); ctx.scale(-1, 1); ctx.drawImage(bg, 0, 0, w, SI_H); }
+        else ctx.drawImage(bg, x, 0, w, SI_H);
+        ctx.restore();
+      }
+    } else {
+      hill(28, 95, "#DFE0DC", 0.15, 70);
+      hill(22, 145, "#D2D4CF", 0.35, 50);
+      ctx.fillStyle = "#C3C6C0"; ctx.fillRect(0, SI_GROUND, SI_W, SI_H - SI_GROUND);
+    }
     ctx.strokeStyle = "#9A9C97"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, SI_GROUND); ctx.lineTo(SI_W, SI_GROUND); ctx.stroke();
     ctx.strokeStyle = "rgba(122,122,120,.35)";
@@ -187,6 +199,15 @@ export function siCreateField(canvas, hooks) {
     ctx.save(); ctx.translate(x, y + bob);
     ctx.globalAlpha = glow; ctx.fillStyle = c;
     ctx.beginPath(); ctx.arc(0, -3, 9 + tier * 2.5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    const art = siArtGod(g.si_key, tier);
+    if (art) {
+      const h = 30, w = h * art.width / art.height;
+      ctx.drawImage(art, -w / 2, 10 - h, w, h);
+      ctx.fillStyle = "#3A3A38"; ctx.font = "7.5px serif"; ctx.textAlign = "center";
+      ctx.fillText(g.si_name, 0, 18);
+      ctx.restore();
+      return;
+    }
     if (tier >= 4) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, -3, 15, f.si_t, f.si_t + Math.PI * 1.5); ctx.stroke(); }
     ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(-6 - tier * 0.6, 8); ctx.lineTo(0, -3); ctx.lineTo(6 + tier * 0.6, 8); ctx.fill();
     ctx.fillStyle = "#FBF6F0"; ctx.strokeStyle = c; ctx.lineWidth = 1.5;
@@ -202,8 +223,14 @@ export function siCreateField(canvas, hooks) {
   function drawEnemy(e) {
     const s = e.boss ? 1.5 : 1, x = e.x, y = SI_GROUND;
     const tier = f.si_model.si_demon_tiers[e.idx];
-    siDrawDemon(ctx, e.idx, tier, x, y, s, f.si_t + e.wob, e.flash > 0);
     const d = SI_DEMONS[e.idx], h = siDemonHeight(tier, s);
+    const art = siArtDemon(e.idx, tier);
+    if (art) {
+      const ah = h * 1.25, aw = ah * art.width / art.height, bob = Math.sin(f.si_t * 4 + e.wob) * 1.5;
+      ctx.save(); ctx.globalAlpha = e.flash > 0 ? 0.5 : 1;
+      ctx.drawImage(art, x - aw / 2, y - ah + bob, aw, ah);
+      ctx.restore();
+    } else siDrawDemon(ctx, e.idx, tier, x, y, s, f.si_t + e.wob, e.flash > 0);
     ctx.fillStyle = "#3A3A38"; ctx.font = `${e.boss ? "bold 11" : "8.5"}px serif`; ctx.textAlign = "center";
     ctx.fillText(e.boss ? `${d.si_boss}・${d.si_trait}` : `${d.si_trait}之影`, x, e.boss ? y - h - 14 : y + 13);
     if (e.boss || e.hp < e.max) {

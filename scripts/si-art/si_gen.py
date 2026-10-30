@@ -7,7 +7,8 @@ import base64, json, os, sys, urllib.error, urllib.request
 
 SI_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/si-gen-art"
 SI_OPENAI_URL = "https://api.openai.com/v1/images/generations"
-SI_MODEL = "gpt-image-2"  # 與 sg-gen-angel 相同
+SI_MODEL = "gpt-image-2"  # 與 sg-gen-angel 相同;不支援透明背景
+SI_MODEL_TRANSPARENT = "gpt-image-1.5"  # 透明背景角色圖用
 SI_STYLES = {
     "sprite": "2D game sprite, Chinese ink-wash painting style, cute chibi (Q-version) proportions, soft sumi brush outlines, "
               "muted palette of ink black #1E1E1E, mist white #F4F4F2 and plum yellow #E3BE2B accents, no red, no text, "
@@ -28,7 +29,8 @@ def si_request(prompt, size, background):
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if openai_key:
         headers["Authorization"] = f"Bearer {openai_key}"
-    body = {"model": SI_MODEL, "prompt": prompt, "n": 1, "size": size, "quality": "medium",
+    model = SI_MODEL_TRANSPARENT if background == "transparent" else SI_MODEL
+    body = {"model": model, "prompt": prompt, "n": 1, "size": size, "quality": "medium",
             "background": background, "output_format": "webp", "output_compression": 90}
     req = urllib.request.Request(SI_OPENAI_URL, data=json.dumps(body).encode(), method="POST", headers=headers)
     with urllib.request.urlopen(req, timeout=300) as r:
