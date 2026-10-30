@@ -1,6 +1,6 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
 import { siDemonHeight } from "./si-demons.js";
-import { siArtBg, siArtWheel, siArtGod, siDrawDemonAny } from "./si-art.js";
+import { siArtBg, siArtWheel, siArtGod, siArtGodExact, siDrawDemonAny } from "./si-art.js";
 import { siCounterMult } from "./si-data.js";
 import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_SHORT, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
@@ -210,9 +210,10 @@ export function siCreateField(canvas, hooks) {
     const art = siArtGod(g.si_key, tier);
     if (art) {
       const h = 30, w = h * art.width / art.height;
-      if (tier >= 4) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, -5, 17, f.si_t, f.si_t + Math.PI * 1.5); ctx.stroke(); }
+      const fx = !siArtGodExact(g.si_key, tier);
+      if (fx && tier >= 4) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, -5, 17, f.si_t, f.si_t + Math.PI * 1.5); ctx.stroke(); }
       ctx.drawImage(art, -w / 2, 10 - h, w, h);
-      if (tier >= 3) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-4, 12 - h); ctx.lineTo(0, 7 - h); ctx.lineTo(4, 12 - h); ctx.stroke(); }
+      if (fx && tier >= 3) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-4, 12 - h); ctx.lineTo(0, 7 - h); ctx.lineTo(4, 12 - h); ctx.stroke(); }
       ctx.fillStyle = c; ctx.font = "bold 7.5px serif"; // 五行色顯示在光暈與名字
  ctx.textAlign = "center";
       ctx.fillText(g.si_name, 0, 18);

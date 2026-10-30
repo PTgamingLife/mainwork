@@ -7,6 +7,7 @@ import base64, json, os, sys, urllib.error, urllib.request
 
 SI_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/si-gen-art"
 SI_OPENAI_URL = "https://api.openai.com/v1/images/generations"
+SI_OPENAI_EDIT_URL = "https://api.openai.com/v1/images/edits"
 SI_MODEL = "gpt-image-2"  # 與 sg-gen-angel 相同;不支援透明背景
 SI_MODEL_TRANSPARENT = "gpt-image-1.5"  # 透明背景角色圖用
 SI_STYLES = {
@@ -16,6 +17,27 @@ SI_STYLES = {
     "ring": "Chinese ink-wash game asset, front view, perfectly circular, centered, transparent background, no text, no red seal colors.",
     "bg": "Chinese ink-wash painting, muted gray ink washes on mist white paper (#F4F4F2 to #E6E7E4), no red, no text.",
 }
+
+
+def si_edit(prompt, size, background, ref):
+    """以參考圖延伸(升階):multipart 呼叫 images/edits,保持同一角色外觀"""
+    boundary = "----siart" + os.urandom(8).hex()
+    fields = {"model": SI_MODEL_TRANSPARENT, "prompt": prompt, "n": "1", "size": size, "quality": "medium",
+              "background": background, "output_format": "webp", "output_compression": "90", "input_fidelity": "high"}
+    parts = [f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in fields.items()]
+    with open(ref, "rb") as f:
+        img = f.read()
+    ext = os.path.splitext(ref)[1].lstrip(".") or "png"
+    parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="image[]"; filename="ref.{ext}"\r\n'
+                 f'Content-Type: image/{ext}\r\n\r\n'.encode() + img + b"\r\n")
+    parts.append(f"--{boundary}--\r\n".encode())
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if openai_key:
+        headers["Authorization"] = f"Bearer {openai_key}"
+    req = urllib.request.Request(SI_OPENAI_EDIT_URL, data=b"".join(parts), method="POST", headers=headers)
+    with urllib.request.urlopen(req, timeout=300) as r:
+        return json.load(r)["data"][0]["b64_json"]
 
 
 def si_request(prompt, size, background):
@@ -47,7 +69,8 @@ def si_main(list_path, out_dir):
             continue
         prompt = f'{SI_STYLES[it.get("style", "sprite")]} {it["prompt"]}'
         try:
-            b64 = si_request(prompt, it.get("size", "1024x1024"), it.get("background", "transparent"))
+            args = (prompt, it.get("size", "1024x1024"), it.get("background", "transparent"))
+            b64 = si_edit(*args, it["ref"]) if it.get("ref") else si_request(*args)
         except urllib.error.HTTPError as e:
             print("FAIL", it["file"], e.code, e.read()[:300])
             continue
