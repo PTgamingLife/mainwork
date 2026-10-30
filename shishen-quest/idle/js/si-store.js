@@ -3,7 +3,7 @@ import {
   SI_GODS, SI_GOD_BY_KEY, SI_DEMONS, SI_SKILLS, SI_SKILL_STEPS, SI_OATH_CUT_MIN, SI_THIEF_CHANCE,
   SI_THIEF_RATIO, SI_BOND_MULT, SI_RUN_MIN, SI_PENALTY_MIN, SI_PENALTY_CAP_MIN, SI_OFFLINE_DAYS,
   SI_OFFLINE_PER_HOUR, SI_OFFLINE_MISS_RATE, SI_BOSS_DROP, SI_WEEK_BONUS, SI_ELEMENTS,
-  siPointOfElem, siPointOfEnergy, siUpgradeCost,
+  siPointOfElem, siPointOfEnergy, siUpgradeCost, SI_COST_MULT_MIN, SI_COST_MULT_MAX,
 } from "./si-data.js";
 
 const SI_MIN = 60000;
@@ -205,8 +205,19 @@ export function siApplyGains(si, gains) {
 }
 
 // ---- 升級 ----
-export function siUpgrade(si, key) {
-  const cost = siUpgradeCost(si.si_levels[key]);
+// 命盤越弱升級越便宜、越強越貴
+export function siCostMult(sg, key) {
+  const scores = sg?.sg_chart?.sg_scores || {};
+  const vals = SI_GODS.map((g) => scores[g.si_key] ?? 1);
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length || 1;
+  const m = (scores[key] ?? 1) / avg;
+  return Math.round(Math.min(SI_COST_MULT_MAX, Math.max(SI_COST_MULT_MIN, m)) * 100) / 100;
+}
+
+export function siCost(si, sg, key) { return siUpgradeCost(si.si_levels[key], siCostMult(sg, key)); }
+
+export function siUpgrade(si, sg, key) {
+  const cost = siCost(si, sg, key);
   if (si.si_aura[key] < cost) return false;
   si.si_aura[key] -= cost;
   si.si_levels[key] += 1;

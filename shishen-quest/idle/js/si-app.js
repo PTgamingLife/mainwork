@@ -92,8 +92,8 @@ function siRender() {
   $("si-week").innerHTML = siViewWeek(m.si_fx, m.si_dm);
   $("si-skills").innerHTML = siViewSkillRow(lv);
   $("si-skill-list").innerHTML = siViewSkills(lv);
-  $("si-gods").innerHTML = siViewGods(si, m.si_powers, m.si_dm);
-  $("si-bestiary").innerHTML = siViewBestiary(si.si_demon_kills);
+  $("si-gods").innerHTML = siViewGods(si, si_sg, m.si_powers, m.si_dm);
+  $("si-bestiary").innerHTML = siViewBestiary(si.si_demon_kills, m.si_dm);
   siDrawBestiary();
   if (si_mock) siRenderMock();
 }
@@ -204,7 +204,7 @@ $("si-tabs").addEventListener("click", (ev) => {
 });
 $("si-gods").addEventListener("click", (ev) => {
   const b = ev.target.closest("[data-si-up]");
-  if (b && siUpgrade(si, b.dataset.siUp)) { siSaveAll(); siRender(); }
+  if (b && siUpgrade(si, si_sg, b.dataset.siUp)) { siSaveAll(); siRender(); }
 });
 
 // ---- ?mock=1 測試面板 ----

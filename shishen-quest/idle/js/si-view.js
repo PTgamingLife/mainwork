@@ -2,10 +2,11 @@
 import {
   SI_GODS, SI_GOD_BY_KEY, SI_POINT_NAMES, SI_POINT_ENERGIES, SI_ELEM_COLORS, SI_ELEMENTS, SI_SKILLS, SI_SKILL_STEPS,
   SI_OATH_CUT_MIN, SI_THIEF_CHANCE, SI_THIEF_RATIO, SI_BOND_MULT, SI_TIERS, SI_PENALTY_CAP_MIN,
-  siElemOfPoint, siPointOfEnergy, siTierOf, siUpgradeCost,
+  siElemOfPoint, siPointOfEnergy, siTierOf, siGodElem,
 } from "./si-data.js";
 import { SG_TRANSFORMS } from "../../js/sg-wuxing.js";
 import { siFmt } from "./si-field.js";
+import { siCost, siCostMult } from "./si-store.js";
 import { SI_DEMON_TIERS, SI_DEMON_STEPS, siDemonTierOf } from "./si-demons.js";
 import { SI_DEMONS } from "./si-data.js";
 
@@ -60,13 +61,13 @@ export function siViewSkills(levels) {
   }).join("");
 }
 
-export function siViewGods(si, powers, dm) {
+export function siViewGods(si, sg, powers, dm) {
   return SI_POINT_ENERGIES.map((e, i) => {
     const color = SI_ELEM_COLORS[siElemOfPoint(dm, i)];
     const rows = SI_GODS.filter((g) => g.si_energy === e).map((g) => {
-      const lv = si.si_levels[g.si_key], cost = siUpgradeCost(lv), have = Math.floor(si.si_aura[g.si_key]);
+      const lv = si.si_levels[g.si_key], cost = siCost(si, sg, g.si_key), have = Math.floor(si.si_aura[g.si_key]);
       return `<div class="si-god"><span class="si-swatch" style="background:${color}">${g.si_name[0]}</span>
-        <div class="si-god-info"><b>${g.si_name}</b>Lv${lv}・${SI_TIERS[siTierOf(lv)]}<br>戰力 ${siFmt(powers[g.si_key])}・靈氣 ${siFmt(have)}/${siFmt(cost)}</div>
+        <div class="si-god-info"><b>${g.si_name}</b>Lv${lv}・${SI_TIERS[siTierOf(lv)]}<br>戰力 ${siFmt(powers[g.si_key])}・靈氣 ${siFmt(have)}/${siFmt(cost)}<br>命盤 ${sg?.sg_chart?.sg_scores?.[g.si_key] ?? "-"}・升級成本 ×${siCostMult(sg, g.si_key)}</div>
         <button class="si-up" data-si-up="${g.si_key}" ${have >= cost ? "" : "disabled"}>升級</button></div>`;
     }).join("");
     return `<div class="si-group"><div class="si-group-h">${SI_POINT_NAMES[i]}殿・${SI_ELEMENTS[siElemOfPoint(dm, i)]}</div>${rows}</div>`;
@@ -105,13 +106,13 @@ export function siViewTimer(run, leftMs, penaltyMin) {
   return `剩餘<b>${siMmss(leftMs)}</b>中斷 +${penaltyMin} 分(今日上限 ${SI_PENALTY_CAP_MIN})`;
 }
 
-export function siViewBestiary(kills) {
+export function siViewBestiary(kills, dm) {
   return SI_DEMONS.map((d, i) => {
     const n = kills[i], tier = siDemonTierOf(n), next = SI_DEMON_STEPS[tier + 1];
     return `<div class="si-demon-card"><div class="si-demon-h"><b>${d.si_trait}・${d.si_boss}</b>
       <span>${SI_DEMON_TIERS[tier]}・已打倒 ${siFmt(n)}${next ? ` / ${siFmt(next)}` : "(已達真身)"}</span></div>
       <canvas data-si-demon="${i}" style="width:100%;aspect-ratio:330/78"></canvas>
       <div class="si-demon-tiers">${SI_DEMON_TIERS.map((t, k) => `<span class="${k <= tier ? "on" : ""}">${t}</span>`).join("")}</div>
-      <div class="si-demon-drop">掉落:${SI_GOD_BY_KEY[d.si_drop].si_name}靈氣</div></div>`;
+      <div class="si-demon-drop">屬${SI_ELEMENTS[siGodElem(dm, d.si_drop)]}(代表${SI_GOD_BY_KEY[d.si_drop].si_name})・掉落${SI_GOD_BY_KEY[d.si_drop].si_name}靈氣・被剋傷害 +15%</div></div>`;
   }).join("");
 }

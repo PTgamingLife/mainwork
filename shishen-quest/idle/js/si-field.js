@@ -1,5 +1,6 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
 import { siDrawDemon, siDemonHeight } from "./si-demons.js";
+import { siCounterMult } from "./si-data.js";
 import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_NAMES, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
 const SI_W = 390, SI_H = 300, SI_GROUND = 266;
@@ -73,11 +74,12 @@ export function siCreateField(canvas, hooks) {
     if (front && front.x < SI_W - 20 && f.si_hit_cd <= 0) {
       f.si_hit_cd = SI_HIT_S;
       const g = pickGod();
-      const dmg = Math.max(1, Math.round(totalPower() / 10 * SI_HIT_S * (0.8 + Math.random() * 0.4)));
+      const cm = siCounterMult(f.si_model.si_dm, g.si_key, SI_DEMONS[front.idx].si_drop);
+      const dmg = Math.max(1, Math.round(totalPower() / 10 * SI_HIT_S * (0.8 + Math.random() * 0.4) * cm));
       front.hp -= dmg; front.flash = 0.12;
       const [gx, gy] = godPos(g);
       f.si_fx.push({ k: "shot", x0: gx, y0: gy, x1: front.x, y1: SI_GROUND - siDemonHeight(f.si_model.si_demon_tiers[front.idx], front.boss ? 1.5 : 1) * 0.6, t: 0, c: godColor(g) });
-      f.si_fx.push({ k: "num", x: front.x + (Math.random() * 30 - 15), y: SI_GROUND - 60, t: 0, v: dmg, c: godColor(g) });
+      f.si_fx.push({ k: "num", x: front.x + (Math.random() * 30 - 15), y: SI_GROUND - 60, t: 0, v: dmg, c: godColor(g), cm });
       if (front.hp <= 0) { f.si_enemies.shift(); kill(front); }
     }
     f.si_fx.forEach((x) => { x.t += dt; });
@@ -217,8 +219,11 @@ export function siCreateField(canvas, hooks) {
         const px = x.x0 + (x.x1 - x.x0) * u, py = x.y0 + (x.y1 - x.y0) * u;
         ctx.fillStyle = x.c; ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fill();
       } else {
-        ctx.globalAlpha = 1 - x.t / 0.9; ctx.fillStyle = "#B8951A"; ctx.font = "bold 14px serif"; ctx.textAlign = "center";
-        ctx.fillText(siFmt(x.v), x.x, x.y - x.t * 30); ctx.globalAlpha = 1;
+        // 相剋:大字梅黃加「剋」;被剋:小字灰
+        const up = x.cm > 1, down = x.cm < 1;
+        ctx.globalAlpha = 1 - x.t / 0.9; ctx.fillStyle = down ? "#9A9C97" : up ? "#E3BE2B" : "#B8951A";
+        ctx.font = `bold ${up ? 17 : down ? 11 : 14}px serif`; ctx.textAlign = "center";
+        ctx.fillText(up ? `剋 ${siFmt(x.v)}` : siFmt(x.v), x.x, x.y - x.t * 30); ctx.globalAlpha = 1;
       }
     });
     // 靈氣:心魔 → 核心 → 沿相生流到該點

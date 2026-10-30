@@ -71,4 +71,17 @@ export const SI_WEEK_BONUS = 1.2;        // 本週轉化加成
 // 十神形象:每 10 級換一階
 export const SI_TIERS = ["初心", "執器", "披光", "化形", "法相"];
 export const siTierOf = (lvl) => Math.min(SI_TIERS.length - 1, Math.floor((lvl - 1) / 10));
-export const siUpgradeCost = (lvl) => Math.ceil(10 * Math.pow(1.12, lvl - 1));
+export const siUpgradeCost = (lvl, mult = 1) => Math.ceil(10 * Math.pow(1.12, lvl - 1) * mult);
+
+// 命盤補弱:升級成本 × (該十神命盤分數 ÷ 十神平均分數),限制在 0.4–2.0
+export const SI_COST_MULT_MIN = 0.4, SI_COST_MULT_MAX = 2.0;
+
+// 五行相剋:攻擊方剋怪物 +15%,怪物剋攻擊方 −15%(相生、同五行不變)
+export const SI_COUNTER_BONUS = 0.15;
+export const siGodElem = (dm, key) => siElemOfPoint(dm, siPointOfEnergy(SI_GOD_BY_KEY[key].si_energy));
+export function siCounterMult(dm, atkKey, defKey) {
+  const a = siGodElem(dm, atkKey), b = siGodElem(dm, defKey);
+  if ((b - a + 5) % 5 === 2) return 1 + SI_COUNTER_BONUS;
+  if ((a - b + 5) % 5 === 2) return 1 - SI_COUNTER_BONUS;
+  return 1;
+}
