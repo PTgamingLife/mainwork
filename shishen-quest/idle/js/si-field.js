@@ -1,4 +1,5 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
+import { siDrawDemon, siDemonHeight } from "./si-demons.js";
 import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_NAMES, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
 const SI_W = 390, SI_H = 300, SI_GROUND = 266;
@@ -45,9 +46,9 @@ export function siCreateField(canvas, hooks) {
   }
 
   function kill(e) {
-    if (e.boss) { hooks.si_onBossDead(); f.si_boss_phase = false; return; }
+    if (e.boss) { hooks.si_onBossDead(e.idx); f.si_boss_phase = false; return; }
     const key = SI_DEMONS[e.idx].si_drop;
-    hooks.si_onKill(key);
+    hooks.si_onKill(key, e.idx);
     const g = SI_GODS.find((x) => x.si_key === key);
     f.si_auras.push({ x0: e.x, y0: SI_GROUND - 22, t: 0, g, pt: siPointOfEnergy(g.si_energy) });
   }
@@ -63,7 +64,7 @@ export function siCreateField(canvas, hooks) {
     }
     // 心魔前進、排隊
     f.si_enemies.forEach((e, i) => {
-      e.x = Math.max(frontX(i), e.x - SI_ENEMY_SPEED * dt);
+      e.x = Math.max(frontX(i) + (e.boss ? 16 : 0), e.x - SI_ENEMY_SPEED * dt);
       e.flash = Math.max(0, e.flash - dt);
     });
     // 十神攻擊最前面的心魔
@@ -75,7 +76,7 @@ export function siCreateField(canvas, hooks) {
       const dmg = Math.max(1, Math.round(totalPower() / 10 * SI_HIT_S * (0.8 + Math.random() * 0.4)));
       front.hp -= dmg; front.flash = 0.12;
       const [gx, gy] = godPos(g);
-      f.si_fx.push({ k: "shot", x0: gx, y0: gy, x1: front.x, y1: SI_GROUND - 24 * (front.boss ? 2 : 1), t: 0, c: godColor(g) });
+      f.si_fx.push({ k: "shot", x0: gx, y0: gy, x1: front.x, y1: SI_GROUND - siDemonHeight(f.si_model.si_demon_tiers[front.idx], front.boss ? 1.5 : 1) * 0.6, t: 0, c: godColor(g) });
       f.si_fx.push({ k: "num", x: front.x + (Math.random() * 30 - 15), y: SI_GROUND - 60, t: 0, v: dmg, c: godColor(g) });
       if (front.hp <= 0) { f.si_enemies.shift(); kill(front); }
     }
@@ -197,26 +198,16 @@ export function siCreateField(canvas, hooks) {
   }
 
   function drawEnemy(e) {
-    const s = e.boss ? 2 : 1;
-    const y = SI_GROUND, x = e.x, w = Math.sin(f.si_t * 5 + e.wob) * 2;
-    ctx.save(); ctx.globalAlpha = e.flash > 0 ? 0.55 : 0.88;
-    ctx.fillStyle = e.boss ? "#1E1E22" : "#2A2A2E";
-    ctx.beginPath(); ctx.moveTo(x - 14 * s, y);
-    ctx.quadraticCurveTo(x - 16 * s, y - 30 * s, x + w, y - 36 * s);
-    ctx.quadraticCurveTo(x + 16 * s, y - 30 * s, x + 14 * s, y);
-    for (let k = 0; k < 4; k++) ctx.lineTo(x + (9 - k * 6) * s, y - (k % 2 ? 0 : 5) * s);
-    ctx.fill(); ctx.globalAlpha = 1;
-    ctx.fillStyle = "#B23A2E"; ctx.beginPath(); ctx.ellipse(x + w, y - 22 * s, 7 * s, 5 * s, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#F4F4F2";
-    ctx.beginPath(); ctx.arc(x - 4 * s + w, y - 26 * s, 1.6 * s, 0, Math.PI * 2); ctx.arc(x + 4 * s + w, y - 26 * s, 1.6 * s, 0, Math.PI * 2); ctx.fill();
-    const d = SI_DEMONS[e.idx];
-    ctx.fillStyle = e.boss ? "#B23A2E" : "#3A3A38"; ctx.font = `${e.boss ? "bold 11" : "8.5"}px serif`; ctx.textAlign = "center";
-    ctx.fillText(e.boss ? `${d.si_boss}・${d.si_trait}` : `${d.si_trait}之影`, x, y + 13);
+    const s = e.boss ? 1.5 : 1, x = e.x, y = SI_GROUND;
+    const tier = f.si_model.si_demon_tiers[e.idx];
+    siDrawDemon(ctx, e.idx, tier, x, y, s, f.si_t + e.wob, e.flash > 0);
+    const d = SI_DEMONS[e.idx], h = siDemonHeight(tier, s);
+    ctx.fillStyle = "#3A3A38"; ctx.font = `${e.boss ? "bold 11" : "8.5"}px serif`; ctx.textAlign = "center";
+    ctx.fillText(e.boss ? `${d.si_boss}・${d.si_trait}` : `${d.si_trait}之影`, x, e.boss ? y - h - 14 : y + 13);
     if (e.boss || e.hp < e.max) {
-      ctx.fillStyle = "rgba(30,30,30,.2)"; ctx.fillRect(x - 16 * s, y - 42 * s, 32 * s, 3);
-      ctx.fillStyle = "#B23A2E"; ctx.fillRect(x - 16 * s, y - 42 * s, 32 * s * Math.max(0, e.hp / e.max), 3);
+      ctx.fillStyle = "rgba(30,30,30,.15)"; ctx.fillRect(x - 16 * s, y - h - 8, 32 * s, 3);
+      ctx.fillStyle = "#3A3A38"; ctx.fillRect(x - 16 * s, y - h - 8, 32 * s * Math.max(0, e.hp / e.max), 3);
     }
-    ctx.restore();
   }
 
   function drawFx() {

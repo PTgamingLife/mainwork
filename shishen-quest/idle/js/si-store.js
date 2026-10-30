@@ -17,6 +17,7 @@ export function siEmptyState() {
     si_run: null,      // 進行中的試煉
     si_last_seen: 0,   // 最後在線時間(算離線收益)
     si_last_done: null, // 最後一次「打卡 + 完成試煉」的日期
+    si_demon_kills: SI_DEMONS.map(() => 0), // 十種心魔各被打倒幾次(決定心魔變形)
   };
 }
 

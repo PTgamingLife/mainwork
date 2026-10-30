@@ -6,6 +6,8 @@ import {
 } from "./si-data.js";
 import { SG_TRANSFORMS } from "../../js/sg-wuxing.js";
 import { siFmt } from "./si-field.js";
+import { SI_DEMON_TIERS, SI_DEMON_STEPS, siDemonTierOf } from "./si-demons.js";
+import { SI_DEMONS } from "./si-data.js";
 
 const siColorOf = (dm, key) => SI_ELEM_COLORS[siElemOfPoint(dm, siPointOfEnergy(SI_GOD_BY_KEY[key].si_energy))];
 
@@ -79,7 +81,7 @@ function siGainsGrid(gains, dm) {
 function siThiefBox(t) {
   return t
     ? `<div class="si-thief">注意力小偷出現!偷走 ${SI_GOD_BY_KEY[t.si_key].si_name} 靈氣 ${siFmt(t.si_amount)}(${Math.round(t.si_ratio * 100)}%)</div>`
-    : `<div class="si-thief" style="color:var(--si-ink-2);background:var(--si-mist-2)">戒律守住心神,小偷沒有出現</div>`;
+    : `<div class="si-thief si-safe">戒律守住心神,小偷沒有出現</div>`;
 }
 
 export function siViewSettle(res, demon, dm) {
@@ -93,7 +95,7 @@ export function siViewOffline(res, dm) {
   return `<h3>離線收益</h3><p>離開 ${h} 小時 ${m} 分・有效 ${res.si_hours.toFixed(1)} 小時</p>
     <p style="font-size:11.5px;color:var(--si-gray)">有打卡的日子全額、沒打卡 1/5;上次完成試煉後只算 5 天</p>
     ${siThiefBox(res.si_thief)}${siGainsGrid(res.si_gains, dm)}
-    ${res.si_expired ? `<p style="color:var(--si-seal)">已超過 5 天沒完成試煉,離線收益已停止</p>` : ""}
+    ${res.si_expired ? `<p style="color:var(--si-ink);font-weight:700">已超過 5 天沒完成試煉,離線收益已停止</p>` : ""}
     <button class="si-btn si-plum" data-si-close>收下</button>`;
 }
 
@@ -101,4 +103,15 @@ export function siViewTimer(run, leftMs, penaltyMin) {
   if (!run) return `今日中斷 ${penaltyMin}/${SI_PENALTY_CAP_MIN}`;
   if (run.si_boss) return `頭目<b>決戰</b>`;
   return `剩餘<b>${siMmss(leftMs)}</b>中斷 +${penaltyMin} 分(今日上限 ${SI_PENALTY_CAP_MIN})`;
+}
+
+export function siViewBestiary(kills) {
+  return SI_DEMONS.map((d, i) => {
+    const n = kills[i], tier = siDemonTierOf(n), next = SI_DEMON_STEPS[tier + 1];
+    return `<div class="si-demon-card"><div class="si-demon-h"><b>${d.si_trait}・${d.si_boss}</b>
+      <span>${SI_DEMON_TIERS[tier]}・已打倒 ${siFmt(n)}${next ? ` / ${siFmt(next)}` : "(已達真身)"}</span></div>
+      <canvas data-si-demon="${i}" style="width:100%;aspect-ratio:330/78"></canvas>
+      <div class="si-demon-tiers">${SI_DEMON_TIERS.map((t, k) => `<span class="${k <= tier ? "on" : ""}">${t}</span>`).join("")}</div>
+      <div class="si-demon-drop">掉落:${SI_GOD_BY_KEY[d.si_drop].si_name}靈氣</div></div>`;
+  }).join("");
 }

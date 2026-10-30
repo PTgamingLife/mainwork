@@ -5,8 +5,9 @@ import {
 } from "./si-store.js";
 import { siCreateField } from "./si-field.js";
 import { SI_KILL_DROP } from "./si-data.js";
+import { siDemonTierOf, siDrawDemon } from "./si-demons.js";
 import {
-  siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer,
+  siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer,
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
 
@@ -55,6 +56,7 @@ function siModel() {
     si_fx: siWeekEffects(si_sg),
     si_demon: siDemonOf(day),
     si_enemy_hp: Math.round(30 * Math.pow(1.03, day - 1)),
+    si_demon_tiers: si.si_demon_kills.map(siDemonTierOf),
   };
 }
 
@@ -91,7 +93,39 @@ function siRender() {
   $("si-skills").innerHTML = siViewSkillRow(lv);
   $("si-skill-list").innerHTML = siViewSkills(lv);
   $("si-gods").innerHTML = siViewGods(si, m.si_powers, m.si_dm);
+  $("si-bestiary").innerHTML = siViewBestiary(si.si_demon_kills);
+  siDrawBestiary();
   if (si_mock) siRenderMock();
+}
+
+// 心魔被打倒次數;跨過門檻就變形
+function siCountKill(idx) {
+  const before = siDemonTierOf(si.si_demon_kills[idx]);
+  si.si_demon_kills[idx] += 1;
+  if (siDemonTierOf(si.si_demon_kills[idx]) !== before) si_field.si_setModel(siModel());
+}
+
+// 圖鑑:每種心魔畫 5 階;還沒解鎖的階只畫剪影
+function siDrawBestiary() {
+  document.querySelectorAll("[data-si-demon]").forEach((cv) => {
+    const idx = Number(cv.dataset.siDemon), cur = siDemonTierOf(si.si_demon_kills[idx]);
+    const dpr = Math.min(2, window.devicePixelRatio || 1), w = 330, h = 78;
+    cv.width = w * dpr; cv.height = h * dpr;
+    const ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+    for (let k = 0; k < 5; k++) {
+      if (k <= cur) { siDrawDemon(ctx, idx, k, 33 + k * 66, 66, 0.85, 0); continue; }
+      // 剪影:先畫在暫存畫布,再整片塗成淡灰(iOS Safari 不支援 ctx.filter)
+      const tmp = document.createElement("canvas");
+      tmp.width = 66 * dpr; tmp.height = h * dpr;
+      const tc = tmp.getContext("2d");
+      tc.scale(dpr, dpr);
+      siDrawDemon(tc, idx, k, 33, 66, 0.85, 0);
+      tc.globalCompositeOperation = "source-in";
+      tc.fillStyle = "rgba(30,30,30,.16)"; tc.fillRect(0, 0, 66, h);
+      ctx.drawImage(tmp, k * 66, 0, 66, h);
+    }
+  });
 }
 
 // ---- 試煉 ----
@@ -109,8 +143,12 @@ function siInterrupt() {
 }
 
 const si_hooks = {
-  si_onKill(key) { siRunDrop(si, si_sg, key, SI_KILL_DROP); },
-  si_onBossDead() {
+  si_onKill(key, idx) {
+    siRunDrop(si, si_sg, key, SI_KILL_DROP);
+    siCountKill(idx);
+  },
+  si_onBossDead(idx) {
+    siCountKill(idx);
     siBossDrop(si, si_sg, siDayNo(si_sg));
     const demon = siDemonOf(siDayNo(si_sg));
     const res = siSettle(si, si_sg);
@@ -177,13 +215,14 @@ function siRenderMock() {
     <div><button data-si-mock="sg_precept_ok">打卡戒律</button><button data-si-mock="sg_bond_ok">打卡約束</button>
     <button data-si-mock="sg_oath_ok">打卡誓言</button><button data-si-mock="all">三項一次完成</button></div>
     <div><button data-si-mock="speed">速度 ×1/×60</button><button data-si-mock="interrupt">模擬中斷</button>
-    <button data-si-mock="h6">時間 +6 小時</button><button data-si-mock="d1">時間 +1 天</button><button data-si-mock="reset">重置</button></div>`;
+    <button data-si-mock="kills">心魔 +3000 擊倒</button><button data-si-mock="h6">時間 +6 小時</button><button data-si-mock="d1">時間 +1 天</button><button data-si-mock="reset">重置</button></div>`;
 }
 $("si-mockbar").addEventListener("click", (ev) => {
   const a = ev.target.closest("[data-si-mock]")?.dataset.siMock;
   if (!a) return;
   if (a === "speed") si_speed = si_speed === 1 ? 60 : 1;
   else if (a === "interrupt") siInterrupt();
+  else if (a === "kills") { si.si_demon_kills = si.si_demon_kills.map((n) => n + 3000); }
   else if (a === "h6" || a === "d1") {
     si_offset += a === "h6" ? 6 * 3600000 : siDayMs;
     localStorage.setItem(SI_MOCK_OFFSET_KEY, String(si_offset));
