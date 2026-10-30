@@ -1,6 +1,7 @@
 # 十神試煉場 — 產生遊戲美術
 # 用法:python3 scripts/si-art/si_gen.py scripts/si-art/si_p1.json shishen-quest/idle/img
-# 有 OPENAI_API_KEY → 直接呼叫 OpenAI;否則用 SI_GEN_KEY(= sg_push_auth.token)走 Supabase si-gen-art
+# 預設直接呼叫 OpenAI:有 OPENAI_API_KEY 就帶上;沒有則靠雲端環境的網路密鑰(Bearer)自動帶入
+# 設了 SI_GEN_KEY(= sg_push_auth.token)則改走 Supabase si-gen-art
 # 金鑰只從環境變數讀,不寫進任何檔案
 import base64, json, os, sys, urllib.error, urllib.request
 
@@ -16,22 +17,22 @@ SI_STYLES = {
 
 
 def si_request(prompt, size, background):
+    si_key = os.environ.get("SI_GEN_KEY", "").strip()
+    if si_key:
+        body = {"prompt": prompt, "size": size, "background": background}
+        req = urllib.request.Request(SI_URL, data=json.dumps(body).encode(), method="POST",
+                                     headers={"Content-Type": "application/json", "x-sg-key": si_key})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            return json.load(r)["b64"]
+    headers = {"Content-Type": "application/json"}
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if openai_key:
-        body = {"model": SI_MODEL, "prompt": prompt, "n": 1, "size": size, "quality": "medium",
-                "background": background, "output_format": "webp", "output_compression": 90}
-        req = urllib.request.Request(SI_OPENAI_URL, data=json.dumps(body).encode(), method="POST",
-                                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {openai_key}"})
-        with urllib.request.urlopen(req, timeout=300) as r:
-            return json.load(r)["data"][0]["b64_json"]
-    si_key = os.environ.get("SI_GEN_KEY", "").strip()
-    if not si_key:
-        sys.exit("缺少環境變數 OPENAI_API_KEY 或 SI_GEN_KEY")
-    body = {"prompt": prompt, "size": size, "background": background}
-    req = urllib.request.Request(SI_URL, data=json.dumps(body).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", "x-sg-key": si_key})
+        headers["Authorization"] = f"Bearer {openai_key}"
+    body = {"model": SI_MODEL, "prompt": prompt, "n": 1, "size": size, "quality": "medium",
+            "background": background, "output_format": "webp", "output_compression": 90}
+    req = urllib.request.Request(SI_OPENAI_URL, data=json.dumps(body).encode(), method="POST", headers=headers)
     with urllib.request.urlopen(req, timeout=300) as r:
-        return json.load(r)["b64"]
+        return json.load(r)["data"][0]["b64_json"]
 
 
 def si_main(list_path, out_dir):
