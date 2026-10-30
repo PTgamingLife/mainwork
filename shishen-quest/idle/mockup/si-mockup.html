@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>十神試煉場 示意圖</title>
+<style>
+  :root {
+    --si-mist-1: #F4F4F2; --si-mist-2: #E6E7E4; --si-ink: #1E1E1E; --si-ink-2: #3A3A38;
+    --si-gray: #7A7A78; --si-line: rgba(30,30,30,.12); --si-plum: #E3BE2B; --si-seal: #B23A2E;
+    --si-font-brush: "LXGW WenKai TC", "Kaiti TC", "STKaiti", "DFKai-SB", serif;
+    --si-font-body: "Noto Serif TC", "PMingLiU", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--si-font-body); color: var(--si-ink);
+    background: linear-gradient(180deg, var(--si-mist-1), var(--si-mist-2)); }
+  .si-screen { width: 390px; height: 844px; margin: 0 auto; position: relative; overflow: hidden; }
+  .si-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+  .si-seal { width: 34px; height: 34px; display: grid; place-items: center; background: var(--si-seal); color: #FBF6F0;
+    font-family: var(--si-font-brush); font-size: 20px; border-radius: 4px; transform: rotate(-4deg); }
+  .si-stage { flex: 1; }
+  .si-stage b { font-family: var(--si-font-brush); font-size: 19px; letter-spacing: .06em; }
+  .si-stage small { display: block; color: var(--si-gray); font-size: 11px; }
+  .si-timer { text-align: right; font-size: 11px; color: var(--si-gray); }
+  .si-timer b { display: block; font-size: 20px; color: var(--si-ink); font-family: var(--si-font-brush); }
+  .si-bar { margin: 0 12px; height: 6px; border-radius: 3px; background: var(--si-line); overflow: hidden; }
+  .si-bar i { display: block; height: 100%; width: 62%; background: var(--si-plum); }
+  .si-pend { display: flex; gap: 4px; padding: 8px 12px 0; flex-wrap: wrap; font-size: 11px; }
+  .si-pend span { padding: 2px 6px; border: 1px solid var(--si-line); border-radius: 10px; background: rgba(250,250,248,.7); }
+  .si-field { display: block; margin-top: 4px; }
+  .si-week { margin: 0 12px; padding: 8px 10px; font-size: 11.5px; line-height: 1.6;
+    border: 1px solid var(--si-line); border-radius: 8px; background: rgba(250,250,248,.75); }
+  .si-week em { font-style: normal; color: var(--si-seal); }
+  .si-skills { display: flex; gap: 8px; padding: 10px 12px; }
+  .si-skill { flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--si-line);
+    background: rgba(250,250,248,.85); font-size: 11px; color: var(--si-gray); }
+  .si-skill b { display: block; font-family: var(--si-font-brush); font-size: 17px; color: var(--si-ink); }
+  .si-skill i { font-style: normal; color: var(--si-ink-2); }
+  .si-tabs { position: absolute; bottom: 0; left: 0; right: 0; display: flex; border-top: 1px solid var(--si-line);
+    background: rgba(250,250,248,.92); }
+  .si-tabs div { flex: 1; text-align: center; padding: 12px 0 16px; font-family: var(--si-font-brush); font-size: 16px; color: var(--si-gray); }
+  .si-tabs .on { color: var(--si-ink); border-top: 2px solid var(--si-plum); margin-top: -1px; }
+  .si-notes { width: 390px; margin: 0 auto; padding: 14px 16px 30px; font-size: 13px; line-height: 1.7; border-top: 1px dashed var(--si-gray); }
+  .si-notes h3 { font-family: var(--si-font-brush); margin: 0 0 6px; }
+  .si-notes ol { margin: 0; padding-left: 20px; }
+</style>
+</head>
+<body>
+<div class="si-screen">
+  <div class="si-top">
+    <div class="si-seal">試</div>
+    <div class="si-stage"><b>Day-12 心神訓練</b><small>本日心魔:貪婪 ・ 頭目 薩麥爾</small></div>
+    <div class="si-timer">剩餘<b>07:36</b>中斷 +5 分(今日 5/15)</div>
+  </div>
+  <div class="si-bar"><i></i></div>
+  <div class="si-pend">
+    <span>待領取靈氣</span><span>比肩 12</span><span>正財 31</span><span>食神 8</span><span>正官 14</span><span>…</span>
+  </div>
+  <svg id="si-field" class="si-field" width="390" height="340" viewBox="0 80 390 340"></svg>
+  <div class="si-week">
+    本週轉化:戒律 <em>木剋土・掌握吸收</em>(星線發亮,比劫戰力 +20%)<br>
+    約束/誓言 <em>水生木・滋養生長</em>(外圈靈氣流加速,比劫吸收 +20%)
+  </div>
+  <div class="si-skills">
+    <div class="si-skill"><b>誓言 Lv3</b><i>試煉 −4 分</i><br>累計 23 次</div>
+    <div class="si-skill"><b>戒律 Lv2</b><i>小偷機率 −</i><br>累計 9 次</div>
+    <div class="si-skill"><b>約束 Lv4</b><i>靈氣 ×1.4</i><br>累計 52 次</div>
+  </div>
+  <div class="si-tabs"><div class="on">戰場</div><div>十神</div><div>技能</div></div>
+</div>
+
+<div class="si-notes">
+  <h3>示意說明</h3>
+  <ol>
+    <li>風火輪往右滾動,外圈火焰旋轉;輪內五芒星五點 = 五座殿閣。</li>
+    <li>每點兩個十神:正/陰在內、偏在外;顏色 = 五行,亮度/光暈 = 戰力。</li>
+    <li>外圈圓 = 相生流(靈氣粒子順時針流動);五芒星線 = 相剋線,本週戒律那條發亮。</li>
+    <li>右方心魔「X之影」湧來,被擊倒掉出對應十神靈氣 → 飛回輪心 → 沿相生流到該點。</li>
+    <li>計時結束 → 頭目(反卡巴拉原名)登場 → 必勝 → 結算彈窗(含注意力小偷)。</li>
+  </ol>
+</div>
+
+<script>
+// 示意用:日主木 → 比劫木、食傷火、財土、官殺金、印水(相生順序順時針)
+const si_svg = document.getElementById("si-field");
+const si_ns = "http://www.w3.org/2000/svg";
+const si_el = (tag, attrs, parent = si_svg) => {
+  const n = document.createElementNS(si_ns, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  parent.appendChild(n); return n;
+};
+const si_text = (x, y, s, attrs = {}, parent) => {
+  const t = si_el("text", { x, y, "text-anchor": "middle", "font-size": 9, fill: "#3A3A38", ...attrs }, parent);
+  t.textContent = s; return t;
+};
+
+// 遠山與地面
+si_el("path", { d: "M0 190 Q60 120 120 175 T240 150 T390 165 V420 H0Z", fill: "#DADCD8" });
+si_el("path", { d: "M0 230 Q90 170 170 215 T330 200 T390 210 V420 H0Z", fill: "#CDD0CB" });
+si_el("rect", { x: 0, y: 352, width: 390, height: 68, fill: "#BFC2BC" });
+si_el("line", { x1: 0, y1: 352, x2: 390, y2: 352, stroke: "#9A9C97", "stroke-width": 1 });
+
+// 滾動速度線
+[300, 316, 332].forEach((y, i) => si_el("line", { x1: 4, y1: y, x2: 30 + i * 6, y2: y, stroke: "#9A9C97", "stroke-width": 2, "stroke-linecap": "round" }));
+
+const si_cx = 140, si_cy = 236, si_R = 112;
+const si_elems = [
+  { name: "木", color: "#4E7A68", pt: "比劫", inner: "比肩", outer: "劫財", tier: [3, 2] },
+  { name: "火", color: "#D2553F", pt: "食傷", inner: "食神", outer: "傷官", tier: [2, 1] },
+  { name: "土", color: "#C9A21E", pt: "財",   inner: "正財", outer: "偏財", tier: [4, 2] },
+  { name: "金", color: "#8E918B", pt: "官殺", inner: "正官", outer: "七殺", tier: [2, 3] },
+  { name: "水", color: "#2F4A6B", pt: "印",   inner: "正印", outer: "偏印", tier: [1, 1] },
+];
+const si_ang = (i) => (-90 + i * 72) * Math.PI / 180;
+const si_at = (i, r) => [si_cx + r * Math.cos(si_ang(i)), si_cy + r * Math.sin(si_ang(i))];
+
+// 風火輪:火焰
+const si_flames = si_el("g", {});
+for (let k = 0; k < 24; k++) {
+  const a = k * 15 * Math.PI / 180, a2 = a + 0.13;
+  const p1 = [si_cx + si_R * Math.cos(a), si_cy + si_R * Math.sin(a)];
+  const p2 = [si_cx + (si_R + 18 + (k % 3) * 5) * Math.cos(a + 0.2), si_cy + (si_R + 18 + (k % 3) * 5) * Math.sin(a + 0.2)];
+  const p3 = [si_cx + si_R * Math.cos(a2 + 0.13), si_cy + si_R * Math.sin(a2 + 0.13)];
+  si_el("path", { d: `M${p1} Q${p2} ${p3}Z`, fill: k % 2 ? "#E3BE2B" : "#D2553F", opacity: .85 }, si_flames);
+}
+// 輪框
+si_el("circle", { cx: si_cx, cy: si_cy, r: si_R, fill: "rgba(250,250,248,.9)", stroke: "#1E1E1E", "stroke-width": 4 });
+si_el("circle", { cx: si_cx, cy: si_cy, r: si_R - 8, fill: "none", stroke: "#1E1E1E", "stroke-width": 1, opacity: .3 });
+
+// 相生流(外圈)
+const si_rFlow = 74;
+si_el("circle", { cx: si_cx, cy: si_cy, r: si_rFlow, fill: "none", stroke: "#B9BAB6", "stroke-width": 2, "stroke-dasharray": "3 4" });
+// 本週生型:水→木 那段加亮
+const [wx, wy] = si_at(4, si_rFlow), [mx, my] = si_at(0, si_rFlow);
+si_el("path", { d: `M${wx} ${wy} A${si_rFlow} ${si_rFlow} 0 0 1 ${mx} ${my}`, fill: "none", stroke: "#2F4A6B", "stroke-width": 4, opacity: .7 });
+for (let k = 0; k < 15; k++) {
+  const a = (k * 24 - 80) * Math.PI / 180;
+  si_el("circle", { cx: si_cx + si_rFlow * Math.cos(a), cy: si_cy + si_rFlow * Math.sin(a), r: 2.2, fill: si_elems[Math.floor(k / 3)].color });
+}
+
+// 五芒星相剋線
+for (let i = 0; i < 5; i++) {
+  const [x1, y1] = si_at(i, si_rFlow), [x2, y2] = si_at((i + 2) % 5, si_rFlow);
+  const hot = i === 0; // 木剋土
+  si_el("line", { x1, y1, x2, y2, stroke: hot ? "#E3BE2B" : "#1E1E1E", "stroke-width": hot ? 3.5 : 1, opacity: hot ? 1 : .35 });
+}
+
+// 核心
+si_el("circle", { cx: si_cx, cy: si_cy, r: 15, fill: "#E3BE2B", opacity: .25 });
+si_el("circle", { cx: si_cx, cy: si_cy, r: 8, fill: "#E3BE2B" });
+si_text(si_cx, si_cy + 26, "核心", { "font-size": 8, fill: "#7A7A78" });
+
+// 十神小人:等階越高,光暈越大、頭頂飾物越多
+function si_figure(x, y, color, tier, label) {
+  const g = si_el("g", {});
+  if (tier >= 2) si_el("circle", { cx: x, cy: y - 2, r: 7 + tier * 2.2, fill: color, opacity: .12 + tier * .05 }, g);
+  si_el("path", { d: `M${x - 6} ${y + 7} L${x} ${y - 3} L${x + 6} ${y + 7}Z`, fill: color }, g);
+  si_el("circle", { cx: x, cy: y - 6, r: 4, fill: "#FBF6F0", stroke: color, "stroke-width": 1.5 }, g);
+  if (tier >= 3) si_el("path", { d: `M${x - 4} ${y - 10} L${x} ${y - 15} L${x + 4} ${y - 10}`, fill: "none", stroke: "#E3BE2B", "stroke-width": 1.5 }, g);
+  if (tier >= 4) si_el("circle", { cx: x, cy: y - 6, r: 8, fill: "none", stroke: "#E3BE2B", "stroke-width": 1 }, g);
+  si_text(x, y + 16, label, { "font-size": 7.5 }, g);
+}
+
+// 殿閣 + 兩位十神
+si_elems.forEach((e, i) => {
+  const [hx, hy] = si_at(i, si_rFlow);
+  // 殿閣屋頂
+  si_el("path", { d: `M${hx - 11} ${hy - 1} Q${hx} ${hy - 11} ${hx + 11} ${hy - 1}Z`, fill: e.color });
+  si_el("rect", { x: hx - 7, y: hy - 1, width: 14, height: 8, fill: "#FBF6F0", stroke: e.color, "stroke-width": 1.2 });
+  si_text(hx, hy + 6, e.name, { "font-size": 7, fill: e.color, "font-weight": 700 });
+  const [ix, iy] = si_at(i, 46), [ox, oy] = si_at(i, 97);
+  si_figure(ix, iy, e.color, e.tier[0], e.inner);
+  si_figure(ox, oy, e.color, e.tier[1], e.outer);
+});
+
+// 心魔
+function si_enemy(x, y, s, label) {
+  const g = si_el("g", {});
+  si_el("path", { d: `M${x - 14 * s} ${y} Q${x - 16 * s} ${y - 30 * s} ${x} ${y - 36 * s} Q${x + 16 * s} ${y - 30 * s} ${x + 14 * s} ${y}
+    L${x + 8 * s} ${y - 5 * s} L${x + 2 * s} ${y} L${x - 4 * s} ${y - 5 * s} L${x - 9 * s} ${y}Z`, fill: "#2A2A2E", opacity: .85 }, g);
+  si_el("ellipse", { cx: x, cy: y - 22 * s, rx: 7 * s, ry: 5 * s, fill: "#B23A2E" }, g);
+  si_el("circle", { cx: x - 4 * s, cy: y - 26 * s, r: 1.6 * s, fill: "#F4F4F2" }, g);
+  si_el("circle", { cx: x + 4 * s, cy: y - 26 * s, r: 1.6 * s, fill: "#F4F4F2" }, g);
+  si_text(x, y + 12, label, { "font-size": 8.5, fill: "#3A3A38" }, g);
+}
+si_enemy(290, 350, 1.15, "貪婪之影");
+si_enemy(335, 350, 0.95, "拒絕");
+si_enemy(370, 350, 0.85, "不安");
+
+// 打擊與傷害數字
+si_el("circle", { cx: 268, cy: 318, r: 13, fill: "#E3BE2B", opacity: .55 });
+si_el("circle", { cx: 268, cy: 318, r: 6, fill: "#FBF6F0" });
+si_text(282, 280, "1.2k", { "font-size": 16, fill: "#B8951A", "font-weight": 700 });
+si_text(330, 296, "846", { "font-size": 12, fill: "#B8951A", "font-weight": 700 });
+
+// 靈氣飛回核心
+si_el("path", { d: `M300 300 Q240 190 ${si_cx + 10} ${si_cy - 6}`, fill: "none", stroke: "#C9A21E", "stroke-width": 1.2, "stroke-dasharray": "2 3" });
+si_el("circle", { cx: 236, cy: 210, r: 4.5, fill: "#C9A21E" });
+si_text(258, 224, "正財靈氣", { "font-size": 8, fill: "#B8951A" });
+</script>
+</body>
+</html>
