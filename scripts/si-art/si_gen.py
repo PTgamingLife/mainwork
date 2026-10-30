@@ -1,9 +1,12 @@
-# 十神試煉場 — 呼叫 Supabase edge function si-gen-art 產生遊戲美術
+# 十神試煉場 — 產生遊戲美術
 # 用法:python3 scripts/si-art/si_gen.py scripts/si-art/si_p1.json shishen-quest/idle/img
-# 需要環境變數 SI_GEN_KEY(= sg_push_auth.token);金鑰不寫進任何檔案
+# 有 OPENAI_API_KEY → 直接呼叫 OpenAI;否則用 SI_GEN_KEY(= sg_push_auth.token)走 Supabase si-gen-art
+# 金鑰只從環境變數讀,不寫進任何檔案
 import base64, json, os, sys, urllib.error, urllib.request
 
 SI_URL = "https://hhcubvixldieuwdeqnwc.supabase.co/functions/v1/si-gen-art"
+SI_OPENAI_URL = "https://api.openai.com/v1/images/generations"
+SI_MODEL = "gpt-image-2"  # 與 sg-gen-angel 相同
 SI_STYLES = {
     "sprite": "2D game sprite, Chinese ink-wash painting style, cute chibi (Q-version) proportions, soft sumi brush outlines, "
               "muted palette of ink black #1E1E1E, mist white #F4F4F2 and plum yellow #E3BE2B accents, no red, no text, "
@@ -12,10 +15,26 @@ SI_STYLES = {
 }
 
 
-def si_main(list_path, out_dir):
+def si_request(prompt, size, background):
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if openai_key:
+        body = {"model": SI_MODEL, "prompt": prompt, "n": 1, "size": size, "quality": "medium",
+                "background": background, "output_format": "webp", "output_compression": 90}
+        req = urllib.request.Request(SI_OPENAI_URL, data=json.dumps(body).encode(), method="POST",
+                                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {openai_key}"})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            return json.load(r)["data"][0]["b64_json"]
     si_key = os.environ.get("SI_GEN_KEY", "").strip()
     if not si_key:
-        sys.exit("缺少環境變數 SI_GEN_KEY")
+        sys.exit("缺少環境變數 OPENAI_API_KEY 或 SI_GEN_KEY")
+    body = {"prompt": prompt, "size": size, "background": background}
+    req = urllib.request.Request(SI_URL, data=json.dumps(body).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "x-sg-key": si_key})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        return json.load(r)["b64"]
+
+
+def si_main(list_path, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     for it in json.load(open(list_path, encoding="utf-8")):
         path = os.path.join(out_dir, it["file"])
@@ -23,18 +42,13 @@ def si_main(list_path, out_dir):
             print("skip", it["file"])
             continue
         prompt = f'{SI_STYLES[it.get("style", "sprite")]} {it["prompt"]}'
-        body = json.dumps({"prompt": prompt, "size": it.get("size", "1024x1024"),
-                           "background": it.get("background", "transparent")}).encode()
-        req = urllib.request.Request(SI_URL, data=body, method="POST",
-                                     headers={"Content-Type": "application/json", "x-sg-key": si_key})
         try:
-            with urllib.request.urlopen(req, timeout=300) as r:
-                data = json.load(r)
+            b64 = si_request(prompt, it.get("size", "1024x1024"), it.get("background", "transparent"))
         except urllib.error.HTTPError as e:
             print("FAIL", it["file"], e.code, e.read()[:300])
             continue
         with open(path, "wb") as f:
-            f.write(base64.b64decode(data["b64"]))
+            f.write(base64.b64decode(b64))
         print("ok", it["file"], os.path.getsize(path), flush=True)
 
 
