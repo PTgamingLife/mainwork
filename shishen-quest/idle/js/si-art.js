@@ -1,9 +1,13 @@
 // 十神試煉場 — AI 美術圖(img/);沒有圖的角色沿用程式繪製
-// 檔名:si-god-<十神key>-t<階>.webp、si-demon-<心魔序號>-t<階>.webp、si-bg-0.webp
+// 檔名:si-god-<十神key>-t<階>.webp、si-demon-<心魔序號>-t<階>.webp、si-bg-0.webp、si-wheel-0.webp
+import { siDrawDemon, siDemonHeight } from "./si-demons.js";
+
 const SI_ART_LIST = {
   si_bg: "img/si-bg-0.webp",
-  si_gods: { bi_jian: [0] },
-  si_demons: { 7: [0] },
+  si_wheel: "img/si-wheel-0.webp",
+  si_gods: Object.fromEntries(["bi_jian", "jie_cai", "shi_shen", "shang_guan", "zheng_cai", "pian_cai",
+    "zheng_guan", "qi_sha", "zheng_yin", "pian_yin"].map((k) => [k, [0]])),
+  si_demons: Object.fromEntries([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [i, [0]])),
 };
 
 const si_imgs = {};
@@ -11,7 +15,7 @@ function siLoad(src) {
   if (!(src in si_imgs)) {
     const im = new Image();
     si_imgs[src] = null;
-    im.onload = () => { si_imgs[src] = im; };
+    im.onload = () => { si_imgs[src] = im; window.dispatchEvent(new Event("si-art-loaded")); };
     im.src = src;
   }
   return si_imgs[src];
@@ -25,5 +29,30 @@ function siPick(prefix, id, tiers, tier) {
 }
 
 export const siArtBg = () => siLoad(SI_ART_LIST.si_bg);
+export const siArtWheel = () => siLoad(SI_ART_LIST.si_wheel);
 export const siArtGod = (key, tier) => siPick("si-god", key, SI_ART_LIST.si_gods[key], tier);
 export const siArtDemon = (idx, tier) => siPick("si-demon", idx, SI_ART_LIST.si_demons[idx], tier);
+
+// 心魔:有 AI 圖就畫圖,再依階段疊上氣場、金冠;沒有圖就用程式繪製
+export function siDrawDemonAny(ctx, idx, tier, x, y, s = 1, t = 0, flash = false) {
+  const art = siArtDemon(idx, tier);
+  const h = siDemonHeight(tier, s);
+  if (art) {
+    const ah = h * (s > 1 ? 1.05 : 1.25), aw = ah * art.width / art.height, bob = Math.sin(t * 4) * 1.5;
+    ctx.save();
+    if (tier >= 2) { // 魔化以上:暗色氣場;真身:外圍火光
+      ctx.fillStyle = tier >= 4 ? "rgba(227,190,43,.18)" : "rgba(30,30,30,.14)";
+      ctx.beginPath(); ctx.ellipse(x, y - ah / 2, aw * 0.62, ah * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = flash ? 0.5 : tier === 0 ? 0.8 : 1;
+    ctx.drawImage(art, x - aw / 2, y - ah + bob, aw, ah);
+    ctx.globalAlpha = 1;
+    if (tier >= 3) { // 魔王以上:頭頂金冠
+      const cy = y - ah + bob - 2;
+      ctx.fillStyle = "#E3BE2B"; ctx.beginPath();
+      ctx.moveTo(x - 7, cy); ctx.lineTo(x - 7, cy - 7); ctx.lineTo(x - 3.5, cy - 3); ctx.lineTo(x, cy - 9);
+      ctx.lineTo(x + 3.5, cy - 3); ctx.lineTo(x + 7, cy - 7); ctx.lineTo(x + 7, cy); ctx.fill();
+    }
+    ctx.restore();
+  } else siDrawDemon(ctx, idx, tier, x, y, s, t, flash);
+}

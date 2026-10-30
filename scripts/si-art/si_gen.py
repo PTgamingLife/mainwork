@@ -13,6 +13,7 @@ SI_STYLES = {
     "sprite": "2D game sprite, Chinese ink-wash painting style, cute chibi (Q-version) proportions, soft sumi brush outlines, "
               "muted palette of ink black #1E1E1E, mist white #F4F4F2 and plum yellow #E3BE2B accents, no red, no text, "
               "no ground shadow, single subject centered, full body, transparent background.",
+    "ring": "Chinese ink-wash game asset, front view, perfectly circular, centered, transparent background, no text, no red seal colors.",
     "bg": "Chinese ink-wash painting, muted gray ink washes on mist white paper (#F4F4F2 to #E6E7E4), no red, no text.",
 }
 

@@ -5,7 +5,8 @@ import {
 } from "./si-store.js";
 import { siCreateField } from "./si-field.js";
 import { SI_KILL_DROP } from "./si-data.js";
-import { siDemonTierOf, siDrawDemon } from "./si-demons.js";
+import { siDemonTierOf } from "./si-demons.js";
+import { siDrawDemonAny } from "./si-art.js";
 import {
   siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer,
 } from "./si-view.js";
@@ -114,19 +115,21 @@ function siDrawBestiary() {
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
     for (let k = 0; k < 5; k++) {
-      if (k <= cur) { siDrawDemon(ctx, idx, k, 33 + k * 66, 66, 0.85, 0); continue; }
+      if (k <= cur) { siDrawDemonAny(ctx, idx, k, 33 + k * 66, 66, 0.85, 0); continue; }
       // 剪影:先畫在暫存畫布,再整片塗成淡灰(iOS Safari 不支援 ctx.filter)
       const tmp = document.createElement("canvas");
       tmp.width = 66 * dpr; tmp.height = h * dpr;
       const tc = tmp.getContext("2d");
       tc.scale(dpr, dpr);
-      siDrawDemon(tc, idx, k, 33, 66, 0.85, 0);
+      siDrawDemonAny(tc, idx, k, 33, 66, 0.85, 0);
       tc.globalCompositeOperation = "source-in";
       tc.fillStyle = "rgba(30,30,30,.16)"; tc.fillRect(0, 0, 66, h);
       ctx.drawImage(tmp, k * 66, 0, 66, h);
     }
   });
 }
+
+window.addEventListener("si-art-loaded", () => siDrawBestiary());
 
 // ---- 試煉 ----
 function siStart() {

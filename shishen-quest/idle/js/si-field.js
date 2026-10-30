@@ -1,11 +1,12 @@
 // 十神試煉場 — 戰場(canvas):風火輪、五芒星、十神、心魔、靈氣流動
-import { siDrawDemon, siDemonHeight } from "./si-demons.js";
-import { siArtBg, siArtGod, siArtDemon } from "./si-art.js";
+import { siDemonHeight } from "./si-demons.js";
+import { siArtBg, siArtWheel, siArtGod, siDrawDemonAny } from "./si-art.js";
 import { siCounterMult } from "./si-data.js";
 import { SI_GODS, SI_DEMONS, SI_ELEM_COLORS, SI_POINT_SHORT, siPointOfEnergy, siElemOfPoint, siTierOf } from "./si-data.js";
 
 const SI_W = 390, SI_H = 300, SI_GROUND = 266;
 const SI_CX = 128, SI_CY = 152, SI_R = 104, SI_FLOW_R = 68;
+const SI_RING_SCALE = 1.25; // 外圈圖 260 單位寬(內緣 97、火焰尖 130)÷ 輪直徑 208
 const SI_SPAWN_S = 2.5, SI_HIT_S = 0.3, SI_ENEMY_SPEED = 42;
 
 const siAng = (i) => (-90 + i * 72) * Math.PI / 180;
@@ -126,8 +127,9 @@ export function siCreateField(canvas, hooks) {
 
   function drawWheel() {
     const m = f.si_model;
-    // 火焰外圈(旋轉)
-    for (let k = 0; k < 24; k++) {
+    const ring = siArtWheel();
+    // 火焰外圈(旋轉):有 AI 圖就整張旋轉,否則程式畫
+    for (let k = 0; !ring && k < 24; k++) {
       const a = k * Math.PI / 12 + f.si_roll;
       const flick = 16 + (k % 3) * 5 + Math.sin(f.si_t * 9 + k) * 4;
       ctx.fillStyle = k % 2 ? "rgba(227,190,43,.9)" : "rgba(210,85,63,.85)";
@@ -138,7 +140,13 @@ export function siCreateField(canvas, hooks) {
       ctx.fill();
     }
     ctx.fillStyle = "rgba(250,250,248,.94)"; ctx.strokeStyle = "#1E1E1E"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.arc(SI_CX, SI_CY, SI_R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(SI_CX, SI_CY, SI_R, 0, Math.PI * 2); ctx.fill();
+    if (ring) {
+      const rs = SI_R * SI_RING_SCALE * 2;
+      ctx.save(); ctx.translate(SI_CX, SI_CY); ctx.rotate(f.si_roll);
+      ctx.drawImage(ring, -rs / 2, -rs / 2, rs, rs);
+      ctx.restore();
+    } else ctx.stroke();
     // 輪輻(隨滾動旋轉)
     ctx.strokeStyle = "rgba(30,30,30,.08)"; ctx.lineWidth = 2;
     for (let k = 0; k < 8; k++) {
@@ -202,8 +210,11 @@ export function siCreateField(canvas, hooks) {
     const art = siArtGod(g.si_key, tier);
     if (art) {
       const h = 30, w = h * art.width / art.height;
+      if (tier >= 4) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, -5, 17, f.si_t, f.si_t + Math.PI * 1.5); ctx.stroke(); }
       ctx.drawImage(art, -w / 2, 10 - h, w, h);
-      ctx.fillStyle = "#3A3A38"; ctx.font = "7.5px serif"; ctx.textAlign = "center";
+      if (tier >= 3) { ctx.strokeStyle = "#E3BE2B"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-4, 12 - h); ctx.lineTo(0, 7 - h); ctx.lineTo(4, 12 - h); ctx.stroke(); }
+      ctx.fillStyle = c; ctx.font = "bold 7.5px serif"; // 五行色顯示在光暈與名字
+ ctx.textAlign = "center";
       ctx.fillText(g.si_name, 0, 18);
       ctx.restore();
       return;
@@ -224,13 +235,7 @@ export function siCreateField(canvas, hooks) {
     const s = e.boss ? 1.5 : 1, x = e.x, y = SI_GROUND;
     const tier = f.si_model.si_demon_tiers[e.idx];
     const d = SI_DEMONS[e.idx], h = siDemonHeight(tier, s);
-    const art = siArtDemon(e.idx, tier);
-    if (art) {
-      const ah = h * 1.25, aw = ah * art.width / art.height, bob = Math.sin(f.si_t * 4 + e.wob) * 1.5;
-      ctx.save(); ctx.globalAlpha = e.flash > 0 ? 0.5 : 1;
-      ctx.drawImage(art, x - aw / 2, y - ah + bob, aw, ah);
-      ctx.restore();
-    } else siDrawDemon(ctx, e.idx, tier, x, y, s, f.si_t + e.wob, e.flash > 0);
+    siDrawDemonAny(ctx, e.idx, tier, x, y, s, f.si_t + e.wob, e.flash > 0);
     ctx.fillStyle = "#3A3A38"; ctx.font = `${e.boss ? "bold 11" : "8.5"}px serif`; ctx.textAlign = "center";
     ctx.fillText(e.boss ? `${d.si_boss}・${d.si_trait}` : `${d.si_trait}之影`, x, e.boss ? y - h - 14 : y + 13);
     if (e.boss || e.hp < e.max) {
