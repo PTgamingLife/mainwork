@@ -1,6 +1,6 @@
 // 十神修行錄 — 今日卜卦(三錢法):搖龜殼 6 次,由初爻到上爻成卦;一天一卦
 // 爻值:三枚錢,正面 3、反面 2,合計 6 老陰(變)、7 少陽、8 少陰、9 老陽(變)
-import { sgDateStr } from "./sg-store.js?v=20261024a";
+import { sgDateStr } from "./sg-store.js?v=20261031a";
 
 export const SG_YAO_NAMES = { 6: "老陰", 7: "少陽", 8: "少陰", 9: "老陽" };
 const SG_POS = ["初", "二", "三", "四", "五", "上"];

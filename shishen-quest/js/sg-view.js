@@ -1,12 +1,12 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261024a";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261024a";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261031a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261031a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js?v=20261024a";
-import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261024a";
-import { sgDivineCard } from "./sg-divine-view.js?v=20261024a";
+} from "./sg-store.js?v=20261031a";
+import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261031a";
+import { sgDivineCard } from "./sg-divine-view.js?v=20261031a";
 
 // 轉化型態標籤:「木剋土・掌握吸收」+ 行動方向
 function sgTransformTag(key, withDir = false) {

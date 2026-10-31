@@ -1,5 +1,5 @@
 // 十神修行錄 — 今日卜卦畫面
-import { sgTodayDivine, sgYaoLabel, sgHexName, SG_YAO_NAMES } from "./sg-divine.js?v=20261024a";
+import { sgTodayDivine, sgYaoLabel, sgHexName, SG_YAO_NAMES } from "./sg-divine.js?v=20261031a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
