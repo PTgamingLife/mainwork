@@ -8,7 +8,7 @@ import { SI_KILL_DROP } from "./si-data.js";
 import { siDemonTierOf } from "./si-demons.js";
 import { siDrawDemonAny } from "./si-art.js";
 import {
-  siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer,
+  siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer, siViewExpired,
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
 import { siCloudInit, siCloudSave } from "./si-sync.js";
@@ -90,7 +90,11 @@ function siRenderHeader() {
 
 function siRenderStart() {
   const run = si.si_run;
-  if (run) { $("si-start").innerHTML = `<span class="si-hint" style="font-size:10.5px;padding:3px 10px;opacity:.85">試煉中・螢幕保持常亮,切換 App 或鎖螢幕會中斷</span>`; return; }
+  if (run) {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) ? "<br>iPhone 若仍會黑屏:設定 → 螢幕顯示與亮度 → 自動鎖定 → 永不" : "";
+    $("si-start").innerHTML = `<span class="si-hint" style="font-size:10.5px;padding:3px 10px;opacity:.85;line-height:1.5">試煉中・螢幕保持常亮,切換 App 或鎖螢幕會中斷${ios}</span>`;
+    return;
+  }
   const n = siTickets(si, si_sg, siToday());
   $("si-start").innerHTML = n
     ? `<button class="si-btn" id="si-go">開始試煉${n > 1 ? `(領 ${n} 場收益)` : ""}</button>`
@@ -268,7 +272,13 @@ function siBoot() {
   }
   si_field = siCreateField($("si-canvas"), si_hooks);
   siRender();
-  if (si.si_run) {
+  if (si.si_run && si.si_run.si_date < siToday()) {
+    // 前一天沒跑完:自動結算已擊倒心魔的靈氣,今天重新開始、不加罰時
+    const res = siSettle(si, si_sg, () => 1);
+    si.si_last_seen = siNow();
+    siModal(siViewExpired(res, si_sg.sg_chart.sg_day_master));
+    siRender();
+  } else if (si.si_run) {
     si_field.si_setRunning(true);
     if (si.si_run.si_boss) si_field.si_startBoss();
     siInterrupt(); // 重新開啟 = 中斷
