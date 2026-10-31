@@ -1,12 +1,12 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261024a";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261024a";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261031a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261031a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js?v=20261024a";
-import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261024a";
-import { sgDivineCard } from "./sg-divine-view.js?v=20261024a";
+} from "./sg-store.js?v=20261031a";
+import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261031a";
+import { sgDivineCard } from "./sg-divine-view.js?v=20261031a";
 
 // 轉化型態標籤:「木剋土・掌握吸收」+ 行動方向
 function sgTransformTag(key, withDir = false) {
@@ -178,6 +178,10 @@ function sgWeekSummary(state) {
   <button class="sg-btn sg-ghost sg-small" data-sg-act="revow">重新立誓</button>`;
 }
 
+// 十神試煉場(放置遊戲)入口
+const sgIdleEntry = () => `<div class="sg-card"><p>打卡後進入試煉場,讓十神修行、擊退心魔。</p>
+  <button class="sg-btn sg-ghost sg-small" data-sg-act="idle">進入試煉場</button></div>`;
+
 export function sgViewToday(state, ui = {}) {
   const today = sgDateStr();
   const done = state.sg_checkins[today];
@@ -197,6 +201,7 @@ export function sgViewToday(state, ui = {}) {
     ${chk("sg_precept_ok", "戒律", wk.sg_precept.sg_text, wk.sg_precept)}${chk("sg_bond_ok", "約束", wk.sg_bond.sg_text, wk.sg_bond)}${chk("sg_oath_ok", "誓言", `今天有推進:${wk.sg_oath.sg_text}`, wk.sg_oath)}
     <button class="sg-btn" type="submit">${done ? "更新今日打卡" : "落印打卡"}</button>
   </form>
+  ${done ? sgIdleEntry() : ""}
   ${sgDivineCard(state, ui)}`;
 }
 
@@ -259,6 +264,7 @@ export function sgViewGrowth(state) {
   const hist = [...state.sg_history].reverse();
   return `
   <h2 class="sg-h">修行</h2>
+  ${sgIdleEntry()}
   <div class="sg-card sg-ink-card"><div class="sg-stats">
       <div class="sg-stat"><b>${streak}</b><small>連續天數</small></div>
       <div class="sg-stat"><b>${cur.sg_name}</b><small>境界</small></div>

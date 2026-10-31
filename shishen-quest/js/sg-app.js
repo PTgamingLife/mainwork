@@ -1,15 +1,15 @@
 // 十神修行錄 — 控制器
-import { sgCalcChart } from "./sg-bazi.js?v=20261024a";
+import { sgCalcChart } from "./sg-bazi.js?v=20261031a";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
   sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
-} from "./sg-store.js?v=20261024a";
+} from "./sg-store.js?v=20261031a";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
-} from "./sg-view.js?v=20261024a";
-import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261024a";
-import { SG_TRANSFORMS, sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261024a";
-import { sgCastYao, sgAddYao, sgTodayDivine, sgSetDivineText } from "./sg-divine.js?v=20261024a";
+} from "./sg-view.js?v=20261031a";
+import { SG_WEEKLY_QUESTIONS } from "./sg-data.js?v=20261031a";
+import { SG_TRANSFORMS, sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261031a";
+import { sgCastYao, sgAddYao, sgTodayDivine, sgSetDivineText } from "./sg-divine.js?v=20261031a";
 
 // LINE Developers 的 LIFF ID;空字串 = 單機模式(只存 localStorage)
 const SG_LIFF_ID = "2011684838-Jdzxtrxn";
@@ -155,7 +155,17 @@ function sgHandleCheckin(form) {
   const after = sgRealm(sgState).cur.sg_name;
   const got = gain.reduce((a, b) => a + b, 0);
   sgToast(after !== before ? `境界晉升:${after}!` : earnedAmulet ? `連續 ${streak} 天,獲得護符一枚` : `已落印,連續 ${streak} 天${got ? `・能量 +${got.toFixed(1)}` : ""}`);
-  sgGo("growth");
+  setTimeout(sgGoIdle, 900); // 打卡後自動進入試煉場
+}
+
+// 前往十神試煉場:先把狀態同步上雲(最多等 2.5 秒),避免切頁時中斷同步
+async function sgGoIdle() {
+  sgSave(sgState);
+  if (sgLiff && sgState.sg_profile?.sg_consent_at) {
+    clearTimeout(sgSyncTimer);
+    await Promise.race([sgApi("save", { state: sgState }).catch(() => {}), new Promise((ok) => setTimeout(ok, 2500))]);
+  }
+  location.href = `idle/index.html${new URLSearchParams(location.search).has("mock") ? "?solo=1" : ""}`;
 }
 
 function sgHandleReview(form) {
@@ -317,6 +327,7 @@ $main.addEventListener("click", (e) => {
   if (go) return sgGo(go.dataset.sgGo);
   const act = e.target.closest("[data-sg-act]")?.dataset.sgAct;
   if (act === "share") sgShare();
+  if (act === "idle") sgGoIdle();
   if (act === "rewish") { sgUi.options = null; sgRender(); }
   if (act === "divine-text") sgFetchDivineText();
   if (act === "revow" && confirm("重新立誓會結束本週的戒律、約束、誓言(已打卡紀錄保留),確定嗎?")) {

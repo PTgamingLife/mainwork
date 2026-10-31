@@ -1,0 +1,5 @@
+[
+  {"file": "si-god-bi_jian-t0.webp", "prompt": "A young friendly cultivator symbolizing like-minded companionship, wearing a simple jade-green (#4E7A68) robe, gentle smile, empty hands, standing and facing the viewer, beginner level, modest and plain."},
+  {"file": "si-demon-7-t0.webp", "prompt": "A small semi-transparent ink-shadow creature embodying greed: blob-like ghost body, huge grinning mouth with small sharp teeth, clutching a plum-yellow coin pouch, dim yellow glowing eyes, cute yet eerie, facing left, weak early form."},
+  {"file": "si-bg-0.webp", "style": "bg", "size": "1536x1024", "background": "opaque", "prompt": "Horizontal side-scrolling game background landscape: layered misty mountains fading into a pale mist sky, distant ridges in light gray, nearer hills slightly darker, a flat calm ground strip occupying the bottom 15 percent, left and right edges similar so it can tile, no characters, no buildings."}
+]
