@@ -12,6 +12,7 @@ import {
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
 import { siCloudInit, siCloudSave } from "./si-sync.js";
+import { siAwakeOn, siAwakeOff, siAwakeResume } from "./si-awake.js";
 
 // ?mock=1 = 假資料測試;?solo=1 = 用本機十神修行錄資料、不登入 LINE;否則登入 LINE 並同步雲端
 const si_mock = new URLSearchParams(location.search).has("mock");
@@ -89,7 +90,7 @@ function siRenderHeader() {
 
 function siRenderStart() {
   const run = si.si_run;
-  if (run) { $("si-start").innerHTML = ""; return; }
+  if (run) { $("si-start").innerHTML = `<span class="si-hint" style="font-size:10.5px;padding:3px 10px;opacity:.85">試煉中・螢幕保持常亮,切換 App 或鎖螢幕會中斷</span>`; return; }
   const n = siTickets(si, si_sg, siToday());
   $("si-start").innerHTML = n
     ? `<button class="si-btn" id="si-go">開始試煉${n > 1 ? `(領 ${n} 場收益)` : ""}</button>`
@@ -146,6 +147,7 @@ window.addEventListener("si-art-loaded", () => siDrawBestiary());
 // ---- 試煉 ----
 function siStart() {
   if (!siRunStart(si, si_sg, siToday())) return;
+  siAwakeOn(); // 試煉中保持螢幕常亮(在點擊當下啟動)
   si_field.si_setRunning(true);
   siSaveAll(); siRender();
 }
@@ -168,6 +170,7 @@ const si_hooks = {
     const demon = siDemonOf(siDayNo(si_sg));
     const res = siSettle(si, si_sg);
     si_field.si_setRunning(false);
+    siAwakeOff();
     siSaveAll();
     siModal(siViewSettle(res, demon, si_sg.sg_chart.sg_day_master));
     siRender();
@@ -207,7 +210,7 @@ function siLoop(t) {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { siSaveAll(true, true); return; }
   si_last = performance.now();
-  if (si.si_run) siInterrupt(); else siCheckOffline();
+  if (si.si_run) { siInterrupt(); siAwakeResume(); } else siCheckOffline();
 });
 
 // ---- 頁籤 / 升級 ----
@@ -270,6 +273,8 @@ function siBoot() {
     if (si.si_run.si_boss) si_field.si_startBoss();
     siInterrupt(); // 重新開啟 = 中斷
     si.si_last_seen = siNow();
+    siAwakeOn(); // 重新開啟:先試 Wake Lock;影片備案需要點擊,點一下畫面就會啟動
+    document.addEventListener("pointerdown", () => { if (si.si_run) siAwakeOn(); }, { once: true });
   } else siCheckOffline();
   siSaveAll();
   requestAnimationFrame(siLoop);
