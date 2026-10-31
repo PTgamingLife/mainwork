@@ -91,6 +91,12 @@ export function siViewSettle(res, demon, dm) {
     ${thief}${siGainsGrid(res.si_gains, dm)}<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
 }
 
+// 前一天沒跑完的試煉:過午夜自動結算(無頭目獎勵、無小偷)
+export function siViewExpired(res, dm) {
+  return `<h3>昨日試煉已結算</h3><p>昨天的試煉沒有完成,已依擊倒的心魔自動結算(無頭目獎勵)。</p>
+    ${siGainsGrid(res.si_gains, dm)}<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
+}
+
 export function siViewOffline(res, dm) {
   const h = Math.floor(res.si_away_ms / 3600000), m = Math.floor(res.si_away_ms / 60000) % 60;
   return `<h3>離線收益</h3><p>離開 ${h} 小時 ${m} 分・有效 ${res.si_hours.toFixed(1)} 小時</p>
