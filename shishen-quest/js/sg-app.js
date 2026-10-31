@@ -155,7 +155,17 @@ function sgHandleCheckin(form) {
   const after = sgRealm(sgState).cur.sg_name;
   const got = gain.reduce((a, b) => a + b, 0);
   sgToast(after !== before ? `境界晉升:${after}!` : earnedAmulet ? `連續 ${streak} 天,獲得護符一枚` : `已落印,連續 ${streak} 天${got ? `・能量 +${got.toFixed(1)}` : ""}`);
-  sgGo("growth");
+  setTimeout(sgGoIdle, 900); // 打卡後自動進入試煉場
+}
+
+// 前往十神試煉場:先把狀態同步上雲(最多等 2.5 秒),避免切頁時中斷同步
+async function sgGoIdle() {
+  sgSave(sgState);
+  if (sgLiff && sgState.sg_profile?.sg_consent_at) {
+    clearTimeout(sgSyncTimer);
+    await Promise.race([sgApi("save", { state: sgState }).catch(() => {}), new Promise((ok) => setTimeout(ok, 2500))]);
+  }
+  location.href = `idle/index.html${new URLSearchParams(location.search).has("mock") ? "?solo=1" : ""}`;
 }
 
 function sgHandleReview(form) {
@@ -317,6 +327,7 @@ $main.addEventListener("click", (e) => {
   if (go) return sgGo(go.dataset.sgGo);
   const act = e.target.closest("[data-sg-act]")?.dataset.sgAct;
   if (act === "share") sgShare();
+  if (act === "idle") sgGoIdle();
   if (act === "rewish") { sgUi.options = null; sgRender(); }
   if (act === "divine-text") sgFetchDivineText();
   if (act === "revow" && confirm("重新立誓會結束本週的戒律、約束、誓言(已打卡紀錄保留),確定嗎?")) {

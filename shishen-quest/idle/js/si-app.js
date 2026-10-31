@@ -1,6 +1,6 @@
 // 十神試煉場 — 主控:載入狀態、試煉計時、中斷懲罰、結算、離線收益、頁籤
 import {
-  siLoad, siSave, siLoadSg, siDateStr, siDayNo, siDemonOf, siSkillLevels, siTickets, siWeekEffects, siPowers,
+  siLoad, siSave, siLoadSg, siFromObj, siDateStr, siDayNo, siDemonOf, siSkillLevels, siTickets, siWeekEffects, siPowers,
   siRunStart, siRunPenalty, siRunLeftMs, siRunDrop, siBossDrop, siSettle, siOffline, siApplyGains, siUpgrade, siDayMs,
 } from "./si-store.js";
 import { siCreateField } from "./si-field.js";
@@ -11,9 +11,11 @@ import {
   siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer,
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
+import { siCloudInit, siCloudSave } from "./si-sync.js";
 
+// ?mock=1 = 假資料測試;?solo=1 = 用本機十神修行錄資料、不登入 LINE;否則登入 LINE 並同步雲端
 const si_mock = new URLSearchParams(location.search).has("mock");
-const SI_STATE_KEY = si_mock ? SI_MOCK_STATE_KEY : "si_state_v1";
+const si_solo = new URLSearchParams(location.search).has("solo");
 const SI_SG_KEY = si_mock ? SI_MOCK_SG_KEY : "sg_state_v2";
 const $ = (id) => document.getElementById(id);
 
@@ -24,13 +26,23 @@ const siToday = () => siDateStr(siNow());
 
 let si_sg = siLoadSg(SI_SG_KEY);
 if (si_mock && !si_sg) { si_sg = siMockSg(siToday()); localStorage.setItem(SI_SG_KEY, JSON.stringify(si_sg)); }
-const si = siLoad(SI_STATE_KEY);
+// 試煉進度:測試模式存自己的 key;正式存在十神修行錄狀態的 sg_idle 欄位
+const si = si_mock ? siLoad(SI_MOCK_STATE_KEY) : siFromObj(si_sg?.sg_idle);
 let si_field = null;
 
-const siSaveAll = () => {
+// cloud = 同步上雲(1 秒內合併);now = 立即送出
+const siSaveAll = (cloud = true, now = false) => {
   si.si_last_seen = siNow();
-  siSave(SI_STATE_KEY, si);
-  if (si_mock) localStorage.setItem(SI_SG_KEY, JSON.stringify(si_sg));
+  si.si_saved_at = Date.now();
+  if (si_mock) {
+    siSave(SI_MOCK_STATE_KEY, si);
+    localStorage.setItem(SI_SG_KEY, JSON.stringify(si_sg));
+    return Promise.resolve();
+  }
+  if (!si_sg) return Promise.resolve();
+  si_sg.sg_idle = si;
+  try { localStorage.setItem(SI_SG_KEY, JSON.stringify(si_sg)); } catch { /* 私密模式 */ }
+  return cloud ? siCloudSave(si_sg, now) : Promise.resolve();
 };
 
 function siToast(msg) {
@@ -187,13 +199,13 @@ function siLoop(t) {
     si_field.si_draw();
     si_ui_t += real; si_save_t += real;
     if (si_ui_t > 0.5) { si_ui_t = 0; siRenderHeader(); }
-    if (si_save_t > 5) { si_save_t = 0; siSaveAll(); }
+    if (si_save_t > 5) { si_save_t = 0; siSaveAll(false); }
   }
   requestAnimationFrame(siLoop);
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { siSaveAll(); return; }
+  if (document.hidden) { siSaveAll(true, true); return; }
   si_last = performance.now();
   if (si.si_run) siInterrupt(); else siCheckOffline();
 });
@@ -238,9 +250,16 @@ $("si-mockbar").addEventListener("click", (ev) => {
 });
 
 // ---- 啟動 ----
+// 返回十神修行錄:先存檔上雲再切頁
+$("si-back").addEventListener("click", async (ev) => {
+  ev.preventDefault();
+  await Promise.race([siSaveAll(true, true), new Promise((ok) => setTimeout(ok, 2500))]);
+  location.href = `../index.html${si_mock || si_solo ? "?mock=1" : ""}`;
+});
+
 function siBoot() {
   if (!si_sg?.sg_chart) {
-    $("si-app").innerHTML = `<div class="si-empty">請先在「十神修行錄」建立命盤、立下本週戒律/約束/誓言,<br>再回來進入試煉場。</div>`;
+    $("si-app").innerHTML = `<div class="si-empty">請先在「十神修行錄」建立命盤、立下本週戒律/約束/誓言,<br>再回來進入試煉場。<br><br><a href="../index.html">前往十神修行錄</a></div>`;
     $("si-tabs").hidden = true;
     return;
   }
@@ -255,4 +274,15 @@ function siBoot() {
   siSaveAll();
   requestAnimationFrame(siLoop);
 }
-siBoot();
+
+async function siStartApp() {
+  if (!si_mock && !si_solo) {
+    const merged = await siCloudInit(si_sg);
+    if (merged) {
+      si_sg = merged;
+      Object.assign(si, siFromObj(merged.sg_idle));
+    }
+  }
+  siBoot();
+}
+siStartApp();

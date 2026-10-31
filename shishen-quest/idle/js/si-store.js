@@ -21,14 +21,15 @@ export function siEmptyState() {
   };
 }
 
+// 由存檔物件補齊預設值(十神修行錄的 sg_state.sg_idle 或測試用 localStorage)
+export function siFromObj(s) {
+  const base = siEmptyState();
+  if (!s || typeof s !== "object") return base;
+  return { ...base, ...s, si_levels: { ...base.si_levels, ...s.si_levels }, si_aura: { ...base.si_aura, ...s.si_aura } };
+}
+
 export function siLoad(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    const base = siEmptyState();
-    if (!raw) return base;
-    const s = JSON.parse(raw);
-    return { ...base, ...s, si_levels: { ...base.si_levels, ...s.si_levels }, si_aura: { ...base.si_aura, ...s.si_aura } };
-  } catch { return siEmptyState(); }
+  try { return siFromObj(JSON.parse(localStorage.getItem(key) || "null")); } catch { return siEmptyState(); }
 }
 
 export function siSave(key, state) {
