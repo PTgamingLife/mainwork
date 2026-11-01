@@ -11,6 +11,8 @@ import {
 } from "../_shared/ladys.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
+// 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
+const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
 const LADYS_COMMANDS = ["行程", "帳", "瑣事", "選單"];
 
@@ -151,8 +153,8 @@ async function ladysHandle(ev: any, settings: any) {
     return;
   }
 
-  // 一對一聊天室:只回應成員的指令,其他人一律不理(這是個人 OA,還有既有的每日推播)
-  if (src.type === "user" && uid && LADYS_COMMANDS.includes(text) && await ladysIsMember(uid)) {
+  // 一對一聊天室:只回應帳號擁有者與成員(你、老婆)的指令,其他人一律不理
+  if (src.type === "user" && uid && LADYS_COMMANDS.includes(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
     await ladysReply(ev.replyToken, [await ladysRunCommand(text)]);
   }
 }
