@@ -42,6 +42,12 @@ async function ladysEnsureMember(groupId: string, uid: string, isBinder = false)
   await ladysInsert("ladys_members?on_conflict=ladys_line_uid", {
     ladys_line_uid: uid, ladys_name: name, ladys_role: role, ladys_emoji: LADYS_OWNER_LABEL[role],
   }, "resolution=ignore-duplicates,return=minimal");
+  // 新成員也套上 LadyS 圖文選單(若已設定)
+  try {
+    const { richmenus = [] } = await ladysLine("richmenu/list", undefined, "GET");
+    const menu = richmenus.find((r: any) => r.name === "ladys-main");
+    if (menu) await ladysLine(`user/${uid}/richmenu/${menu.richMenuId}`);
+  } catch (e) { console.error("ladys link richmenu", e instanceof Error ? e.message : e); }
 }
 
 async function ladysIsMember(uid: string): Promise<boolean> {
