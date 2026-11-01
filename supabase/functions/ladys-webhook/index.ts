@@ -14,7 +14,7 @@ const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
 const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
-const LADYS_COMMANDS = ["行程", "帳", "瑣事", "選單"];
+const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單"];
 
 async function ladysVerifySignature(raw: string, sig: string): Promise<boolean> {
   if (!LADYS_LINE_SECRET || !sig) return false;
@@ -80,18 +80,21 @@ async function ladysCmdExpenses() {
   return ladysCard(`${Number(today.slice(5, 7))} 月支出`, lines, [ladysLiffButton("打開記帳", "money")]);
 }
 
-async function ladysCmdNotes() {
-  const rows = await ladysSelect("ladys_notes", "ladys_deleted=eq.false&ladys_done=eq.false&order=ladys_created_at.desc&limit=20&select=*");
-  const kindLabel: Record<string, string> = { todo: "待辦", shopping: "採買", memo: "備忘" };
-  const lines = rows.map((r) => `☐ [${kindLabel[r.ladys_kind] ?? "待辦"}] ${r.ladys_content}`);
-  return ladysCard("未完成瑣事", lines.length ? lines : ["全部完成了 ✨"], [ladysLiffButton("打開瑣事", "notes")]);
+async function ladysCmdNotes(goal: boolean) {
+  const rows = await ladysSelect("ladys_notes",
+    `ladys_deleted=eq.false&ladys_done=eq.false&ladys_kind=${goal ? "eq.goal" : "neq.goal"}&order=ladys_created_at.desc&limit=20&select=*`);
+  const lines = rows.map((r) => `${goal ? "🎯" : "☐"} ${LADYS_OWNER_LABEL[r.ladys_owner as "both"] ?? ""} ${r.ladys_content}`);
+  return goal
+    ? ladysCard("進行中的目標", lines.length ? lines : ["還沒有目標 🌱"], [ladysLiffButton("打開目標", "goals")])
+    : ladysCard("未完成待辦", lines.length ? lines : ["全部完成了 ✨"], [ladysLiffButton("打開待辦", "todos")]);
 }
 
 function ladysCmdMenu() {
   return ladysCard("LadyS 選單", ["想看什麼?"], [
     ladysLiffButton("📅 行事曆", "calendar"),
     ladysLiffButton("💰 記帳", "money"),
-    ladysLiffButton("📝 瑣事", "notes"),
+    ladysLiffButton("🎯 目標", "goals"),
+    ladysLiffButton("☑️ 待辦", "todos"),
     ladysLiffButton("⚙️ 設定", "settings"),
   ]);
 }
@@ -100,7 +103,8 @@ async function ladysRunCommand(text: string) {
   switch (text) {
     case "行程": return await ladysCmdSchedule();
     case "帳": return await ladysCmdExpenses();
-    case "瑣事": return await ladysCmdNotes();
+    case "目標": return await ladysCmdNotes(true);
+    case "待辦": case "瑣事": return await ladysCmdNotes(false);
     default: return ladysCmdMenu();
   }
 }
