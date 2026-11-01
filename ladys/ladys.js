@@ -150,6 +150,12 @@ function viewSettings() {
     <div class="ladys-field"><label>晚上整理對話</label><input type="time" id="ladysNightly" value="${s.ladys_nightly_time}"></div></div>
     ${sw("push_empty", "今天沒行程也推「今天沒有安排」")}</div>
     <div class="ladys-sec">晚上要整理哪些</div><div class="ladys-card">${sw("extract_events", "📅 行事曆")}${sw("extract_expenses", "💰 支出")}${sw("extract_notes", "🎯 目標與 ☑️ 待辦")}</div>
+    <div class="ladys-sec">Google 日曆同步</div><div class="ladys-card">
+    ${ladysS.data.gcalReady ? "" : '<div class="s" style="color:var(--ladys-danger);font-size:12px;margin-bottom:6px">尚未設定 Google 授權,開啟也不會同步</div>'}
+    ${sw("gcal_enabled", "把行事曆同步到 Google")}
+    <div class="ladys-field" style="margin-top:10px"><label>日曆 ID(Google 日曆 → 設定 → 整合日曆)</label>
+    <input id="ladysGcalId" placeholder="xxxx@group.calendar.google.com" value="${esc(s.ladys_gcal_calendar_id)}"></div>
+    <div class="s" style="color:var(--ladys-muted);font-size:12px">單向同步:在 LadyS 新增/修改/刪除會更新到 Google;在 Google 上改的不會回來。</div></div>
     <div class="ladys-sec">成員</div><div class="ladys-card">${ladysS.data.members.map((m) => `<div class="ladys-row2 ladys-mrow">
       <input data-mname="${m.ladys_line_uid}" value="${esc(m.ladys_name)}" maxlength="20">
       <select data-mrole="${m.ladys_line_uid}"><option value="husband" ${m.ladys_role === "husband" ? "selected" : ""}>👨 老公</option><option value="wife" ${m.ladys_role === "wife" ? "selected" : ""}>👩 老婆</option></select></div>`).join("")}
@@ -242,7 +248,7 @@ document.addEventListener("click", async (ev) => {
     $("ladysCustomBox").style.display = t.dataset.persona === "custom" ? "" : "none"; return;
   }
   if (t.id === "ladysSaveSettings") {
-    const data = { persona: document.querySelector("[data-persona].on")?.dataset.persona, persona_custom: $("ladysCustom").value, morning_time: $("ladysMorning").value, nightly_time: $("ladysNightly").value };
+    const data = { persona: document.querySelector("[data-persona].on")?.dataset.persona, persona_custom: $("ladysCustom").value, morning_time: $("ladysMorning").value, nightly_time: $("ladysNightly").value, gcal_calendar_id: $("ladysGcalId").value.trim() };
     document.querySelectorAll("[data-set]").forEach((c) => (data[c.dataset.set] = c.checked));
     try {
       await ladysApi("settings", { data });
@@ -250,7 +256,7 @@ document.addEventListener("click", async (ev) => {
         const name = document.querySelector(`[data-mname="${m.ladys_line_uid}"]`).value, role = document.querySelector(`[data-mrole="${m.ladys_line_uid}"]`).value;
         if (name !== m.ladys_name || role !== m.ladys_role) await ladysApi("member", { data: { uid: m.ladys_line_uid, name, role } });
       }
-      await reload(); toast("設定已儲存");
+      await reload(); toast(data.gcal_enabled ? "設定已儲存,已同步 Google" : "設定已儲存");
     } catch (e) { toast("儲存失敗:" + e.message); }
   }
 });
@@ -261,7 +267,7 @@ function ladysMockApi(action, extra) {
   const db = (ladysMockApi.db ||= (() => {
     const today = ymdOf(new Date().toISOString()), at = (n, hm) => new Date(new Date(today + "T" + (hm || "00:00") + ":00+08:00").getTime() + n * 864e5).toISOString();
     const id = () => crypto.randomUUID();
-    return { me: "Umock", today, settings: { ladys_persona: "butler", ladys_persona_custom: "", ladys_morning_time: "07:30", ladys_nightly_time: "23:00", ladys_push_empty: true, ladys_extract_events: true, ladys_extract_expenses: true, ladys_extract_notes: true },
+    return { me: "Umock", today, settings: { ladys_persona: "butler", ladys_persona_custom: "", ladys_morning_time: "07:30", ladys_nightly_time: "23:00", ladys_push_empty: true, ladys_extract_events: true, ladys_extract_expenses: true, ladys_extract_notes: true, ladys_gcal_enabled: false, ladys_gcal_calendar_id: null }, gcalReady: false,
       members: [{ ladys_line_uid: "U" + "a".repeat(32), ladys_name: "柏廷", ladys_role: "husband" }, { ladys_line_uid: "U" + "b".repeat(32), ladys_name: "老婆", ladys_role: "wife" }],
       events: [{ id: id(), ladys_title: "跟媽媽分享:請款30、誰先找到工作誰上班", ladys_start_at: at(0), ladys_all_day: true, ladys_owner: "both", ladys_location: "" },
         { id: id(), ladys_title: "牙醫回診", ladys_start_at: at(1, "10:30"), ladys_end_at: at(1, "11:30"), ladys_all_day: false, ladys_owner: "wife", ladys_location: "仁愛診所" },
@@ -283,6 +289,7 @@ function ladysMockApi(action, extra) {
     if (extra.kind === "event") list.sort((a, c) => a.ladys_start_at.localeCompare(c.ladys_start_at));
     return Promise.resolve({ ok: true });
   }
+  if (action === "settings" && extra.data.gcal_calendar_id && !/^[\w.+-]+@[\w.-]+$/.test(extra.data.gcal_calendar_id)) return Promise.reject(new Error("BAD_CALENDAR_ID"));
   if (action === "settings") { for (const [k, v] of Object.entries(extra.data)) if (v !== undefined) db.settings["ladys_" + k] = v; return Promise.resolve({ ok: true }); }
   if (action === "member") { const m = db.members.find((x) => x.ladys_line_uid === extra.data.uid); m.ladys_name = extra.data.name; m.ladys_role = extra.data.role; return Promise.resolve({ ok: true }); }
   return Promise.reject(new Error("BAD_ACTION"));

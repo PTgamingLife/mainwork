@@ -9,6 +9,7 @@ import {
   ladysEventsBetween, ladysFinishRun, ladysHm, ladysInsert, ladysJson, ladysLiffButton, ladysPush,
   ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "../_shared/ladys.ts";
+import { ladysGcalSweep } from "../_shared/ladys-gcal.ts";
 
 const LADYS_MODEL = "claude-haiku-5-5";
 const LADYS_MAX_MESSAGES = 600;
@@ -171,6 +172,9 @@ async function ladysRunNightly(runId: number, runDate: string) {
   const maxId = Math.max(...msgs.map((m) => Number(m.id)));
   await ladysUpdate("ladys_messages", `ladys_processed_at=is.null&id=lte.${maxId}`, { ladys_processed_at: new Date().toISOString() });
 
+  let gcal: unknown = null;
+  try { gcal = await ladysGcalSweep(); } catch (e) { gcal = { error: String(e instanceof Error ? e.message : e).slice(0, 160) }; }
+
   const total = events.length + expenses.length + notes.length;
   if (total > 0 && settings.ladys_group_id) {
     const lines = [
@@ -185,7 +189,7 @@ async function ladysRunNightly(runId: number, runDate: string) {
     ];
     await ladysPush(settings.ladys_group_id, [ladysCard(`${ladysDayLabel(runDate)} 今日整理`, lines, [ladysLiffButton("查看 / 修改", "list")])]);
   }
-  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, pushed: total > 0 } };
+  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, pushed: total > 0, gcal } };
 }
 
 Deno.serve(async (req) => {
