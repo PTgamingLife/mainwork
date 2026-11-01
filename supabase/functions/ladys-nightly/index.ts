@@ -173,7 +173,7 @@ async function ladysRunNightly(runId: number, runDate: string) {
 
   const total = events.length + expenses.length + notes.length;
   if (total > 0 && settings.ladys_group_id) {
-        const lines = [
+    const lines = [
       clip(out.summary, 60) || "今天辛苦了 🌙",
       `今天記了 ${events.length} 個行程、${expenses.length} 筆支出、${notes.filter((n: any) => n.ladys_kind === "goal").length} 個目標、${notes.filter((n: any) => n.ladys_kind !== "goal").length} 件待辦`,
       ...(events.length ? ["【行程】", ...savedEvents.map((e: any) =>
