@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LadyS 隱私權政策</title>
+<style>
+  :root { --ladys-ink: #2E2E33; --ladys-muted: #8A8A93; --ladys-bg: #F5F5F7; --ladys-accent: #6C8EBF; }
+  body { margin: 0; background: var(--ladys-bg); color: var(--ladys-ink);
+    font: 15px/1.7 -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 28px 0 6px; color: var(--ladys-accent); }
+  p, li { margin: 6px 0; }
+  .muted { color: var(--ladys-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LadyS 隱私權政策</h1>
+  <p class="muted">最後更新:2026 年 11 月 2 日</p>
+
+  <p>LadyS 是陳柏廷為自己家庭(本人與配偶)建立的私人生活秘書服務,透過 LINE 群組與 LINE LIFF 頁面運作,不對外開放使用。</p>
+
+  <h2>收集哪些資料</h2>
+  <ul>
+    <li>綁定的 LINE 群組中的文字訊息內容、傳送時間、傳送者的 LINE 使用者 ID 與顯示名稱。</li>
+    <li>由訊息整理出的行程、支出、目標與待辦事項。</li>
+    <li>在 LIFF 頁面中手動新增或修改的資料與設定。</li>
+    <li>不處理照片、貼圖、語音,不收集密碼、帳號或身分證字號等敏感資料。</li>
+  </ul>
+
+  <h2>如何使用</h2>
+  <ul>
+    <li>每晚以 AI(Anthropic Claude)整理當天對話,產生行程、支出、目標與待辦。</li>
+    <li>每天早上在群組推播當日行程。</li>
+    <li>經使用者開啟後,將行程單向同步到使用者自己的 Google 日曆(僅使用 Google Calendar 的「活動讀寫」權限,只寫入指定的「LadyS 家庭」日曆)。</li>
+  </ul>
+
+  <h2>資料保存與分享</h2>
+  <ul>
+    <li>資料存放於 Supabase 資料庫,只有後端服務可以讀寫,LIFF 頁面僅開放給已綁定的兩位成員。</li>
+    <li>原始群組訊息在整理完成 30 天後自動刪除。</li>
+    <li>不出售、不出租、不提供資料給任何第三方做廣告或其他用途;僅為完成上述功能,傳送給 LINE、Anthropic 與 Google 的 API。</li>
+  </ul>
+
+  <h2>Google 使用者資料</h2>
+  <p>LadyS 對 Google 使用者資料的使用與傳輸,遵守 Google API 服務使用者資料政策(包含有限使用要求)。LadyS 只建立、更新、刪除自己同步過去的行程,不讀取或分析日曆中的其他內容。</p>
+
+  <h2>刪除資料或停止使用</h2>
+  <ul>
+    <li>可在 LIFF 頁面中刪除任何一筆資料。</li>
+    <li>可到 <a href="https://myaccount.google.com/permissions">Google 帳戶權限</a> 隨時撤銷日曆授權。</li>
+    <li>如需刪除全部資料,請透過 LINE 官方帳號「生活秘書-用AI創造美好生活」聯絡帳號擁有者。</li>
+  </ul>
+</main>
+</body>
+</html>
