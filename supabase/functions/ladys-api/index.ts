@@ -6,6 +6,7 @@
 import {
   ladysAddDays, ladysDayStartIso, ladysInsert, ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "../_shared/ladys.ts";
+import { ladysGcalSweep } from "../_shared/ladys-gcal.ts";
 
 // LIFF 所在的 LINE Login 頻道(LadyS)。頻道 ID 是公開資訊,寫死避免 audience 設錯。
 const LADYS_LIFF_CHANNEL_ID = "2012319360";
@@ -55,8 +56,8 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_notes", "ladys_deleted=eq.false&order=ladys_done.asc,ladys_created_at.desc&select=id,ladys_content,ladys_kind,ladys_owner,ladys_done"),
   ]);
   delete settings.ladys_group_id;
-  delete settings.ladys_gcal_calendar_id;
-  return { me: uid, today, settings, members, events, expenses, notes };
+  const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
+  return { me: uid, today, settings, gcalReady, members, events, expenses, notes };
 }
 
 function ladysEventRow(b: any) {
@@ -114,7 +115,12 @@ async function ladysSaveSettings(b: any) {
   if (b.persona_custom !== undefined) patch.ladys_persona_custom = str(b.persona_custom, 200);
   if (isHm(b.morning_time)) patch.ladys_morning_time = b.morning_time;
   if (isHm(b.nightly_time)) patch.ladys_nightly_time = b.nightly_time;
-  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes"]) {
+  if (b.gcal_calendar_id !== undefined) {
+    const id = str(b.gcal_calendar_id, 200);
+    if (id && !/^[\w.+-]+@[\w.-]+$/.test(id)) bad("BAD_CALENDAR_ID");
+    patch.ladys_gcal_calendar_id = id || null;
+  }
+  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled"]) {
     if (typeof b[k] === "boolean") patch[`ladys_${k}`] = b[k];
   }
   await ladysUpdate("ladys_settings", "id=eq.1", patch);
@@ -128,6 +134,11 @@ async function ladysSaveMember(b: any) {
   if (b.emoji !== undefined) patch.ladys_emoji = str(b.emoji, 4) || "🙂";
   const [r] = await ladysUpdate("ladys_members", `ladys_line_uid=eq.${b.uid}`, patch);
   return r ?? bad("NOT_FOUND");
+}
+
+// 行程異動後順手同步 Google;失敗不影響儲存,只回報錯誤
+async function ladysGcalSafe() {
+  try { return await ladysGcalSweep(); } catch (e) { return { synced: 0, deleted: 0, errors: [String(e instanceof Error ? e.message : e).slice(0, 160)] }; }
 }
 
 Deno.serve(async (req) => {
@@ -147,9 +158,15 @@ Deno.serve(async (req) => {
 
     const a = String(body.action ?? "");
     if (a === "load") return json(await ladysLoad(uid));
-    if (a === "save") return json({ ok: true, row: await ladysSave(body.kind, body.data ?? {}) });
-    if (a === "delete") { await ladysDelete(body.kind, body.id); return json({ ok: true }); }
-    if (a === "settings") { await ladysSaveSettings(body.data ?? {}); return json({ ok: true }); }
+    if (a === "save") {
+      const row = await ladysSave(body.kind, body.data ?? {});
+      return json({ ok: true, row, gcal: body.kind === "event" ? await ladysGcalSafe() : null });
+    }
+    if (a === "delete") {
+      await ladysDelete(body.kind, body.id);
+      return json({ ok: true, gcal: body.kind === "event" ? await ladysGcalSafe() : null });
+    }
+    if (a === "settings") { await ladysSaveSettings(body.data ?? {}); return json({ ok: true, gcal: await ladysGcalSafe() }); }
     if (a === "member") return json({ ok: true, row: await ladysSaveMember(body.data ?? {}) });
     return json({ error: "BAD_ACTION" }, 400);
   } catch (e) {
