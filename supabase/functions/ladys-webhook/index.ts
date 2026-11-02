@@ -9,12 +9,13 @@ import {
   ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysLiffButton, ladysReply, ladysSelect,
   ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
 } from "../_shared/ladys.ts";
+import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
 const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
-const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單"];
+const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆"];
 
 async function ladysVerifySignature(raw: string, sig: string): Promise<boolean> {
   if (!LADYS_LINE_SECRET || !sig) return false;
@@ -105,8 +106,21 @@ function ladysCmdMenu() {
   ]);
 }
 
+// 「更新行事曆」:立刻整理到目前為止還沒整理的對話(與晚間整理同一套邏輯),用 reply 回覆不吃推播額度
+async function ladysCmdUpdateNow() {
+  try {
+    const r = await ladysProcessPending("剛剛的對話整理好了");
+    if (r.card) return r.card;
+    return { type: "text", text: r.status === "empty" ? "目前沒有新的對話需要整理 👌" : "看過新的對話了,沒有需要記錄的行程、支出、目標或待辦 👌" };
+  } catch (e) {
+    console.error("ladys update-now", e instanceof Error ? e.message : e);
+    return { type: "text", text: "整理時出了點問題,晚上 23:00 會再自動整理一次 🙏" };
+  }
+}
+
 async function ladysRunCommand(text: string) {
   switch (text) {
+    case "更新行事曆": return await ladysCmdUpdateNow();
     case "行程": return await ladysCmdSchedule();
     case "帳": return await ladysCmdExpenses();
     case "目標": return await ladysCmdNotes(true);
