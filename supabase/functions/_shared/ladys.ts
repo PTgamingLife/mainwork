@@ -173,16 +173,16 @@ function ladysCircle(px: number, view: LadysView, inner: unknown[]) {
 
 function ladysCircleFooter(primary: { view: LadysView; label?: string }) {
   const [emoji, name] = LADYS_VIEWS[primary.view];
-  const big = ladysCircle(88, primary.view, [
-    { type: "text", text: emoji, size: "xl", align: "center" },
-    { type: "text", text: primary.label ?? name, size: "xs", color: "#FFFFFF", weight: "bold", align: "center" },
+  const big = ladysCircle(176, primary.view, [
+    { type: "text", text: emoji, size: "3xl", align: "center" },
+    { type: "text", text: primary.label ?? name, size: "md", color: "#FFFFFF", weight: "bold", align: "center" },
   ]);
   const smalls = LADYS_SHORTCUTS.filter((v) => v !== primary.view).slice(0, 4).map((v) => ({
     type: "box", layout: "vertical", flex: 1, alignItems: "center", spacing: "xs",
     action: { type: "uri", label: LADYS_VIEWS[v][1], uri: ladysLiffUri(v) },
     contents: [
-      ladysCircle(44, v, [{ type: "text", text: LADYS_VIEWS[v][0], size: "md", align: "center" }]),
-      { type: "text", text: LADYS_VIEWS[v][1], size: "xxs", color: LADYS_C.muted, align: "center" },
+      ladysCircle(60, v, [{ type: "text", text: LADYS_VIEWS[v][0], size: "xl", align: "center" }]),
+      { type: "text", text: LADYS_VIEWS[v][1], size: "xs", color: LADYS_C.muted, align: "center" },
     ],
   }));
   return {
