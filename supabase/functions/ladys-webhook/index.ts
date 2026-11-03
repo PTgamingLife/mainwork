@@ -10,6 +10,7 @@ import {
   ladysMask, ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
+import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
@@ -59,7 +60,10 @@ async function ladysIsMember(uid: string): Promise<boolean> {
 // ---------- 指令 ----------
 async function ladysCmdSchedule() {
   const today = ladysTodayTaipei();
-  const events = await ladysEventsBetween(today, ladysAddDays(today, 8));
+  const events = [
+    ...(await ladysEventsBetween(today, ladysAddDays(today, 8))),
+    ...ladysExpandYearly(await ladysYearlyEvents(), today, ladysAddDays(today, 8)),
+  ].sort((a, b) => a.ladys_start_at.localeCompare(b.ladys_start_at));
   const byDay = ladysGroupByDay(events);
   const lines: string[] = [];
   for (const [day, list] of byDay) {

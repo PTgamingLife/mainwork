@@ -142,13 +142,14 @@ export function ladysDayLabel(ymd: string): string {
 export function ladysEventLine(e: any): string {
   const t = e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at);
   const loc = e.ladys_location ? ` @${e.ladys_location}` : "";
-  return `${LADYS_OWNER_LABEL[e.ladys_owner as LadysOwner] ?? "👫"} ${t} ${e.ladys_title}${loc}`;
+  const yrs = Number(e.ladys_years) > 0 ? `(${e.ladys_years} 週年)` : e.ladys_recur === "yearly" ? "💝" : "";
+  return `${LADYS_OWNER_LABEL[e.ladys_owner as LadysOwner] ?? "👫"} ${t} ${e.ladys_title}${yrs}${loc}`;
 }
 
 export async function ladysEventsBetween(fromYmd: string, toYmdExclusive: string): Promise<any[]> {
   return await ladysSelect(
     "ladys_events",
-    `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(fromYmd))}` +
+    `ladys_deleted=eq.false&ladys_recur=eq.none&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(fromYmd))}` +
       `&ladys_start_at=lt.${encodeURIComponent(ladysDayStartIso(toYmdExclusive))}&order=ladys_start_at.asc&select=*`,
   );
 }

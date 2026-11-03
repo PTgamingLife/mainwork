@@ -7,6 +7,7 @@ import {
   ladysAddDays, ladysDayStartIso, ladysInsert, ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "../_shared/ladys.ts";
 import { ladysGcalSweep } from "../_shared/ladys-gcal.ts";
+import { ladysPeriodStats } from "../_shared/ladys-life.ts";
 
 // LIFF 所在的 LINE Login 頻道(LadyS)。頻道 ID 是公開資訊,寫死避免 audience 設錯。
 const LADYS_LIFF_CHANNEL_ID = "2012319360";
@@ -45,19 +46,23 @@ async function ladysVerify(idToken: string): Promise<string> {
 
 async function ladysLoad(uid: string) {
   const today = ladysTodayTaipei();
-  const [settings, members, events, expenses, notes] = await Promise.all([
+  const [settings, members, events, yearly, expenses, notes, life] = await Promise.all([
     ladysSettings(),
     ladysSelect("ladys_members", "select=ladys_line_uid,ladys_name,ladys_emoji,ladys_role&order=ladys_created_at.asc"),
     ladysSelect("ladys_events", `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, -62)))}` +
       `&ladys_start_at=lt.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, 400)))}&order=ladys_start_at.asc` +
-      "&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source"),
+      "&ladys_recur=eq.none&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
+    ladysSelect("ladys_events", "ladys_deleted=eq.false&ladys_recur=eq.yearly" +
+      "&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
     ladysSelect("ladys_expenses", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -400)}&order=ladys_date.desc,ladys_created_at.desc` +
       "&select=id,ladys_date,ladys_amount,ladys_category,ladys_payer,ladys_note"),
     ladysSelect("ladys_notes", "ladys_deleted=eq.false&order=ladys_done.asc,ladys_created_at.desc&select=id,ladys_content,ladys_kind,ladys_owner,ladys_done"),
+    ladysSelect("ladys_life", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -400)}&order=ladys_date.desc,ladys_created_at.desc` +
+      "&select=id,ladys_date,ladys_kind,ladys_content,ladys_owner"),
   ]);
   delete settings.ladys_group_id;
   const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
-  return { me: uid, today, settings, gcalReady, members, events, expenses, notes };
+  return { me: uid, today, settings, gcalReady, members, events, yearly, expenses, notes, life, period: ladysPeriodStats(life) };
 }
 
 function ladysEventRow(b: any) {
@@ -66,7 +71,10 @@ function ladysEventRow(b: any) {
   const allDay = !isHm(b.time);
   const start = new Date(`${b.date}T${allDay ? "00:00" : b.time}:00+08:00`).toISOString();
   const end = !allDay && isHm(b.end_time) && b.end_time > b.time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null;
-  return { ladys_title: title, ladys_start_at: start, ladys_end_at: end, ladys_all_day: allDay, ladys_location: str(b.location, 60), ladys_owner: owner(b.owner) };
+  return {
+    ladys_title: title, ladys_start_at: start, ladys_end_at: end, ladys_all_day: allDay, ladys_location: str(b.location, 60),
+    ladys_owner: owner(b.owner), ladys_recur: b.yearly === true ? "yearly" : "none",
+  };
 }
 
 function ladysExpenseRow(b: any) {
@@ -85,10 +93,19 @@ function ladysNoteRow(b: any) {
   };
 }
 
+const LIFE_KINDS = ["period_start", "period_end", "health", "other"];
+function ladysLifeRow(b: any) {
+  if (!isYmd(b.date)) bad("BAD_DATE");
+  const kind = LIFE_KINDS.includes(b.kind) ? b.kind : "other";
+  const content = str(b.content, 120) || (kind === "period_start" ? "經期開始" : kind === "period_end" ? "經期結束" : bad("BAD_CONTENT"));
+  return { ladys_date: b.date, ladys_kind: kind, ladys_content: content, ladys_owner: kind.startsWith("period") ? "wife" : owner(b.owner) };
+}
+
 const TABLES: Record<string, [string, (b: any) => Record<string, unknown>]> = {
   event: ["ladys_events", ladysEventRow],
   expense: ["ladys_expenses", ladysExpenseRow],
   note: ["ladys_notes", ladysNoteRow],
+  life: ["ladys_life", ladysLifeRow],
 };
 
 async function ladysSave(kind: string, b: any) {
@@ -120,6 +137,15 @@ async function ladysSaveSettings(b: any) {
     if (id && !/^[\w.+-]+@[\w.-]+$/.test(id)) bad("BAD_CALENDAR_ID");
     patch.ladys_gcal_calendar_id = id || null;
   }
+  if (Array.isArray(b.anniv_remind_days)) {
+    const days = [...new Set(b.anniv_remind_days.map(Number).filter((n: number) => Number.isInteger(n) && n >= 0 && n <= 60))].slice(0, 5);
+    patch.ladys_anniv_remind_days = days;
+  }
+  if (b.period_remind_days !== undefined) {
+    const n = Number(b.period_remind_days);
+    if (Number.isInteger(n) && n >= 0 && n <= 14) patch.ladys_period_remind_days = n;
+  }
+  if (["wife", "both", "off"].includes(b.period_remind_to)) patch.ladys_period_remind_to = b.period_remind_to;
   for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled"]) {
     if (typeof b[k] === "boolean") patch[`ladys_${k}`] = b[k];
   }
