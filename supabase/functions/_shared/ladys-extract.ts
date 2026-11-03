@@ -5,7 +5,7 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import {
   LADYS_OWNER_LABEL, ladysAddDays, ladysCard, ladysDayLabel, ladysEventsBetween, ladysHm, ladysInsert,
-  ladysLiffButton, ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
+  ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "./ladys.ts";
 import { ladysGcalSweep } from "./ladys-gcal.ts";
 
@@ -187,7 +187,7 @@ export async function ladysProcessPending(cardTitle: string): Promise<{ status: 
       ...(notes.some((n: any) => n.ladys_kind !== "goal") ? ["【待辦】", ...notes.filter((n: any) => n.ladys_kind !== "goal").map((n: any) => `☐ ${n.ladys_content}`)] : []),
       "有記錯的話,點下面按鈕修改 👇",
     ];
-    card = ladysCard(cardTitle, lines, [ladysLiffButton("查看 / 修改", "list")]);
+    card = ladysCard(cardTitle, lines, { view: "list", label: "查看修改" });
   }
   return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, gcal }, card };
 }

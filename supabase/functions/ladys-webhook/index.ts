@@ -6,7 +6,7 @@
 
 import {
   LADYS_LINE_SECRET, ladysAddDays, ladysCard, ladysDayLabel, ladysEventLine, ladysEventsBetween,
-  ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysLiffButton, ladysReply, ladysSelect,
+  ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysReply, ladysSelect,
   ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
@@ -66,7 +66,7 @@ async function ladysCmdSchedule() {
     lines.push(`【${ladysDayLabel(day)}${day === today ? " 今天" : ""}】`);
     for (const e of list) lines.push(ladysEventLine(e));
   }
-  return ladysCard("未來 7 天行程", lines.length ? lines : ["這 7 天沒有安排 🌿"], [ladysLiffButton("打開行事曆", "calendar")]);
+  return ladysCard("未來 7 天行程", lines.length ? lines : ["這 7 天沒有安排 🌿"], { view: "calendar" });
 }
 
 async function ladysCmdExpenses() {
@@ -84,7 +84,7 @@ async function ladysCmdExpenses() {
     "【最近 5 筆】",
     ...rows.slice(0, 5).map((r) => `${r.ladys_date.slice(5)} ${r.ladys_category} ${fmt(Number(r.ladys_amount))} ${r.ladys_note}`.trim()),
   ];
-  return ladysCard(`${Number(today.slice(5, 7))} 月支出`, lines, [ladysLiffButton("打開記帳", "money")]);
+  return ladysCard(`${Number(today.slice(5, 7))} 月支出`, lines, { view: "money" });
 }
 
 async function ladysCmdNotes(goal: boolean) {
@@ -92,18 +92,12 @@ async function ladysCmdNotes(goal: boolean) {
     `ladys_deleted=eq.false&ladys_done=eq.false&ladys_kind=${goal ? "eq.goal" : "neq.goal"}&order=ladys_created_at.desc&limit=20&select=*`);
   const lines = rows.map((r) => `${goal ? "🎯" : "☐"} ${LADYS_OWNER_LABEL[r.ladys_owner as "both"] ?? ""} ${r.ladys_content}`);
   return goal
-    ? ladysCard("進行中的目標", lines.length ? lines : ["還沒有目標 🌱"], [ladysLiffButton("打開目標", "goals")])
-    : ladysCard("未完成待辦", lines.length ? lines : ["全部完成了 ✨"], [ladysLiffButton("打開待辦", "todos")]);
+    ? ladysCard("進行中的目標", lines.length ? lines : ["還沒有目標 🌱"], { view: "goals" })
+    : ladysCard("未完成待辦", lines.length ? lines : ["全部完成了 ✨"], { view: "todos" });
 }
 
 function ladysCmdMenu() {
-  return ladysCard("LadyS 選單", ["想看什麼?"], [
-    ladysLiffButton("📅 行事曆", "calendar"),
-    ladysLiffButton("💰 記帳", "money"),
-    ladysLiffButton("🎯 目標", "goals"),
-    ladysLiffButton("☑️ 待辦", "todos"),
-    ladysLiffButton("⚙️ 設定", "settings"),
-  ]);
+  return ladysCard("LadyS 選單", ["想看什麼?點下面的圓圈 👇"], { view: "calendar" });
 }
 
 // 「更新行事曆」:立刻整理到目前為止還沒整理的對話(與晚間整理同一套邏輯),用 reply 回覆不吃推播額度

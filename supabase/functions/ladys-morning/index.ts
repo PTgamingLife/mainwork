@@ -4,7 +4,7 @@
 
 import {
   ladysAddDays, ladysCard, ladysCheckCronKey, ladysClaimRun, ladysDayLabel, ladysEventLine,
-  ladysEventsBetween, ladysFinishRun, ladysGroupByDay, ladysJson, ladysLiffButton, ladysPush,
+  ladysEventsBetween, ladysFinishRun, ladysGroupByDay, ladysJson, ladysPush,
   ladysSettings, ladysTodayTaipei,
 } from "../_shared/ladys.ts";
 
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       ...(todayList.length ? todayList.map(ladysEventLine) : ["今天沒有安排 🌿"]),
       ...(tomorrowList.length ? [`【明天 ${ladysDayLabel(tomorrow)}】`, ...tomorrowList.map(ladysEventLine)] : []),
     ];
-    await ladysPush(settings.ladys_group_id, [ladysCard("今日行程", lines, [ladysLiffButton("打開行事曆", "calendar")])]);
+    await ladysPush(settings.ladys_group_id, [ladysCard("今日行程", lines, { view: "calendar" })]);
     await ladysFinishRun(runId, "done", { today: todayList.length, tomorrow: tomorrowList.length });
     return ladysJson({ ok: true, today: todayList.length, tomorrow: tomorrowList.length });
   } catch (e) {
