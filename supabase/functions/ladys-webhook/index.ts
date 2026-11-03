@@ -7,7 +7,7 @@
 import {
   LADYS_LINE_SECRET, ladysAddDays, ladysCard, ladysDayLabel, ladysEventLine, ladysEventsBetween,
   ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysReply, ladysSelect,
-  ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
+  ladysMask, ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 
@@ -165,7 +165,7 @@ async function ladysHandle(ev: any, settings: any) {
       ladys_line_msg_id: String(ev.message.id),
       ladys_group_id: gid,
       ladys_user_uid: uid || null,
-      ladys_text: text.slice(0, 2000),
+      ladys_text: ladysMask(text).slice(0, 2000), // 敏感資訊先遮蔽才落地
       ladys_sent_at: new Date(Number(ev.timestamp)).toISOString(),
     }, "resolution=ignore-duplicates,return=minimal");
     return;

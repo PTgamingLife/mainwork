@@ -54,6 +54,21 @@ export async function ladysUpdate(table: string, query: string, patch: unknown):
   return await res.json();
 }
 
+export async function ladysDeleteWhere(table: string, query: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method: "DELETE", headers: sbHeaders("return=minimal") });
+  if (!res.ok) throw new Error(`SB_DELETE_${table}_${res.status}:${(await res.text()).slice(0, 160)}`);
+}
+
+// 存進資料庫前遮蔽敏感資訊:身分證、手機、卡號、密碼 / 驗證碼、銀行帳號
+export function ladysMask(text: string): string {
+  return text
+    .replace(/(密碼|password|pwd|PIN|驗證碼|OTP)\s*[:：是為]?\s*\S+/gi, "$1 [已遮蔽]")
+    .replace(/(帳號|帳戶|戶頭)\s*[:：是為]?\s*[\d-]{8,}/g, "$1 [已遮蔽]")
+    .replace(/\b[A-Z][12]\d{8}\b/gi, "[身分證已遮蔽]")
+    .replace(/(?<!\d)(?:\d[ -]?){13,19}(?!\d)/g, "[卡號已遮蔽]")
+    .replace(/(?<!\d)09\d{2}[-\s]?\d{3}[-\s]?\d{3}(?!\d)/g, "[電話已遮蔽]");
+}
+
 export async function ladysSettings(): Promise<any> {
   const [s] = await ladysSelect("ladys_settings", "id=eq.1&select=*");
   return s ?? {};

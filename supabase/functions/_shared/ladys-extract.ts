@@ -4,7 +4,7 @@
 
 import Anthropic from "npm:@anthropic-ai/sdk";
 import {
-  LADYS_OWNER_LABEL, ladysAddDays, ladysCard, ladysDayLabel, ladysEventsBetween, ladysHm, ladysInsert,
+  LADYS_OWNER_LABEL, ladysAddDays, ladysCard, ladysDayLabel, ladysDeleteWhere, ladysEventsBetween, ladysHm, ladysInsert,
   ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "./ladys.ts";
 import { ladysGcalSweep } from "./ladys-gcal.ts";
@@ -169,7 +169,8 @@ export async function ladysProcessPending(cardTitle: string): Promise<{ status: 
   if (notes.length) await ladysInsert("ladys_notes", notes, "return=minimal");
 
   const maxId = Math.max(...msgs.map((m) => Number(m.id)));
-  await ladysUpdate("ladys_messages", `ladys_processed_at=is.null&id=lte.${maxId}`, { ladys_processed_at: new Date().toISOString() });
+  // 整理完立刻刪除原文,只留整理結果(AI 失敗時不會走到這裡,原文保留到下次重試)
+  await ladysDeleteWhere("ladys_messages", `id=lte.${maxId}`);
 
   let gcal: unknown = null;
   try { gcal = await ladysGcalSweep(); } catch (e) { gcal = { error: String(e instanceof Error ? e.message : e).slice(0, 160) }; }
