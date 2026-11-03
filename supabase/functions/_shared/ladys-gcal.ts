@@ -46,6 +46,7 @@ function ladysGcalBody(e: any) {
     description: "由 LadyS 生活秘書同步。要修改請到 LINE 的 LadyS「我的記錄」。",
     colorId: LADYS_GCAL_COLOR[e.ladys_owner] ?? "3",
     extendedProperties: { private: { ladys_id: e.id } },
+    ...(e.ladys_recur === "yearly" ? { recurrence: ["RRULE:FREQ=YEARLY"] } : {}),
   };
   if (e.ladys_all_day) {
     const d = ymdTpe(e.ladys_start_at);
@@ -66,6 +67,7 @@ export async function ladysGcalSweep(): Promise<{ synced: number; deleted: numbe
 
   const rows = await ladysSelect("ladys_events",
     `or=(and(ladys_deleted.eq.false,ladys_gcal_event_id.is.null,ladys_start_at.gte.${since}),` +
+    `and(ladys_deleted.eq.false,ladys_gcal_event_id.is.null,ladys_recur.eq.yearly),` +
     `and(ladys_deleted.eq.true,ladys_gcal_event_id.not.is.null),` +
     `and(ladys_gcal_event_id.not.is.null,ladys_gcal_dirty.eq.true))&limit=50&select=*`);
 
