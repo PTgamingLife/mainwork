@@ -149,13 +149,53 @@ export function ladysGroupByDay(events: any[]): Map<string, any[]> {
   return m;
 }
 
-export function ladysLiffButton(label: string, view: string) {
-  const uri = LADYS_LIFF_URL ? `${LADYS_LIFF_URL}${LADYS_LIFF_URL.includes("?") ? "&" : "?"}view=${view}` : "https://line.me";
-  return { type: "button", style: "primary", height: "sm", color: LADYS_C.husband, action: { type: "uri", label, uri } };
+// ---------- 卡片(樣式 C:一個主要大圓 + 下方一排小圓捷徑,統一霧藍)----------
+export type LadysView = "calendar" | "list" | "money" | "goals" | "todos" | "settings";
+const LADYS_VIEWS: Record<LadysView, [string, string]> = {
+  calendar: ["📅", "行事曆"], list: ["📋", "列表"], money: ["💰", "記帳"],
+  goals: ["🎯", "目標"], todos: ["☑️", "待辦"], settings: ["⚙️", "設定"],
+};
+const LADYS_SHORTCUTS: LadysView[] = ["calendar", "money", "goals", "todos", "settings"];
+
+export function ladysLiffUri(view: LadysView): string {
+  return LADYS_LIFF_URL ? `${LADYS_LIFF_URL}${LADYS_LIFF_URL.includes("?") ? "&" : "?"}view=${view}` : "https://line.me";
 }
 
-// 簡單卡片:標題 + 多行文字 + 選用按鈕
-export function ladysCard(title: string, lines: string[], buttons: unknown[] = []) {
+// 正圓:寬高相同、圓角為一半;整顆可點
+function ladysCircle(px: number, view: LadysView, inner: unknown[]) {
+  return {
+    type: "box", layout: "vertical", width: `${px}px`, height: `${px}px`, cornerRadius: `${px / 2}px`,
+    backgroundColor: LADYS_C.husband, justifyContent: "center", alignItems: "center", spacing: "none",
+    action: { type: "uri", label: LADYS_VIEWS[view][1], uri: ladysLiffUri(view) },
+    contents: inner,
+  };
+}
+
+function ladysCircleFooter(primary: { view: LadysView; label?: string }) {
+  const [emoji, name] = LADYS_VIEWS[primary.view];
+  const big = ladysCircle(88, primary.view, [
+    { type: "text", text: emoji, size: "xl", align: "center" },
+    { type: "text", text: primary.label ?? name, size: "xs", color: "#FFFFFF", weight: "bold", align: "center" },
+  ]);
+  const smalls = LADYS_SHORTCUTS.filter((v) => v !== primary.view).slice(0, 4).map((v) => ({
+    type: "box", layout: "vertical", flex: 1, alignItems: "center", spacing: "xs",
+    action: { type: "uri", label: LADYS_VIEWS[v][1], uri: ladysLiffUri(v) },
+    contents: [
+      ladysCircle(44, v, [{ type: "text", text: LADYS_VIEWS[v][0], size: "md", align: "center" }]),
+      { type: "text", text: LADYS_VIEWS[v][1], size: "xxs", color: LADYS_C.muted, align: "center" },
+    ],
+  }));
+  return {
+    type: "box", layout: "vertical", spacing: "lg", paddingTop: "md",
+    contents: [
+      { type: "box", layout: "horizontal", justifyContent: "center", contents: [big] },
+      { type: "box", layout: "horizontal", contents: smalls },
+    ],
+  };
+}
+
+// 卡片:標題 + 多行文字 + 選用的圓形按鈕區(primary = 主要大圓要開的頁面)
+export function ladysCard(title: string, lines: string[], primary?: { view: LadysView; label?: string }) {
   return {
     type: "flex",
     altText: `${title}|${lines[0] ?? ""}`.slice(0, 380),
@@ -174,7 +214,7 @@ export function ladysCard(title: string, lines: string[], buttons: unknown[] = [
           })),
         ],
       },
-      ...(buttons.length ? { footer: { type: "box", layout: "vertical", spacing: "sm", contents: buttons } } : {}),
+      ...(primary ? { footer: ladysCircleFooter(primary) } : {}),
     },
   };
 }
