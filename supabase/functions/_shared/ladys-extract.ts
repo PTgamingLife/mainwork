@@ -4,7 +4,7 @@
 
 import Anthropic from "npm:@anthropic-ai/sdk";
 import {
-  LADYS_OWNER_LABEL, ladysAddDays, ladysCard, ladysDayLabel, ladysDeleteWhere, ladysEventsBetween, ladysHm, ladysInsert,
+  type LadysHero, LADYS_OWNER_LABEL, ladysAddDays, ladysCard, ladysDayLabel, ladysDeleteWhere, ladysEventsBetween, ladysHm, ladysInsert,
   ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "./ladys.ts";
 import { ladysGcalSweep } from "./ladys-gcal.ts";
@@ -141,7 +141,7 @@ function ladysEventStartIso(date: string, time: string) {
 }
 
 // 整理所有還沒整理的群組訊息;回傳結果與(有抽到東西時)要發到群組的卡片
-export async function ladysProcessPending(cardTitle: string): Promise<{ status: string; detail: any; card: unknown | null }> {
+export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "night"): Promise<{ status: string; detail: any; card: unknown | null }> {
   const settings = await ladysSettings();
   const members = await ladysSelect("ladys_members", "select=*");
   const msgs = await ladysSelect("ladys_messages",
@@ -220,7 +220,7 @@ export async function ladysProcessPending(cardTitle: string): Promise<{ status: 
         ...(privateLife.length ? [`🔒 私密紀錄 ${privateLife.length} 筆(到 LIFF 生活頁查看)`] : [])] : []),
       "有記錯的話,點下面按鈕修改 👇",
     ];
-    card = ladysCard(cardTitle, lines, { view: "list", label: "查看修改" });
+    card = ladysCard(cardTitle, lines, { view: "list", label: "查看修改" }, { hero });
   }
   return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, life: life.length, gcal }, card };
 }
