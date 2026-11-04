@@ -173,6 +173,11 @@ const LADYS_VIEWS: Record<LadysView, [string, string]> = {
 };
 const LADYS_SHORTCUTS: LadysView[] = ["calendar", "money", "goals", "todos", "settings"];
 
+// 動畫(APNG,scripts/ladys_anim.py 產生,放在 GitHub Pages)
+const LADYS_ANIM_BASE = "https://ptgaminglife.github.io/mainwork/ladys/anim/";
+export type LadysHero = "morning" | "night" | "update" | "menu";
+export type LadysCardOpts = { hero?: LadysHero; anim?: boolean };
+
 export function ladysLiffUri(view: LadysView): string {
   return LADYS_LIFF_URL ? `${LADYS_LIFF_URL}${LADYS_LIFF_URL.includes("?") ? "&" : "?"}view=${view}` : "https://line.me";
 }
@@ -187,10 +192,12 @@ function ladysCircle(px: number, view: LadysView, inner: unknown[]) {
   };
 }
 
-function ladysCircleFooter(primary: { view: LadysView; label?: string }) {
+function ladysCircleFooter(primary: { view: LadysView; label?: string }, anim = false) {
   const [emoji, name] = LADYS_VIEWS[primary.view];
   const big = ladysCircle(176, primary.view, [
-    { type: "text", text: emoji, size: "3xl", align: "center" },
+    anim
+      ? { type: "image", url: `${LADYS_ANIM_BASE}icon-${primary.view}.png`, size: "96px", aspectRatio: "1:1", animated: true }
+      : { type: "text", text: emoji, size: "3xl", align: "center" },
     { type: "text", text: primary.label ?? name, size: "md", color: "#FFFFFF", weight: "bold", align: "center" },
   ]);
   const smalls = LADYS_SHORTCUTS.filter((v) => v !== primary.view).slice(0, 4).map((v) => ({
@@ -211,13 +218,16 @@ function ladysCircleFooter(primary: { view: LadysView; label?: string }) {
 }
 
 // 卡片:標題 + 多行文字 + 選用的圓形按鈕區(primary = 主要大圓要開的頁面)
-export function ladysCard(title: string, lines: string[], primary?: { view: LadysView; label?: string }) {
+export function ladysCard(title: string, lines: string[], primary?: { view: LadysView; label?: string }, opts: LadysCardOpts = {}) {
   return {
     type: "flex",
     altText: `${title}|${lines[0] ?? ""}`.slice(0, 380),
     contents: {
       type: "bubble",
       styles: { body: { backgroundColor: LADYS_C.bg }, footer: { backgroundColor: LADYS_C.bg } },
+      ...(opts.hero ? {
+        hero: { type: "image", url: `${LADYS_ANIM_BASE}hero-${opts.hero}.png`, size: "full", aspectRatio: "3:1", aspectMode: "cover", animated: true },
+      } : {}),
       body: {
         type: "box", layout: "vertical", spacing: "sm",
         contents: [
@@ -230,7 +240,7 @@ export function ladysCard(title: string, lines: string[], primary?: { view: Lady
           })),
         ],
       },
-      ...(primary ? { footer: ladysCircleFooter(primary) } : {}),
+      ...(primary ? { footer: ladysCircleFooter(primary, opts.anim === true) } : {}),
     },
   };
 }
