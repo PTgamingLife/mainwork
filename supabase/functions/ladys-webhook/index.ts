@@ -11,12 +11,13 @@ import {
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
+import { ladysImageToText } from "../_shared/ladys-image.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
 const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
-const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆"];
+const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆", "記憶圖片"];
 
 async function ladysVerifySignature(raw: string, sig: string): Promise<boolean> {
   if (!LADYS_LINE_SECRET || !sig) return false;
@@ -116,8 +117,38 @@ async function ladysCmdUpdateNow() {
   }
 }
 
-async function ladysRunCommand(text: string) {
+// 「記憶圖片」:必須「回覆」一張圖片輸入。讀出文字 → 當成一則對話 → 立刻用一般整理流程分類(行程/支出/待辦/目標/生活紀錄)
+const LADYS_IMG_ERR: Record<string, string> = {
+  IMG_GONE: "這張圖片已經過期,LINE 不再提供下載了,請重新傳一次再回覆它 🙏",
+  IMG_TOO_BIG: "圖片太大了,請截小一點再傳 🙏",
+  IMG_NOT_IMAGE: "回覆的不是圖片喔,請長按圖片 →「回覆」→ 輸入「記憶圖片」",
+};
+async function ladysCmdMemoryImage(ev: any, groupId: string) {
+  const quoted = String(ev.message?.quotedMessageId ?? "");
+  if (!quoted) return { type: "text", text: "請長按要記的圖片 →「回覆」→ 輸入「記憶圖片」📸" };
+  try {
+    const text = await ladysImageToText(quoted);
+    if (!text) return { type: "text", text: "這張圖片沒有讀到文字 🤔" };
+    const inserted = await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
+      ladys_line_msg_id: `img-${quoted}`,
+      ladys_group_id: groupId,
+      ladys_user_uid: ev.source?.userId ?? null,
+      ladys_text: ladysMask(`[圖片文字]\n${text}`).slice(0, 3000),
+      ladys_sent_at: new Date(Number(ev.timestamp)).toISOString(),
+    }, "resolution=ignore-duplicates,return=representation");
+    if (!inserted.length) return { type: "text", text: "這張圖片之前已經記過了 👌" };
+    const r = await ladysProcessPending("圖片記好了 📸");
+    return r.card ?? { type: "text", text: "看完圖片了,沒有需要記錄的行程、支出、目標、待辦或生活紀錄 👌" };
+  } catch (e) {
+    const code = e instanceof Error ? e.message : String(e);
+    console.error("ladys memory-image", code);
+    return { type: "text", text: LADYS_IMG_ERR[code] ?? "讀圖片時出了點問題,請稍後再試一次 🙏" };
+  }
+}
+
+async function ladysRunCommand(text: string, ev?: any, groupId = "") {
   switch (text) {
+    case "記憶圖片": return await ladysCmdMemoryImage(ev, groupId);
     case "更新行事曆": return await ladysCmdUpdateNow();
     case "行程": return await ladysCmdSchedule();
     case "帳": return await ladysCmdExpenses();
@@ -162,7 +193,7 @@ async function ladysHandle(ev: any, settings: any) {
 
     if (uid) await ladysEnsureMember(gid, uid);
     if (LADYS_COMMANDS.includes(text)) {
-      await ladysReply(ev.replyToken, [await ladysRunCommand(text)]);
+      await ladysReply(ev.replyToken, [await ladysRunCommand(text, ev, gid)]);
       return;
     }
     await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
@@ -177,7 +208,7 @@ async function ladysHandle(ev: any, settings: any) {
 
   // 一對一聊天室:只回應帳號擁有者與成員(你、老婆)的指令,其他人一律不理
   if (src.type === "user" && uid && LADYS_COMMANDS.includes(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
-    await ladysReply(ev.replyToken, [await ladysRunCommand(text)]);
+    await ladysReply(ev.replyToken, [await ladysRunCommand(text, ev, boundGroup ?? "direct")]);
   }
 }
 
