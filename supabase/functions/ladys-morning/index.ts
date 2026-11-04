@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       ...(tomorrowList.length ? [`【明天 ${ladysDayLabel(tomorrow)}】`, ...tomorrowList.map(ladysEventLine)] : []),
       ...(annivLines.length ? ["【紀念日倒數】", ...annivLines] : []),
     ];
-    await ladysPush(settings.ladys_group_id, [ladysCard("今日行程", lines, { view: "calendar" })]);
+    await ladysPush(settings.ladys_group_id, [ladysCard("今日行程", lines, { view: "calendar" }, { hero: "morning" })]);
     await ladysFinishRun(runId, "done", { today: todayList.length, tomorrow: tomorrowList.length, anniv: annivLines.length, periodSent });
     return ladysJson({ ok: true, today: todayList.length, tomorrow: tomorrowList.length });
   } catch (e) {

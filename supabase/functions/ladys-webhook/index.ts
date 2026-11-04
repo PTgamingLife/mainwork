@@ -102,13 +102,13 @@ async function ladysCmdNotes(goal: boolean) {
 }
 
 function ladysCmdMenu() {
-  return ladysCard("LadyS 選單", ["想看什麼?點下面的圓圈 👇"], { view: "calendar" });
+  return ladysCard("LadyS 選單", ["想看什麼?點下面的圓圈 👇"], { view: "calendar" }, { hero: "menu" });
 }
 
 // 「更新行事曆」:立刻整理到目前為止還沒整理的對話(與晚間整理同一套邏輯),用 reply 回覆不吃推播額度
 async function ladysCmdUpdateNow() {
   try {
-    const r = await ladysProcessPending("剛剛的對話整理好了");
+    const r = await ladysProcessPending("剛剛的對話整理好了", "update");
     if (r.card) return r.card;
     return { type: "text", text: r.status === "empty" ? "目前沒有新的對話需要整理 👌" : "看過新的對話了,沒有需要記錄的行程、支出、目標或待辦 👌" };
   } catch (e) {
@@ -137,7 +137,7 @@ async function ladysCmdMemoryImage(ev: any, groupId: string) {
       ladys_sent_at: new Date(Number(ev.timestamp)).toISOString(),
     }, "resolution=ignore-duplicates,return=representation");
     if (!inserted.length) return { type: "text", text: "這張圖片之前已經記過了 👌" };
-    const r = await ladysProcessPending("圖片記好了 📸");
+    const r = await ladysProcessPending("圖片記好了 📸", "update");
     return r.card ?? { type: "text", text: "看完圖片了,沒有需要記錄的行程、支出、目標、待辦或生活紀錄 👌" };
   } catch (e) {
     const code = e instanceof Error ? e.message : String(e);

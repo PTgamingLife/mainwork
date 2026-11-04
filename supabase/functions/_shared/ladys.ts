@@ -176,7 +176,7 @@ const LADYS_SHORTCUTS: LadysView[] = ["calendar", "money", "goals", "todos", "se
 // 動畫(APNG,scripts/ladys_anim.py 產生,放在 GitHub Pages)
 const LADYS_ANIM_BASE = "https://ptgaminglife.github.io/mainwork/ladys/anim/";
 export type LadysHero = "morning" | "night" | "update" | "menu";
-export type LadysCardOpts = { hero?: LadysHero; anim?: boolean };
+export type LadysCardOpts = { hero?: LadysHero; anim?: boolean }; // anim 預設開(大圓動畫),傳 false 關閉
 
 export function ladysLiffUri(view: LadysView): string {
   return LADYS_LIFF_URL ? `${LADYS_LIFF_URL}${LADYS_LIFF_URL.includes("?") ? "&" : "?"}view=${view}` : "https://line.me";
@@ -240,7 +240,7 @@ export function ladysCard(title: string, lines: string[], primary?: { view: Lady
           })),
         ],
       },
-      ...(primary ? { footer: ladysCircleFooter(primary, opts.anim === true) } : {}),
+      ...(primary ? { footer: ladysCircleFooter(primary, opts.anim !== false) } : {}),
     },
   };
 }
