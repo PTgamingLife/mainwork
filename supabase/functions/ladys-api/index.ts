@@ -4,7 +4,7 @@
 // secrets:見 _shared/ladys.ts
 
 import {
-  ladysAddDays, ladysDayStartIso, ladysInsert, ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
+  ladysAddDays, ladysDayStartIso, ladysDeleteWhere, ladysInsert, ladysLine, ladysSelect, ladysSettings, ladysTodayTaipei, ladysUpdate,
 } from "../_shared/ladys.ts";
 import { ladysGcalSweep } from "../_shared/ladys-gcal.ts";
 import { ladysPeriodStats } from "../_shared/ladys-life.ts";
@@ -61,8 +61,14 @@ async function ladysLoad(uid: string) {
       "&select=id,ladys_date,ladys_kind,ladys_content,ladys_owner"),
   ]);
   delete settings.ladys_group_id;
+  const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
+  delete settings.ladys_work_group_ids;
+  const workGroups = await Promise.all(workIds.map(async (id) => {
+    try { return { id, name: String((await ladysLine(`group/${id}/summary`, undefined, "GET")).groupName ?? "工作群") }; }
+    catch { return { id, name: "工作群(名稱讀取失敗)" }; }
+  }));
   const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
-  return { me: uid, today, settings, gcalReady, members, events, yearly, expenses, notes, life, period: ladysPeriodStats(life) };
+  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, notes, life, period: ladysPeriodStats(life) };
 }
 
 function ladysEventRow(b: any) {
@@ -162,6 +168,18 @@ async function ladysSaveMember(b: any) {
   return r ?? bad("NOT_FOUND");
 }
 
+// 解除工作群:移出名單並讓 LadyS 退出該群組(待整理的原文一併刪除)
+async function ladysUnbindWork(id: unknown) {
+  if (typeof id !== "string" || !/^C[0-9a-f]{32}$/.test(id)) bad("BAD_ID");
+  const s = await ladysSettings();
+  const list: string[] = (s.ladys_work_group_ids ?? []).filter((g: string) => g !== id);
+  await ladysUpdate("ladys_settings", "id=eq.1", { ladys_work_group_ids: list, ladys_updated_at: now() });
+  await ladysDeleteWhere("ladys_messages", `ladys_group_id=eq.${id}`);
+  let left = true;
+  try { await ladysLine(`group/${id}/leave`); } catch { left = false; }
+  return { left };
+}
+
 // 行程異動後順手同步 Google;失敗不影響儲存,只回報錯誤
 async function ladysGcalSafe() {
   try { return await ladysGcalSweep(); } catch (e) { return { synced: 0, deleted: 0, errors: [String(e instanceof Error ? e.message : e).slice(0, 160)] }; }
@@ -194,6 +212,7 @@ Deno.serve(async (req) => {
     }
     if (a === "settings") { await ladysSaveSettings(body.data ?? {}); return json({ ok: true, gcal: await ladysGcalSafe() }); }
     if (a === "member") return json({ ok: true, row: await ladysSaveMember(body.data ?? {}) });
+    if (a === "unbindWork") return json({ ok: true, ...(await ladysUnbindWork(body.id)) });
     return json({ error: "BAD_ACTION" }, 400);
   } catch (e) {
     if (e instanceof LadysBad) return json({ error: e.message }, 400);

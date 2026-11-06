@@ -13,6 +13,7 @@ import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysImageToText } from "../_shared/ladys-image.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
+import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
@@ -173,13 +174,11 @@ async function ladysHandle(ev: any, settings: any) {
   const src = ev.source ?? {};
   const boundGroup: string | null = settings.ladys_group_id ?? null;
 
-  // 被拉進群組:已綁定別的群組 → 直接退出;還沒綁定 → 等綁定碼
+  const workGroups: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
+
+  // 被拉進群組:家庭群組還沒綁定 → 提示綁定碼;已綁定 → 完全不說話,等工作群綁定碼(沒綁定的群組什麼都不記)
   if (ev.type === "join" && src.type === "group") {
-    if (boundGroup && boundGroup !== src.groupId) {
-      await ladysLine(`group/${src.groupId}/leave`);
-    } else if (!boundGroup) {
-      await ladysReply(ev.replyToken, [{ type: "text", text: "我是 LadyS 👋 請輸入「LadyS 綁定 <綁定碼>」啟用。" }]);
-    }
+    if (!boundGroup) await ladysReply(ev.replyToken, [{ type: "text", text: "我是 LadyS 👋 請輸入「LadyS 綁定 <綁定碼>」啟用。" }]);
     return;
   }
   if (src.type === "room") { await ladysLine(`room/${src.roomId}/leave`); return; }
@@ -189,7 +188,8 @@ async function ladysHandle(ev: any, settings: any) {
     const puid: string = src.userId ?? "";
     const okSrc = src.type === "group" ? src.groupId === boundGroup : src.type === "user";
     if (!okSrc || !puid || !(puid === LADYS_OWNER_UID || await ladysIsMember(puid))) return;
-    const msg = await ladysHandleDeletePostback(String(ev.postback?.data ?? ""));
+    const data = String(ev.postback?.data ?? "");
+    const msg = (await ladysHandleDeletePostback(data)) ?? (await ladysHandleWorkPostback(data));
     if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
     return;
   }
@@ -209,7 +209,22 @@ async function ladysHandle(ev: any, settings: any) {
       }
       return;
     }
-    if (gid !== boundGroup) { await ladysLine(`group/${gid}/leave`); return; }
+    if (gid !== boundGroup) {
+      // 工作群:只記錄文字、絕不回話、不跑任何指令
+      if (workGroups.includes(gid)) {
+        await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
+          ladys_line_msg_id: String(ev.message.id), ladys_group_id: gid, ladys_user_uid: uid || null,
+          ladys_text: ladysMask(text).slice(0, 2000), ladys_sent_at: new Date(Number(ev.timestamp)).toISOString(),
+        }, "resolution=ignore-duplicates,return=minimal");
+        return;
+      }
+      // 尚未綁定的群組:只認「LadyS 紀錄 <綁定碼>」,且必須是你或老婆打的;安靜綁定,不回話
+      const w = text.match(/^LadyS\s*紀錄\s*(\S+)$/i);
+      if (w && LADYS_BIND_CODE && w[1] === LADYS_BIND_CODE && uid && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
+        await ladysUpdate("ladys_settings", "id=eq.1", { ladys_work_group_ids: [...new Set([...workGroups, gid])].slice(0, 5), ladys_updated_at: new Date().toISOString() });
+      }
+      return;
+    }
 
     if (uid) await ladysEnsureMember(gid, uid);
     if (LADYS_COMMANDS.includes(text)) {
