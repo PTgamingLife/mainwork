@@ -12,6 +12,7 @@ import {
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysImageToText } from "../_shared/ladys-image.ts";
+import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 
 const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
@@ -109,7 +110,7 @@ function ladysCmdMenu() {
 async function ladysCmdUpdateNow() {
   try {
     const r = await ladysProcessPending("剛剛的對話整理好了", "update");
-    if (r.card) return r.card;
+    if (r.cards.length) return r.cards;
     return { type: "text", text: r.status === "empty" ? "目前沒有新的對話需要整理 👌" : "看過新的對話了,沒有需要記錄的行程、支出、目標或待辦 👌" };
   } catch (e) {
     console.error("ladys update-now", e instanceof Error ? e.message : e);
@@ -138,7 +139,7 @@ async function ladysCmdMemoryImage(ev: any, groupId: string) {
     }, "resolution=ignore-duplicates,return=representation");
     if (!inserted.length) return { type: "text", text: "這張圖片之前已經記過了 👌" };
     const r = await ladysProcessPending("圖片記好了 📸", "update");
-    return r.card ?? { type: "text", text: "看完圖片了,沒有需要記錄的行程、支出、目標、待辦或生活紀錄 👌" };
+    return r.cards.length ? r.cards : { type: "text", text: "看完圖片了,沒有需要記錄的行程、支出、目標、待辦或生活紀錄 👌" };
   } catch (e) {
     const code = e instanceof Error ? e.message : String(e);
     console.error("ladys memory-image", code);
@@ -158,6 +159,15 @@ async function ladysRunCommand(text: string, ev?: any, groupId = "") {
   }
 }
 
+// 多則一起回覆;若 LINE 拒收(格式問題)就退回只送第一則,確保使用者至少看到整理卡
+async function ladysReplySafe(token: string, msgs: unknown[]) {
+  try { await ladysReply(token, msgs); } catch (e) {
+    if (msgs.length < 2) throw e;
+    console.error("ladys reply multi failed, fallback", e instanceof Error ? e.message : e);
+    await ladysReply(token, msgs.slice(0, 1));
+  }
+}
+
 // ---------- 事件 ----------
 async function ladysHandle(ev: any, settings: any) {
   const src = ev.source ?? {};
@@ -173,6 +183,16 @@ async function ladysHandle(ev: any, settings: any) {
     return;
   }
   if (src.type === "room") { await ladysLine(`room/${src.roomId}/leave`); return; }
+
+  // 刪除確認卡的按鈕:只接受綁定群組裡的成員,或帳號擁有者 / 成員的一對一
+  if (ev.type === "postback") {
+    const puid: string = src.userId ?? "";
+    const okSrc = src.type === "group" ? src.groupId === boundGroup : src.type === "user";
+    if (!okSrc || !puid || !(puid === LADYS_OWNER_UID || await ladysIsMember(puid))) return;
+    const msg = await ladysHandleDeletePostback(String(ev.postback?.data ?? ""));
+    if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
+    return;
+  }
   if (ev.type !== "message" || ev.message?.type !== "text") return; // 照片/貼圖/語音暫不處理
 
   const text = String(ev.message.text ?? "").trim();
@@ -193,7 +213,7 @@ async function ladysHandle(ev: any, settings: any) {
 
     if (uid) await ladysEnsureMember(gid, uid);
     if (LADYS_COMMANDS.includes(text)) {
-      await ladysReply(ev.replyToken, [await ladysRunCommand(text, ev, gid)]);
+      await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat());
       return;
     }
     await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
@@ -208,7 +228,7 @@ async function ladysHandle(ev: any, settings: any) {
 
   // 一對一聊天室:只回應帳號擁有者與成員(你、老婆)的指令,其他人一律不理
   if (src.type === "user" && uid && LADYS_COMMANDS.includes(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
-    await ladysReply(ev.replyToken, [await ladysRunCommand(text, ev, boundGroup ?? "direct")]);
+    await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, boundGroup ?? "direct")].flat());
   }
 }
 
