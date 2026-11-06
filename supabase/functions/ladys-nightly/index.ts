@@ -19,8 +19,15 @@ Deno.serve(async (req) => {
   try {
     const r = await ladysProcessPending(`${ladysDayLabel(runDate)} 今日整理`);
     const settings = await ladysSettings();
-    const pushed = !!(r.card && settings.ladys_group_id);
-    if (pushed) await ladysPush(settings.ladys_group_id, [r.card]);
+    const pushed = !!(r.cards.length && settings.ladys_group_id);
+    if (pushed) {
+      // 整理卡 + 刪除確認卡同一次推送,只算 1 則;若格式被拒,退回只推整理卡
+      try { await ladysPush(settings.ladys_group_id, r.cards); } catch (e) {
+        if (r.cards.length < 2) throw e;
+        console.error("ladys nightly multi push failed, fallback", e instanceof Error ? e.message : e);
+        await ladysPush(settings.ladys_group_id, r.cards.slice(0, 1));
+      }
+    }
     await ladysFinishRun(runId, r.status, { ...r.detail, pushed });
     return ladysJson({ ok: true, status: r.status, detail: r.detail, pushed });
   } catch (e) {

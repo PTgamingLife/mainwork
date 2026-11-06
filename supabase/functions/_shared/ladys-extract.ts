@@ -9,6 +9,7 @@ import {
 } from "./ladys.ts";
 import { ladysGcalSweep } from "./ladys-gcal.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "./ladys-life.ts";
+import { ladysDeleteConfirmCard } from "./ladys-obsolete.ts";
 
 const LADYS_MODEL = "claude-haiku-5-5";
 const LADYS_MAX_MESSAGES = 600;
@@ -24,7 +25,7 @@ const OWNER = { type: "string", enum: ["husband", "wife", "both"] };
 const IDS = { type: "array", items: { type: "integer" } };
 const LADYS_SCHEMA = {
   type: "object", additionalProperties: false,
-  required: ["events", "expenses", "notes", "life", "summary"],
+  required: ["events", "expenses", "notes", "life", "obsolete", "summary"],
   properties: {
     events: {
       type: "array",
@@ -71,6 +72,14 @@ const LADYS_SCHEMA = {
         },
       },
     },
+    obsolete: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["ref", "reason"],
+        properties: { ref: { type: "string" }, reason: { type: "string" } },
+      },
+    },
     summary: { type: "string" },
   },
 };
@@ -108,6 +117,7 @@ function ladysSystemPrompt(settings: any, memberDesc: string) {
 - life(生活紀錄):已經發生的生活細節,date 為發生日。經期:「月經來了/MC 來」→ period_start,「結束了/乾淨了」→ period_end,owner 通常是 wife;身體狀況(感冒、看醫生、體重、吃藥、睡眠)→ health;其他值得記住的生活細節(喜好、尺寸、某人說過的重要事)→ other。content 寫成一句完整描述。
 - 生日、結婚紀念日、交往紀念日、各種週年 → events 且 yearly=true,date 用原始日期(知道年份就用原始年份,不知道就用今年),title 寫清楚是誰的什麼紀念日;其他行程 yearly=false。
 - events:約會、看診、聚餐、繳費日、接送、要在某天做或說的事。title 要具體(例如「跟媽媽分享:請款30、誰先找到工作誰上班、家裡場地借用」)。time 用 HH:MM,沒講時間就給空字串(視為全天);end_time 沒講給空字串;location 沒講給空字串。
+- obsolete:對話明確說「已存在的行程」中某筆改期、取消、不去了、改地點時間 → 填那筆的編號(例如 E3)與 20 字內原因(例如「改到 11/12」);改期的新日期照常放 events。只填清單裡有的編號,不確定就不要填。
 - 同一件事被多次提到只記一次;下方「已存在的行程」已經記過的不要重複輸出。只是閒聊、假設、已取消的不要記。
 - expenses:只記實際花掉或確定要付的金額(新台幣整數)。date 為消費日。note 簡短寫買了什麼。
 - notes:goal 寫成可衡量的目標(含期限、數字);todo 寫成可執行的一句話(要買的東西、要準備的文件也是 todo)。不要記密碼、帳號、身分證字號等敏感資料。
@@ -120,7 +130,7 @@ async function ladysExtract(settings: any, members: any[], msgs: any[], existing
   const memberDesc = members.map((m) => `${m.ladys_role === "wife" ? "wife=老婆" : "husband=老公"} ${m.ladys_name}`).join(";") || "老公、老婆";
   const transcript = msgs.map((m) => `[#${m.id} ${ladysStamp(m.ladys_sent_at)}] ${nameOf.get(m.ladys_user_uid) ?? "成員"}:${m.ladys_text}`).join("\n");
   const existingText = existing.length
-    ? existing.map((e) => `- ${ladysTodayTaipei(new Date(e.ladys_start_at))} ${e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at)} ${e.ladys_title}`).join("\n")
+    ? existing.map((e, i) => `- [E${i + 1}] ${ladysTodayTaipei(new Date(e.ladys_start_at))} ${e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at)} ${e.ladys_title}`).join("\n")
     : "(無)";
 
   const res = await ladysClient.messages.create({
@@ -141,12 +151,12 @@ function ladysEventStartIso(date: string, time: string) {
 }
 
 // 整理所有還沒整理的群組訊息;回傳結果與(有抽到東西時)要發到群組的卡片
-export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "night"): Promise<{ status: string; detail: any; card: unknown | null }> {
+export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "night"): Promise<{ status: string; detail: any; cards: unknown[] }> {
   const settings = await ladysSettings();
   const members = await ladysSelect("ladys_members", "select=*");
   const msgs = await ladysSelect("ladys_messages",
     `ladys_processed_at=is.null&order=ladys_sent_at.asc&limit=${LADYS_MAX_MESSAGES}&select=id,ladys_user_uid,ladys_text,ladys_sent_at`);
-  if (!msgs.length) return { status: "empty", detail: { messages: 0 }, card: null };
+  if (!msgs.length) return { status: "empty", detail: { messages: 0 }, cards: [] };
 
   const today = ladysTodayTaipei();
   // 已存在的行程(含每年重複的紀念日),避免 AI 重複記
@@ -203,10 +213,16 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
   let gcal: unknown = null;
   try { gcal = await ladysGcalSweep(); } catch (e) { gcal = { error: String(e instanceof Error ? e.message : e).slice(0, 160) }; }
 
+  // 被改期 / 取消的舊行程(只認一般行程,不動每年重複的紀念日)
+  const seen = new Set<string>();
+  const obsolete = (Array.isArray(out.obsolete) ? out.obsolete : [])
+    .map((o: any) => ({ event: existing[Number(String(o.ref ?? "").replace(/^E/i, "")) - 1], reason: clip(o.reason, 40) }))
+    .filter((o: any) => o.event?.id && o.event.ladys_recur !== "yearly" && !seen.has(o.event.id) && seen.add(o.event.id));
+
   const total = events.length + expenses.length + notes.length + life.length;
   const privateLife = life.filter((l: any) => l.ladys_kind.startsWith("period"));
   const publicLife = life.filter((l: any) => !l.ladys_kind.startsWith("period"));
-  let card: unknown | null = null;
+  const cards: unknown[] = [];
   if (total > 0) {
     const lines = [
       clip(out.summary, 60) || "今天辛苦了 🌙",
@@ -220,7 +236,8 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
         ...(privateLife.length ? [`🔒 私密紀錄 ${privateLife.length} 筆(到 LIFF 生活頁查看)`] : [])] : []),
       "有記錯的話,點下面按鈕修改 👇",
     ];
-    card = ladysCard(cardTitle, lines, { view: "list", label: "查看修改" }, { hero });
+    cards.push(ladysCard(cardTitle, lines, { view: "list", label: "查看修改" }, { hero }));
   }
-  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, life: life.length, gcal }, card };
+  if (obsolete.length) cards.push(ladysDeleteConfirmCard(obsolete));
+  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, notes: notes.length, life: life.length, obsolete: obsolete.length, gcal }, cards };
 }
