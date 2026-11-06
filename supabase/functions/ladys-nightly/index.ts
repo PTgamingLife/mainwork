@@ -7,6 +7,7 @@ import {
   ladysCheckCronKey, ladysClaimRun, ladysDayLabel, ladysFinishRun, ladysJson, ladysPush, ladysSettings, ladysTodayTaipei,
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
+import { ladysWorkProcess } from "../_shared/ladys-work.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return ladysJson({ error: "METHOD" }, 405);
@@ -19,6 +20,15 @@ Deno.serve(async (req) => {
   try {
     const r = await ladysProcessPending(`${ladysDayLabel(runDate)} 今日整理`);
     const settings = await ladysSettings();
+    // 工作群的待確認卡附在同一次推送(最多 5 則);工作群失敗不影響家庭整理
+    let work: any = null;
+    try {
+      const w = await ladysWorkProcess(settings);
+      work = w.detail;
+      r.cards.push(...w.cards);
+    } catch (e) { work = { error: String(e instanceof Error ? e.message : e).slice(0, 160) }; }
+    r.cards = r.cards.slice(0, 5);
+    r.detail = { ...r.detail, work };
     const pushed = !!(r.cards.length && settings.ladys_group_id);
     if (pushed) {
       // 整理卡 + 刪除確認卡同一次推送,只算 1 則;若格式被拒,退回只推整理卡

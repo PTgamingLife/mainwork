@@ -159,6 +159,10 @@ function viewSettings() {
     <input id="ladysGcalId" placeholder="xxxx@group.calendar.google.com" value="${esc(s.ladys_gcal_calendar_id)}"></div>
     <div class="s" style="color:var(--ladys-muted);font-size:12px">單向同步:在 LadyS 新增/修改/刪除會更新到 Google;在 Google 上改的不會回來。</div></div>
     ${lifeSettingsHtml(s)}
+    <div class="ladys-sec">💼 工作群(只記錄、不說話)</div><div class="ladys-card">
+    ${(ladysS.data.workGroups || []).map((g) => `<div class="ladys-switch"><span>${esc(g.name)}</span><button class="ladys-btn danger" style="flex:0 0 auto;padding:6px 12px" data-unbind="${esc(g.id)}">解除</button></div>`).join("")
+      || '<div class="s" style="color:var(--ladys-muted);font-size:12px">還沒有工作群</div>'}
+    <div class="s" style="color:var(--ladys-muted);font-size:12px;margin-top:8px">把 LadyS 拉進工作群後,由你在群裡輸入「LadyS 紀錄 綁定碼」。LadyS 在工作群不會回話,每晚把重點整理成確認卡發到家庭群組,按 ✅ 才會加入。</div></div>
     <div class="ladys-sec">成員</div><div class="ladys-card">${ladysS.data.members.map((m) => `<div class="ladys-row2 ladys-mrow">
       <input data-mname="${m.ladys_line_uid}" value="${esc(m.ladys_name)}" maxlength="20">
       <select data-mrole="${m.ladys_line_uid}"><option value="husband" ${m.ladys_role === "husband" ? "selected" : ""}>👨 老公</option><option value="wife" ${m.ladys_role === "wife" ? "selected" : ""}>👩 老婆</option></select></div>`).join("")}
@@ -255,6 +259,11 @@ document.addEventListener("click", async (ev) => {
     document.querySelectorAll("[data-persona]").forEach((b) => b.classList.toggle("on", b === t));
     $("ladysCustomBox").style.display = t.dataset.persona === "custom" ? "" : "none"; return;
   }
+  if (t.dataset.unbind) {
+    if (!confirm("解除後 LadyS 會退出這個工作群,確定?")) return;
+    try { await ladysApi("unbindWork", { id: t.dataset.unbind }); await reload(); toast("已解除"); } catch (e) { toast("解除失敗"); }
+    return;
+  }
   if (t.id === "ladysSaveSettings") {
     const data = { persona: document.querySelector("[data-persona].on")?.dataset.persona, persona_custom: $("ladysCustom").value, morning_time: $("ladysMorning").value, nightly_time: $("ladysNightly").value, gcal_calendar_id: $("ladysGcalId").value.trim(),
       anniv_remind_days: $("ladysAnnivDays").value.split(/[,，\s]+/).filter(Boolean).map(Number), period_remind_days: Number($("ladysPeriodDays").value),
@@ -278,6 +287,7 @@ function ladysMockApi(action, extra) {
     const today = ymdOf(new Date().toISOString()), at = (n, hm) => new Date(new Date(today + "T" + (hm || "00:00") + ":00+08:00").getTime() + n * 864e5).toISOString();
     const id = () => crypto.randomUUID();
     return { me: "Umock", today, settings: { ladys_persona: "butler", ladys_persona_custom: "", ladys_morning_time: "07:30", ladys_nightly_time: "23:00", ladys_push_empty: true, ladys_extract_events: true, ladys_extract_expenses: true, ladys_extract_notes: true, ladys_gcal_enabled: false, ladys_gcal_calendar_id: null, ladys_anniv_remind_days: [7, 0], ladys_period_remind_days: 2, ladys_period_remind_to: "both" }, gcalReady: false,
+      workGroups: [{ id: "C" + "c".repeat(32), name: "某某公司專案群" }],
       yearly: [{ id: id(), ladys_title: "結婚紀念日", ladys_start_at: "2020-07-02T16:00:00.000Z", ladys_end_at: null, ladys_all_day: true, ladys_owner: "both", ladys_location: "", ladys_recur: "yearly" }],
       life: [{ id: id(), ladys_date: addDaysYmd(today, -3), ladys_kind: "period_start", ladys_content: "經期開始", ladys_owner: "wife" },
         { id: id(), ladys_date: addDaysYmd(today, -31), ladys_kind: "period_start", ladys_content: "經期開始", ladys_owner: "wife" },
@@ -314,6 +324,7 @@ function ladysMockApi(action, extra) {
   }
   if (action === "settings" && extra.data.gcal_calendar_id && !/^[\w.+-]+@[\w.-]+$/.test(extra.data.gcal_calendar_id)) return Promise.reject(new Error("BAD_CALENDAR_ID"));
   if (action === "settings") { for (const [k, v] of Object.entries(extra.data)) if (v !== undefined) db.settings["ladys_" + k] = v; return Promise.resolve({ ok: true }); }
+  if (action === "unbindWork") { db.workGroups = db.workGroups.filter((g) => g.id !== extra.id); return Promise.resolve({ ok: true }); }
   if (action === "member") { const m = db.members.find((x) => x.ladys_line_uid === extra.data.uid); m.ladys_name = extra.data.name; m.ladys_role = extra.data.role; return Promise.resolve({ ok: true }); }
   return Promise.reject(new Error("BAD_ACTION"));
 }

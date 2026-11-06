@@ -154,8 +154,10 @@ function ladysEventStartIso(date: string, time: string) {
 export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "night"): Promise<{ status: string; detail: any; cards: unknown[] }> {
   const settings = await ladysSettings();
   const members = await ladysSelect("ladys_members", "select=*");
+  if (!settings.ladys_group_id) return { status: "empty", detail: { messages: 0 }, cards: [] };
+  // 只整理家庭群組的訊息(工作群另由 ladys-work.ts 處理)
   const msgs = await ladysSelect("ladys_messages",
-    `ladys_processed_at=is.null&order=ladys_sent_at.asc&limit=${LADYS_MAX_MESSAGES}&select=id,ladys_user_uid,ladys_text,ladys_sent_at`);
+    `ladys_group_id=eq.${encodeURIComponent(settings.ladys_group_id)}&ladys_processed_at=is.null&order=ladys_sent_at.asc&limit=${LADYS_MAX_MESSAGES}&select=id,ladys_user_uid,ladys_text,ladys_sent_at`);
   if (!msgs.length) return { status: "empty", detail: { messages: 0 }, cards: [] };
 
   const today = ladysTodayTaipei();
@@ -206,9 +208,8 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
   if (expenses.length) await ladysInsert("ladys_expenses", expenses, "return=minimal");
   if (notes.length) await ladysInsert("ladys_notes", notes, "return=minimal");
 
-  const maxId = Math.max(...msgs.map((m) => Number(m.id)));
   // 整理完立刻刪除原文,只留整理結果(AI 失敗時不會走到這裡,原文保留到下次重試)
-  await ladysDeleteWhere("ladys_messages", `id=lte.${maxId}`);
+  await ladysDeleteWhere("ladys_messages", `id=in.(${msgs.map((m) => Number(m.id)).join(",")})`);
 
   let gcal: unknown = null;
   try { gcal = await ladysGcalSweep(); } catch (e) { gcal = { error: String(e instanceof Error ? e.message : e).slice(0, 160) }; }
