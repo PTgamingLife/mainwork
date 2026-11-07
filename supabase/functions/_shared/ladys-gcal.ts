@@ -43,7 +43,7 @@ function ladysGcalBody(e: any) {
   const base = {
     summary: `${LADYS_OWNER_LABEL[e.ladys_owner as "both"] ?? "👫"} ${e.ladys_title}`,
     location: e.ladys_location || undefined,
-    description: "由 LadyS 生活秘書同步。要修改請到 LINE 的 LadyS「我的記錄」。",
+    description: `${e.ladys_note ? `${e.ladys_note}\n\n—\n` : ""}由 LadyS 生活秘書同步。要修改請到 LINE 的 LadyS「我的記錄」。`,
     colorId: LADYS_GCAL_COLOR[e.ladys_owner] ?? "3",
     extendedProperties: { private: { ladys_id: e.id } },
     ...(e.ladys_recur === "yearly" ? { recurrence: ["RRULE:FREQ=YEARLY"] } : {}),

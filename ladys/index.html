@@ -88,6 +88,10 @@
   .ladys-field label { display: block; font-size: 13px; color: var(--ladys-muted); margin-bottom: 4px; }
   .ladys-field input, .ladys-field select, .ladys-field textarea { width: 100%; border: 1px solid var(--ladys-line);
     border-radius: 10px; padding: 10px; background: #FAFAFC; }
+  .ladys-field input[type=date], .ladys-field input[type=time] { -webkit-appearance: none; appearance: none; display: block;
+    min-width: 0; max-width: 100%; min-height: 44px; box-sizing: border-box; text-align: left; }
+  .ladys-field input::-webkit-date-and-time-value { text-align: left; }
+  .ladys-item .ladys-note { margin-top: 2px; }
   .ladys-row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   .ladys-mrow { margin-bottom: 8px; }
   .ladys-mrow input, .ladys-mrow select { width: 100%; min-width: 0; border: 1px solid var(--ladys-line); border-radius: 10px; padding: 10px; background: #FAFAFC; }

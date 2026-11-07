@@ -81,7 +81,7 @@ function filterChips() {
 function eventItem(e, showDate) {
   const t = e.ladys_all_day ? "全天" : hmOf(e.ladys_start_at) + (e.ladys_end_at ? "–" + hmOf(e.ladys_end_at) : "");
   return `<div class="ladys-item" data-edit="event" data-id="${e.id}"><i class="ladys-bar ladys-o-${e.ladys_owner}"></i>
-    <div class="t"><div>${esc(e.ladys_title)}${yearlyBadge(e)}</div><div class="s">${showDate ? dayLabel(ymdOf(e.ladys_start_at)) + " · " : ""}${t}${e.ladys_location ? " · 📍" + esc(e.ladys_location) : ""}</div></div>
+    <div class="t"><div>${esc(e.ladys_title)}${yearlyBadge(e)}</div><div class="s">${showDate ? dayLabel(ymdOf(e.ladys_start_at)) + " · " : ""}${t}${e.ladys_location ? " · 📍" + esc(e.ladys_location) : ""}</div>${e.ladys_note ? `<div class="s ladys-note">📝 ${esc(e.ladys_note.length > 30 ? e.ladys_note.slice(0, 30) + "…" : e.ladys_note)}</div>` : ""}</div>
     <div class="s">${LADYS_OWNER[e.ladys_owner].slice(0, 2)}</div></div>`;
 }
 
@@ -173,6 +173,7 @@ function openSheet(kind, row) {
       <div class="ladys-row2"><div class="ladys-field"><label>開始(空白=全天)</label><input type="time" id="fTime" value="${row && !row.ladys_all_day ? hmOf(row.ladys_start_at) : ""}"></div>
       <div class="ladys-field"><label>結束</label><input type="time" id="fEnd" value="${row?.ladys_end_at ? hmOf(row.ladys_end_at) : ""}"></div></div>
       <div class="ladys-field"><label>地點</label><input id="fLoc" maxlength="60" value="${esc(row?.ladys_location)}"></div>
+      <div class="ladys-field"><label>備註</label><textarea id="fNote" rows="3" maxlength="300" placeholder="要帶的東西、聯絡人、訂位細節…">${esc(row?.ladys_note)}</textarea></div>
       <div class="ladys-field"><label>是誰的</label>${seg("owner", OWNER_OPTS, row?.ladys_owner || "both")}</div>
       <label class="ladys-switch"><span>💝 每年重複(生日、紀念日)</span><input type="checkbox" id="fYearly" ${row?.ladys_recur === "yearly" ? "checked" : ""}></label>`;
   } else if (kind === "life") {
@@ -196,7 +197,7 @@ const segVal = (name) => $("ladysSheet").querySelector(`[data-seg="${name}"] .on
 async function saveSheet() {
   const sh = $("ladysSheet"), kind = sh.dataset.kind, id = sh.dataset.id || undefined, v = (x) => $(x)?.value ?? "";
   let data;
-  if (kind === "event") data = { id, title: v("fTitle"), date: v("fDate"), time: v("fTime"), end_time: v("fEnd"), location: v("fLoc"), owner: segVal("owner"), yearly: $("fYearly").checked };
+  if (kind === "event") data = { id, title: v("fTitle"), date: v("fDate"), time: v("fTime"), end_time: v("fEnd"), location: v("fLoc"), note: v("fNote"), owner: segVal("owner"), yearly: $("fYearly").checked };
   else if (kind === "life") data = { id, date: v("fDate"), kind: segVal("lkind"), content: v("fContent"), owner: segVal("owner") };
   else if (kind === "expense") data = { id, amount: v("fAmount"), date: v("fDate"), category: v("fCat"), note: v("fNote"), payer: segVal("owner"), flow: v("fFlow") };
   else { const old = ladysS.data.notes.find((n) => n.id === id); data = { id, content: v("fContent"), kind: segVal("kind"), owner: segVal("owner"), done: old?.ladys_done === true }; }
@@ -276,7 +277,7 @@ function ladysMockApi(action, extra) {
         { id: id(), ladys_date: addDaysYmd(today, -31), ladys_kind: "period_start", ladys_content: "經期開始", ladys_owner: "wife" },
         { id: id(), ladys_date: addDaysYmd(today, -1), ladys_kind: "health", ladys_content: "感冒去看醫生", ladys_owner: "husband" }],
       members: [{ ladys_line_uid: "U" + "a".repeat(32), ladys_name: "柏廷", ladys_role: "husband" }, { ladys_line_uid: "U" + "b".repeat(32), ladys_name: "老婆", ladys_role: "wife" }],
-      events: [{ id: id(), ladys_title: "跟媽媽分享:請款30、誰先找到工作誰上班", ladys_start_at: at(0), ladys_all_day: true, ladys_owner: "both", ladys_location: "" },
+      events: [{ id: id(), ladys_title: "跟媽媽分享:請款30、誰先找到工作誰上班", ladys_start_at: at(0), ladys_all_day: true, ladys_owner: "both", ladys_location: "", ladys_note: "帶存摺影本、記得先打電話確認" },
         { id: id(), ladys_title: "牙醫回診", ladys_start_at: at(1, "10:30"), ladys_end_at: at(1, "11:30"), ladys_all_day: false, ladys_owner: "wife", ladys_location: "仁愛診所" },
         { id: id(), ladys_title: "跟客戶開會", ladys_start_at: at(3, "14:00"), ladys_all_day: false, ladys_owner: "husband", ladys_location: "" }],
       expenses: [{ id: id(), ladys_date: today, ladys_amount: 850, ladys_category: "日用品", ladys_payer: "wife", ladys_note: "全聯" }, { id: id(), ladys_date: today, ladys_amount: 320, ladys_category: "餐飲", ladys_payer: "husband", ladys_note: "午餐" },
@@ -298,7 +299,7 @@ function ladysMockApi(action, extra) {
   if (action === "delete") { db[key[extra.kind]] = db[key[extra.kind]].filter((x) => x.id !== extra.id); return Promise.resolve({ ok: true }); }
   if (action === "save") {
     const b = extra.data; let row;
-    if (extra.kind === "event") { const all = !b.time; row = { ladys_title: b.title, ladys_start_at: new Date(`${b.date}T${all ? "00:00" : b.time}:00+08:00`).toISOString(), ladys_end_at: !all && b.end_time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null, ladys_all_day: all, ladys_location: b.location, ladys_owner: b.owner, ladys_recur: b.yearly ? "yearly" : "none" }; }
+    if (extra.kind === "event") { const all = !b.time; row = { ladys_title: b.title, ladys_start_at: new Date(`${b.date}T${all ? "00:00" : b.time}:00+08:00`).toISOString(), ladys_end_at: !all && b.end_time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null, ladys_all_day: all, ladys_location: b.location, ladys_note: b.note, ladys_owner: b.owner, ladys_recur: b.yearly ? "yearly" : "none" }; }
     else if (extra.kind === "life") row = { ladys_date: b.date, ladys_kind: b.kind, ladys_content: b.content || (b.kind === "period_start" ? "經期開始" : "經期結束"), ladys_owner: b.kind.startsWith("period") ? "wife" : b.owner };
     else if (extra.kind === "expense") row = { ladys_date: b.date, ladys_amount: Math.round(+b.amount), ladys_category: b.category, ladys_payer: b.payer, ladys_note: b.note, ladys_flow: b.flow };
     else row = { ladys_content: b.content, ladys_kind: b.kind, ladys_owner: b.owner, ladys_done: b.done };
