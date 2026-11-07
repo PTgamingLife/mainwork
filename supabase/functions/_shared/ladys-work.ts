@@ -18,9 +18,9 @@ const WORK_SCHEMA = {
   type: "object", additionalProperties: false, required: ["events", "todos", "expenses", "incomes"],
   properties: {
     events: { type: "array", items: { type: "object", additionalProperties: false,
-      required: ["title", "date", "time", "end_time", "location", "source_ids"],
+      required: ["title", "date", "time", "end_time", "location", "note", "source_ids"],
       properties: { title: { type: "string" }, date: { type: "string" }, time: { type: "string" },
-        end_time: { type: "string" }, location: { type: "string" }, source_ids: IDS } } },
+        end_time: { type: "string" }, location: { type: "string" }, note: { type: "string" }, source_ids: IDS } } },
     todos: { type: "array", items: { type: "object", additionalProperties: false,
       required: ["content", "source_ids"], properties: { content: { type: "string" }, source_ids: IDS } } },
     expenses: { type: "array", items: { type: "object", additionalProperties: false,
@@ -43,7 +43,7 @@ const startIso = (d: string, t: string) => new Date(`${d}T${isHm(t) ? t : "00:00
 
 function workPrompt(me: string) {
   return `你是 ${me} 的工作記錄助理。閱讀他所在的工作 LINE 群組今天的對話,只抽出跟 ${me} 有關、他需要知道或要參與的:
-- events:會議、拜訪、截止日、活動。date 用 YYYY-MM-DD(相對日期以該則訊息日期換算,台北時間);time 用 HH:MM,沒講給空字串;title 具體寫清楚。
+- events:會議、拜訪、截止日、活動。date 用 YYYY-MM-DD(相對日期以該則訊息日期換算,台北時間);time 用 HH:MM,沒講給空字串;title 具體精簡,額外資訊(要準備的資料、聯絡人、注意事項)放 note,沒有給空字串。
 - todos:${me} 要做、要交、要準備的事,一句話。
 - expenses:${me} 確定要付或已付的金額(新台幣整數)。
 - incomes:${me} 確定會收到或已收到的款項(接案款、獎金等,新台幣整數)。
@@ -92,7 +92,7 @@ export async function ladysWorkProcess(settings: any): Promise<{ detail: any; ca
     rows.push({ ladys_batch: batch, ladys_kind: "event", ladys_group_id: groupOf(e.source_ids), ladys_payload: {
       ladys_title: `💼 ${clip(e.title, 70)}`, ladys_start_at: startIso(e.date, e.time),
       ladys_end_at: isHm(e.time) && isHm(e.end_time) && e.end_time > e.time ? startIso(e.date, e.end_time) : null,
-      ladys_all_day: !isHm(e.time), ladys_location: clip(e.location, 60), ladys_owner: "husband", ladys_recur: "none" } });
+      ladys_all_day: !isHm(e.time), ladys_location: clip(e.location, 60), ladys_note: clip(e.note, 300), ladys_owner: "husband", ladys_recur: "none" } });
   }
   for (const n of out.todos ?? []) {
     if (!clip(n.content, 110)) continue;
