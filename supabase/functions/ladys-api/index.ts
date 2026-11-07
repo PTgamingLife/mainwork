@@ -51,9 +51,9 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_members", "select=ladys_line_uid,ladys_name,ladys_emoji,ladys_role&order=ladys_created_at.asc"),
     ladysSelect("ladys_events", `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, -62)))}` +
       `&ladys_start_at=lt.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, 400)))}&order=ladys_start_at.asc` +
-      "&ladys_recur=eq.none&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
+      "&ladys_recur=eq.none&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_note,ladys_owner,ladys_source,ladys_recur"),
     ladysSelect("ladys_events", "ladys_deleted=eq.false&ladys_recur=eq.yearly" +
-      "&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
+      "&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_note,ladys_owner,ladys_source,ladys_recur"),
     ladysSelect("ladys_expenses", `ladys_deleted=eq.false&ladys_date=gte.${Number(today.slice(0, 4)) - 1}-01-01&order=ladys_date.desc,ladys_created_at.desc` +
       "&select=id,ladys_date,ladys_amount,ladys_category,ladys_payer,ladys_note,ladys_flow"),
     ladysSelect("ladys_notes", "ladys_deleted=eq.false&order=ladys_done.asc,ladys_created_at.desc&select=id,ladys_content,ladys_kind,ladys_owner,ladys_done"),
@@ -78,7 +78,7 @@ function ladysEventRow(b: any) {
   const start = new Date(`${b.date}T${allDay ? "00:00" : b.time}:00+08:00`).toISOString();
   const end = !allDay && isHm(b.end_time) && b.end_time > b.time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null;
   return {
-    ladys_title: title, ladys_start_at: start, ladys_end_at: end, ladys_all_day: allDay, ladys_location: str(b.location, 60),
+    ladys_title: title, ladys_start_at: start, ladys_end_at: end, ladys_all_day: allDay, ladys_location: str(b.location, 60), ladys_note: str(b.note, 300),
     ladys_owner: owner(b.owner), ladys_recur: b.yearly === true ? "yearly" : "none",
   };
 }

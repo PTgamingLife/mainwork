@@ -6,12 +6,12 @@
 
 import {
   LADYS_LINE_SECRET, ladysAddDays, ladysCard, ladysDayLabel, ladysEventLine, ladysEventsBetween,
-  ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysReply, ladysSelect,
+  ladysGroupByDay, ladysInsert, ladysJson, ladysLine, ladysPush, ladysReply, ladysSelect,
   ladysMask, ladysSettings, ladysTodayTaipei, ladysUpdate, LADYS_OWNER_LABEL,
 } from "../_shared/ladys.ts";
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
-import { ladysImageToText } from "../_shared/ladys-image.ts";
+import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
 
@@ -19,7 +19,7 @@ const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
 const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
-const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆", "記憶圖片"];
+const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆", "記憶圖片", "記憶以上圖片"];
 
 async function ladysVerifySignature(raw: string, sig: string): Promise<boolean> {
   if (!LADYS_LINE_SECRET || !sig) return false;
@@ -122,38 +122,10 @@ async function ladysCmdUpdateNow() {
   }
 }
 
-// 「記憶圖片」:必須「回覆」一張圖片輸入。讀出文字 → 當成一則對話 → 立刻用一般整理流程分類(行程/支出/待辦/目標/生活紀錄)
-const LADYS_IMG_ERR: Record<string, string> = {
-  IMG_GONE: "這張圖片已經過期,LINE 不再提供下載了,請重新傳一次再回覆它 🙏",
-  IMG_TOO_BIG: "圖片太大了,請截小一點再傳 🙏",
-  IMG_NOT_IMAGE: "回覆的不是圖片喔,請長按圖片 →「回覆」→ 輸入「記憶圖片」",
-};
-async function ladysCmdMemoryImage(ev: any, groupId: string) {
-  const quoted = String(ev.message?.quotedMessageId ?? "");
-  if (!quoted) return { type: "text", text: "請長按要記的圖片 →「回覆」→ 輸入「記憶圖片」📸" };
-  try {
-    const text = await ladysImageToText(quoted);
-    if (!text) return { type: "text", text: "這張圖片沒有讀到文字 🤔" };
-    const inserted = await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
-      ladys_line_msg_id: `img-${quoted}`,
-      ladys_group_id: groupId,
-      ladys_user_uid: ev.source?.userId ?? null,
-      ladys_text: ladysMask(`[圖片文字]\n${text}`).slice(0, 3000),
-      ladys_sent_at: new Date(Number(ev.timestamp)).toISOString(),
-    }, "resolution=ignore-duplicates,return=representation");
-    if (!inserted.length) return { type: "text", text: "這張圖片之前已經記過了 👌" };
-    const r = await ladysProcessPending("圖片記好了 📸", "update");
-    return r.cards.length ? r.cards : { type: "text", text: "看完圖片了,沒有需要記錄的行程、支出、目標、待辦或生活紀錄 👌" };
-  } catch (e) {
-    const code = e instanceof Error ? e.message : String(e);
-    console.error("ladys memory-image", code);
-    return { type: "text", text: LADYS_IMG_ERR[code] ?? "讀圖片時出了點問題,請稍後再試一次 🙏" };
-  }
-}
-
 async function ladysRunCommand(text: string, ev?: any, groupId = "") {
   switch (text) {
-    case "記憶圖片": return await ladysCmdMemoryImage(ev, groupId);
+    case "記憶圖片": return await ladysMemorizeImages(ev, groupId, false);
+    case "記憶以上圖片": return await ladysMemorizeImages(ev, groupId, true);
     case "更新行事曆": return await ladysCmdUpdateNow();
     case "行程": return await ladysCmdSchedule();
     case "帳": return await ladysCmdExpenses();
@@ -164,8 +136,10 @@ async function ladysRunCommand(text: string, ev?: any, groupId = "") {
 }
 
 // 多則一起回覆;若 LINE 拒收(格式問題)就退回只送第一則,確保使用者至少看到整理卡
-async function ladysReplySafe(token: string, msgs: unknown[]) {
+// 讀很多張圖片可能超過 reply token 時效 → 退回推播到該群組(會用到推播額度)
+async function ladysReplySafe(token: string, msgs: unknown[], to = "") {
   try { await ladysReply(token, msgs); } catch (e) {
+    if (to && String(e).includes("Invalid reply token")) { await ladysPush(to, msgs); return; }
     if (msgs.length < 2) throw e;
     console.error("ladys reply multi failed, fallback", e instanceof Error ? e.message : e);
     await ladysReply(token, msgs.slice(0, 1));
@@ -196,7 +170,12 @@ async function ladysHandle(ev: any, settings: any) {
     if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
     return;
   }
-  if (ev.type !== "message" || ev.message?.type !== "text") return; // 照片/貼圖/語音暫不處理
+  // 家庭群組的圖片:只記訊息編號,供「記憶以上圖片」使用
+  if (ev.type === "message" && ev.message?.type === "image" && src.type === "group" && boundGroup && src.groupId === boundGroup) {
+    await ladysRememberImage(ev, boundGroup);
+    return;
+  }
+  if (ev.type !== "message" || ev.message?.type !== "text") return; // 貼圖/語音暫不處理
 
   const text = String(ev.message.text ?? "").trim();
   const uid: string = src.userId ?? "";
@@ -231,7 +210,7 @@ async function ladysHandle(ev: any, settings: any) {
 
     if (uid) await ladysEnsureMember(gid, uid);
     if (LADYS_COMMANDS.includes(text)) {
-      await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat());
+      await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat(), text.startsWith("記憶") ? gid : "");
       return;
     }
     await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
