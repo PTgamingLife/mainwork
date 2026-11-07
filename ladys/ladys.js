@@ -8,7 +8,7 @@ const LADYS_CATS = ["餐飲", "交通", "日用品", "居家", "育兒", "醫療
 const LADYS_PERSONAS = { butler: "溫柔管家", secretary: "簡潔秘書", buddy: "幽默朋友", custom: "自訂" };
 const WEEK = ["日", "一", "二", "三", "四", "五", "六"];
 
-const ladysS = { data: null, view: "calendar", month: "", sel: "", filter: "all", moneyMonth: "", idToken: "" };
+const ladysS = { data: null, view: "calendar", month: "", sel: "", filter: "all", moneyMonth: "", moneyYear: 0, moneyTab: "mout", idToken: "" };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt$ = (n) => "$" + Number(n).toLocaleString("en-US");
@@ -62,7 +62,7 @@ async function ladysBoot() {
 // ---------- 畫面 ----------
 function render() {
   const d = ladysS.data; if (!d) return;
-  if (!ladysS.month) { ladysS.month = d.today.slice(0, 7); ladysS.sel = d.today; ladysS.moneyMonth = d.today.slice(0, 7); }
+  if (!ladysS.month) { ladysS.month = d.today.slice(0, 7); ladysS.sel = d.today; ladysS.moneyMonth = d.today.slice(0, 7); ladysS.moneyYear = Number(d.today.slice(0, 4)); }
   document.querySelectorAll("#ladysNav button").forEach((b) => b.classList.toggle("on", b.dataset.view === ladysS.view));
   $("ladysFab").style.display = ladysS.view === "settings" ? "none" : "block";
   const titles = { calendar: "行事曆", list: "行程列表", money: "記帳", goals: "目標", todos: "待辦", life: "生活紀錄", settings: "設定" };
@@ -115,20 +115,6 @@ function viewList() {
     : '<div class="ladys-card"><div class="ladys-empty">接下來沒有安排 🌿</div></div>');
 }
 
-function viewMoney() {
-  const ym = ladysS.moneyMonth, rows = ladysS.data.expenses.filter((x) => x.ladys_date.startsWith(ym));
-  const sum = (f) => rows.filter(f).reduce((s, x) => s + Number(x.ladys_amount), 0);
-  const total = sum(() => true), cats = {};
-  for (const x of rows) cats[x.ladys_category] = (cats[x.ladys_category] || 0) + Number(x.ladys_amount);
-  const catRows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-  const [y, m] = ym.split("-").map(Number);
-  return `<div class="ladys-card"><div class="ladys-cal-head"><button data-mmonth="-1">‹</button><b>${y} 年 ${m} 月 · ${fmt$(total)}</b><button data-mmonth="1">›</button></div>
-    <div class="ladys-stats"><div><b>${fmt$(sum((x) => x.ladys_payer === "husband"))}</b><span>👨 老公</span></div><div><b>${fmt$(sum((x) => x.ladys_payer === "wife"))}</b><span>👩 老婆</span></div><div><b>${fmt$(sum((x) => x.ladys_payer === "both"))}</b><span>👫 共同</span></div></div>
-    ${catRows.map(([c, n]) => `<div class="ladys-catbar"><span class="c">${esc(c)}</span><span class="bar"><i style="width:${total ? Math.round((n / total) * 100) : 0}%"></i></span><span class="n">${fmt$(n)}</span></div>`).join("")}</div>
-    <div class="ladys-card">${rows.length ? rows.map((x) => `<div class="ladys-item" data-edit="expense" data-id="${x.id}"><i class="ladys-bar ladys-o-${x.ladys_payer}"></i>
-      <div class="t"><div>${esc(x.ladys_note || x.ladys_category)}</div><div class="s">${dayLabel(x.ladys_date)} · ${esc(x.ladys_category)} · ${LADYS_OWNER[x.ladys_payer]}</div></div><div class="r">${fmt$(x.ladys_amount)}</div></div>`).join("")
-      : '<div class="ladys-empty">這個月還沒有記帳</div>'}</div>`;
-}
 
 function viewNotes(kind) {
   const rows = ladysS.data.notes.filter((n) => (kind === "goal" ? n.ladys_kind === "goal" : n.ladys_kind !== "goal"));
@@ -151,7 +137,7 @@ function viewSettings() {
     <div class="ladys-field"><label>早上推播行程</label><input type="time" id="ladysMorning" value="${s.ladys_morning_time}"></div>
     <div class="ladys-field"><label>晚上整理對話</label><input type="time" id="ladysNightly" value="${s.ladys_nightly_time}"></div></div>
     ${sw("push_empty", "今天沒行程也推「今天沒有安排」")}</div>
-    <div class="ladys-sec">晚上要整理哪些</div><div class="ladys-card">${sw("extract_events", "📅 行事曆")}${sw("extract_expenses", "💰 支出")}${sw("extract_notes", "🎯 目標與 ☑️ 待辦")}</div>
+    <div class="ladys-sec">晚上要整理哪些</div><div class="ladys-card">${sw("extract_events", "📅 行事曆")}${sw("extract_expenses", "💰 收入與支出")}${sw("extract_notes", "🎯 目標與 ☑️ 待辦")}</div>
     <div class="ladys-sec">Google 日曆同步</div><div class="ladys-card">
     ${ladysS.data.gcalReady ? "" : '<div class="s" style="color:var(--ladys-danger);font-size:12px;margin-bottom:6px">尚未設定 Google 授權,開啟也不會同步</div>'}
     ${sw("gcal_enabled", "把行事曆同步到 Google")}
@@ -192,12 +178,7 @@ function openSheet(kind, row) {
   } else if (kind === "life") {
     html = lifeSheet(row, isNew, ladysS.view === "calendar" ? ladysS.sel : d.today);
   } else if (kind === "expense") {
-    html = `<h3>${isNew ? "新增支出" : "編輯支出"}</h3>
-      <div class="ladys-row2"><div class="ladys-field"><label>金額</label><input type="number" inputmode="numeric" id="fAmount" value="${row?.ladys_amount ?? ""}"></div>
-      <div class="ladys-field"><label>日期</label><input type="date" id="fDate" value="${row?.ladys_date || d.today}"></div></div>
-      <div class="ladys-field"><label>類別</label><select id="fCat">${LADYS_CATS.map((c) => `<option ${c === (row?.ladys_category || "其他") ? "selected" : ""}>${c}</option>`).join("")}</select></div>
-      <div class="ladys-field"><label>說明</label><input id="fNote" maxlength="60" value="${esc(row?.ladys_note)}"></div>
-      <div class="ladys-field"><label>誰付的</label>${seg("owner", OWNER_OPTS, row?.ladys_payer || "both")}</div>`;
+    html = expenseSheet(row, isNew, d.today);
   } else {
     const k = row?.ladys_kind === "goal" || (!row && ladysS.view === "goals") ? "goal" : "todo";
     html = `<h3>${isNew ? "新增" : "編輯"}</h3>
@@ -217,7 +198,7 @@ async function saveSheet() {
   let data;
   if (kind === "event") data = { id, title: v("fTitle"), date: v("fDate"), time: v("fTime"), end_time: v("fEnd"), location: v("fLoc"), owner: segVal("owner"), yearly: $("fYearly").checked };
   else if (kind === "life") data = { id, date: v("fDate"), kind: segVal("lkind"), content: v("fContent"), owner: segVal("owner") };
-  else if (kind === "expense") data = { id, amount: v("fAmount"), date: v("fDate"), category: v("fCat"), note: v("fNote"), payer: segVal("owner") };
+  else if (kind === "expense") data = { id, amount: v("fAmount"), date: v("fDate"), category: v("fCat"), note: v("fNote"), payer: segVal("owner"), flow: v("fFlow") };
   else { const old = ladysS.data.notes.find((n) => n.id === id); data = { id, content: v("fContent"), kind: segVal("kind"), owner: segVal("owner"), done: old?.ladys_done === true }; }
   if (kind === "event" && !data.title.trim()) return toast("請填內容");
   if (kind === "expense" && !(Number(data.amount) > 0)) return toast("請填金額");
@@ -235,6 +216,8 @@ document.addEventListener("click", async (ev) => {
   if (t.id === "ladysFab") return openSheet({ calendar: "event", list: "event", money: "expense", life: "life" }[ladysS.view] || "note");
   if (t.dataset.filter) { ladysS.filter = t.dataset.filter; render(); return; }
   if (t.dataset.month) { ladysS.month = addMonths(ladysS.month, +t.dataset.month); render(); return; }
+  if (t.dataset.mtab) { ladysS.moneyTab = t.dataset.mtab; render(); return; }
+  if (t.dataset.myear) { ladysS.moneyYear += +t.dataset.myear; render(); return; }
   if (t.dataset.mmonth) { ladysS.moneyMonth = addMonths(ladysS.moneyMonth, +t.dataset.mmonth); render(); return; }
   if (t.dataset.day) { ladysS.sel = t.dataset.day; render(); return; }
   if (t.dataset.toggle) {
@@ -296,7 +279,10 @@ function ladysMockApi(action, extra) {
       events: [{ id: id(), ladys_title: "跟媽媽分享:請款30、誰先找到工作誰上班", ladys_start_at: at(0), ladys_all_day: true, ladys_owner: "both", ladys_location: "" },
         { id: id(), ladys_title: "牙醫回診", ladys_start_at: at(1, "10:30"), ladys_end_at: at(1, "11:30"), ladys_all_day: false, ladys_owner: "wife", ladys_location: "仁愛診所" },
         { id: id(), ladys_title: "跟客戶開會", ladys_start_at: at(3, "14:00"), ladys_all_day: false, ladys_owner: "husband", ladys_location: "" }],
-      expenses: [{ id: id(), ladys_date: today, ladys_amount: 850, ladys_category: "日用品", ladys_payer: "wife", ladys_note: "全聯" }, { id: id(), ladys_date: today, ladys_amount: 320, ladys_category: "餐飲", ladys_payer: "husband", ladys_note: "午餐" }],
+      expenses: [{ id: id(), ladys_date: today, ladys_amount: 850, ladys_category: "日用品", ladys_payer: "wife", ladys_note: "全聯" }, { id: id(), ladys_date: today, ladys_amount: 320, ladys_category: "餐飲", ladys_payer: "husband", ladys_note: "午餐" },
+        { id: id(), ladys_date: today.slice(0, 8) + "05", ladys_amount: 52000, ladys_category: "薪資", ladys_payer: "husband", ladys_note: "公司薪水", ladys_flow: "in" },
+        { id: id(), ladys_date: today.slice(0, 5) + "03-10", ladys_amount: 30000, ladys_category: "獎金", ladys_payer: "wife", ladys_note: "年終", ladys_flow: "in" },
+        { id: id(), ladys_date: today.slice(0, 5) + "03-12", ladys_amount: 4200, ladys_category: "交通", ladys_payer: "both", ladys_note: "加油", ladys_flow: "out" }],
       notes: [{ id: id(), ladys_content: "利用半年把債務還清", ladys_kind: "goal", ladys_owner: "both", ladys_done: false },
         { id: id(), ladys_content: "準備戶口名簿、401 報表、國泰存摺", ladys_kind: "todo", ladys_owner: "both", ladys_done: false }] };
   })());
@@ -314,7 +300,7 @@ function ladysMockApi(action, extra) {
     const b = extra.data; let row;
     if (extra.kind === "event") { const all = !b.time; row = { ladys_title: b.title, ladys_start_at: new Date(`${b.date}T${all ? "00:00" : b.time}:00+08:00`).toISOString(), ladys_end_at: !all && b.end_time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null, ladys_all_day: all, ladys_location: b.location, ladys_owner: b.owner, ladys_recur: b.yearly ? "yearly" : "none" }; }
     else if (extra.kind === "life") row = { ladys_date: b.date, ladys_kind: b.kind, ladys_content: b.content || (b.kind === "period_start" ? "經期開始" : "經期結束"), ladys_owner: b.kind.startsWith("period") ? "wife" : b.owner };
-    else if (extra.kind === "expense") row = { ladys_date: b.date, ladys_amount: Math.round(+b.amount), ladys_category: b.category, ladys_payer: b.payer, ladys_note: b.note };
+    else if (extra.kind === "expense") row = { ladys_date: b.date, ladys_amount: Math.round(+b.amount), ladys_category: b.category, ladys_payer: b.payer, ladys_note: b.note, ladys_flow: b.flow };
     else row = { ladys_content: b.content, ladys_kind: b.kind, ladys_owner: b.owner, ladys_done: b.done };
     if (extra.kind === "event") { db.events = db.events.filter((x) => x.id !== b.id || !b.yearly); db.yearly = db.yearly.filter((x) => x.id !== b.id || b.yearly); }
     const list = extra.kind === "event" && b.yearly ? db.yearly : db[key[extra.kind]], i = list.findIndex((x) => x.id === b.id);
