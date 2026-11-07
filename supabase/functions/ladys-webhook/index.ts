@@ -79,14 +79,17 @@ async function ladysCmdSchedule() {
 async function ladysCmdExpenses() {
   const today = ladysTodayTaipei();
   const monthStart = `${today.slice(0, 7)}-01`;
-  const rows = await ladysSelect("ladys_expenses",
+  const all = await ladysSelect("ladys_expenses",
     `ladys_deleted=eq.false&ladys_date=gte.${monthStart}&order=ladys_date.desc&select=*`);
+  const rows = all.filter((r) => r.ladys_flow !== "in");
+  const income = all.filter((r) => r.ladys_flow === "in").reduce((s, r) => s + Number(r.ladys_amount), 0);
   const total = rows.reduce((s, r) => s + Number(r.ladys_amount), 0);
   const byPayer: Record<string, number> = {};
   for (const r of rows) byPayer[r.ladys_payer] = (byPayer[r.ladys_payer] ?? 0) + Number(r.ladys_amount);
   const fmt = (n: number) => `$${n.toLocaleString("en-US")}`;
   const lines = [
-    `本月合計 ${fmt(total)}(${rows.length} 筆)`,
+    `本月支出 ${fmt(total)}(${rows.length} 筆)`,
+    ...(income ? [`本月收入 ${fmt(income)}・結餘 ${fmt(income - total)}`] : []),
     ...Object.entries(byPayer).map(([p, n]) => `${LADYS_OWNER_LABEL[p as "husband"]} ${fmt(n)}`),
     "【最近 5 筆】",
     ...rows.slice(0, 5).map((r) => `${r.ladys_date.slice(5)} ${r.ladys_category} ${fmt(Number(r.ladys_amount))} ${r.ladys_note}`.trim()),

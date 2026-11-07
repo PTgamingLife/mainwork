@@ -54,8 +54,8 @@ async function ladysLoad(uid: string) {
       "&ladys_recur=eq.none&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
     ladysSelect("ladys_events", "ladys_deleted=eq.false&ladys_recur=eq.yearly" +
       "&select=id,ladys_title,ladys_start_at,ladys_end_at,ladys_all_day,ladys_location,ladys_owner,ladys_source,ladys_recur"),
-    ladysSelect("ladys_expenses", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -400)}&order=ladys_date.desc,ladys_created_at.desc` +
-      "&select=id,ladys_date,ladys_amount,ladys_category,ladys_payer,ladys_note"),
+    ladysSelect("ladys_expenses", `ladys_deleted=eq.false&ladys_date=gte.${Number(today.slice(0, 4)) - 1}-01-01&order=ladys_date.desc,ladys_created_at.desc` +
+      "&select=id,ladys_date,ladys_amount,ladys_category,ladys_payer,ladys_note,ladys_flow"),
     ladysSelect("ladys_notes", "ladys_deleted=eq.false&order=ladys_done.asc,ladys_created_at.desc&select=id,ladys_content,ladys_kind,ladys_owner,ladys_done"),
     ladysSelect("ladys_life", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -400)}&order=ladys_date.desc,ladys_created_at.desc` +
       "&select=id,ladys_date,ladys_kind,ladys_content,ladys_owner"),
@@ -86,8 +86,11 @@ function ladysEventRow(b: any) {
 function ladysExpenseRow(b: any) {
   if (!isYmd(b.date)) bad("BAD_DATE");
   const amount = Math.round(Number(b.amount));
-  if (!Number.isFinite(amount) || amount <= 0 || amount >= 10_000_000) bad("BAD_AMOUNT");
-  return { ladys_date: b.date, ladys_amount: amount, ladys_category: str(b.category, 10) || "其他", ladys_payer: owner(b.payer), ladys_note: str(b.note, 60) };
+  if (!Number.isFinite(amount) || amount <= 0 || amount >= 100_000_000) bad("BAD_AMOUNT");
+  return {
+    ladys_date: b.date, ladys_amount: amount, ladys_category: str(b.category, 10) || "其他", ladys_payer: owner(b.payer),
+    ladys_note: str(b.note, 60), ladys_flow: b.flow === "in" ? "in" : "out",
+  };
 }
 
 function ladysNoteRow(b: any) {

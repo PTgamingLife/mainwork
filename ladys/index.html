@@ -64,7 +64,9 @@
   .ladys-catbar { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 6px 0; }
   .ladys-catbar .bar { flex: 1; height: 8px; background: var(--ladys-line); border-radius: 8px; overflow: hidden; }
   .ladys-catbar .bar i { display: block; height: 100%; background: var(--ladys-both); }
-  .ladys-catbar .n { width: 72px; text-align: right; }
+  .ladys-catbar .n { width: 104px; text-align: right; white-space: nowrap; }
+  .ladys-catbar .n small { color: var(--ladys-muted); font-size: 11px; }
+  .ladys-in { color: #4E9A6B; } .ladys-neg { color: var(--ladys-danger); }
   .ladys-catbar .c { width: 48px; }
   /* 底部分頁 + 新增 */
   nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--ladys-card);
@@ -126,6 +128,7 @@
 <div class="ladys-sheet" id="ladysSheet"></div>
 <div class="ladys-toast" id="ladysToast"></div>
 <script src="ladys-life.js"></script>
+<script src="ladys-money.js"></script>
 <script src="ladys.js"></script>
 </body>
 </html>
