@@ -10,6 +10,7 @@ import {
 import { ladysGcalSweep } from "./ladys-gcal.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "./ladys-life.ts";
 import { ladysDeleteConfirmCard } from "./ladys-obsolete.ts";
+import { ladysNoteConfirmCard, ladysQueueEventNotes } from "./ladys-eventnote.ts";
 
 const LADYS_MODEL = "claude-haiku-5-5";
 const LADYS_MAX_MESSAGES = 600;
@@ -25,7 +26,7 @@ const OWNER = { type: "string", enum: ["husband", "wife", "both"] };
 const IDS = { type: "array", items: { type: "integer" } };
 const LADYS_SCHEMA = {
   type: "object", additionalProperties: false,
-  required: ["events", "expenses", "incomes", "notes", "life", "obsolete", "summary"],
+  required: ["events", "expenses", "incomes", "notes", "life", "obsolete", "event_notes", "summary"],
   properties: {
     events: {
       type: "array",
@@ -92,6 +93,14 @@ const LADYS_SCHEMA = {
         properties: { ref: { type: "string" }, reason: { type: "string" } },
       },
     },
+    event_notes: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["ref", "note"],
+        properties: { ref: { type: "string" }, note: { type: "string" } },
+      },
+    },
     summary: { type: "string" },
   },
 };
@@ -130,6 +139,7 @@ function ladysSystemPrompt(settings: any, memberDesc: string) {
 - 生日、結婚紀念日、交往紀念日、各種週年 → events 且 yearly=true,date 用原始日期(知道年份就用原始年份,不知道就用今年),title 寫清楚是誰的什麼紀念日;其他行程 yearly=false。
 - events:約會、看診、聚餐、繳費日、接送、要在某天做或說的事。title 要具體(例如「跟媽媽分享:請款30、誰先找到工作誰上班、家裡場地借用」)。time 用 HH:MM,沒講時間就給空字串(視為全天);end_time 沒講給空字串;location 沒講給空字串。title 保持精簡,額外資訊(要帶的東西、穿著、聯絡人、訂位/訂房細節、注意事項)放 note(150 字內),沒有就給空字串。
 - obsolete:對話明確說「已存在的行程」中某筆改期、取消、不去了、改地點時間 → 填那筆的編號(例如 E3)與 20 字內原因(例如「改到 11/12」);改期的新日期照常放 events。只填清單裡有的編號,不確定就不要填。
+- event_notes:對話明確是在「補充」下方「已存在的行程」中某一筆(例如補上要帶的東西、聯絡人、地址、注意事項),而不是新的事 → 填那筆編號 ref(例如 E3)與要補的文字 note(60 字內、完整一句)。這種補充不要再放進 events。只填清單裡有的編號,不確定是哪一筆就不要填;已經在該筆備註裡的內容不要重複。
 - 同一件事被多次提到只記一次;下方「已存在的行程」已經記過的不要重複輸出。只是閒聊、假設、已取消的不要記。
 - expenses:只記實際花掉或確定要付的金額(新台幣整數)。date 為消費日。note 簡短寫買了什麼。
 - incomes:實際入帳或確定會收到的收入(薪水、獎金、接案款、股利利息、退款等,新台幣整數)。payer 填「誰收到的」,date 為入帳日,note 簡短寫來源。
@@ -143,7 +153,7 @@ async function ladysExtract(settings: any, members: any[], msgs: any[], existing
   const memberDesc = members.map((m) => `${m.ladys_role === "wife" ? "wife=老婆" : "husband=老公"} ${m.ladys_name}`).join(";") || "老公、老婆";
   const transcript = msgs.map((m) => `[#${m.id} ${ladysStamp(m.ladys_sent_at)}] ${nameOf.get(m.ladys_user_uid) ?? "成員"}:${m.ladys_text}`).join("\n");
   const existingText = existing.length
-    ? existing.map((e, i) => `- [E${i + 1}] ${ladysTodayTaipei(new Date(e.ladys_start_at))} ${e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at)} ${e.ladys_title}`).join("\n")
+    ? existing.map((e, i) => `- [E${i + 1}] ${ladysTodayTaipei(new Date(e.ladys_start_at))} ${e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at)} ${e.ladys_title}${e.ladys_note ? `(備註:${String(e.ladys_note).replace(/\s+/g, " ").slice(0, 40)})` : ""}`).join("\n")
     : "(無)";
 
   const res = await ladysClient.messages.create({
@@ -262,5 +272,8 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
     cards.push(ladysCard(cardTitle, lines, { view: "list", label: "查看修改" }, { hero }));
   }
   if (obsolete.length) cards.push(ladysDeleteConfirmCard(obsolete));
-  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, incomes: incomes.length, notes: notes.length, life: life.length, obsolete: obsolete.length, gcal }, cards };
+  let noteItems: any[] = [];
+  try { noteItems = await ladysQueueEventNotes(out.event_notes, existing, settings.ladys_group_id); } catch (e) { console.error("ladys event_notes", e instanceof Error ? e.message : e); }
+  if (noteItems.length) cards.push(ladysNoteConfirmCard(noteItems));
+  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, incomes: incomes.length, notes: notes.length, life: life.length, obsolete: obsolete.length, event_notes: noteItems.length, gcal }, cards };
 }
