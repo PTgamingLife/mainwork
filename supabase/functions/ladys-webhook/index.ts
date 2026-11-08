@@ -12,6 +12,7 @@ import {
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
+import { ladysHandleNotePostback } from "../_shared/ladys-eventnote.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
 
@@ -166,7 +167,7 @@ async function ladysHandle(ev: any, settings: any) {
     const okSrc = src.type === "group" ? src.groupId === boundGroup : src.type === "user";
     if (!okSrc || !puid || !(puid === LADYS_OWNER_UID || await ladysIsMember(puid))) return;
     const data = String(ev.postback?.data ?? "");
-    const msg = (await ladysHandleDeletePostback(data)) ?? (await ladysHandleWorkPostback(data));
+    const msg = (await ladysHandleDeletePostback(data)) ?? (await ladysHandleNotePostback(data)) ?? (await ladysHandleWorkPostback(data));
     if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
     return;
   }
