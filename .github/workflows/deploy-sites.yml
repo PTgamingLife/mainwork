@@ -4,7 +4,7 @@ name: Deploy sites to GitHub Pages repos
 # 新增作品：在下方 SITES 加一行，並把資料夾加進 on.push.paths。
 on:
   push:
-    branches: [main, claude/happy-thompson-8348ap]
+    branches: [main]
     paths:
       - "aisec-seat/**"
       - ".github/workflows/deploy-sites.yml"
