@@ -1,0 +1,11 @@
+# 本機私密資料 — 絕對不能 commit
+lf_profile/
+lf_data/
+lf_ext/
+*.db
+*.db-wal
+*.db-shm
+.env
+.venv/
+__pycache__/
+*.pyc

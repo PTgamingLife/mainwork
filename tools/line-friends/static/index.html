@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LINE 好友整理</title>
+<link rel="stylesheet" href="/static/lf_style.css?v=2">
+</head>
+<body>
+<header class="lf-top">
+  <div class="lf-brand">LINE 好友整理 <span class="lf-local">僅本機 127.0.0.1</span></div>
+  <nav class="lf-nav" id="lf-nav">
+    <a href="#sync" data-lf-page="sync">同步</a>
+    <a href="#friends" data-lf-page="friends">好友總覽</a>
+    <a href="#todo" data-lf-page="todo">待整理</a>
+    <a href="#rename" data-lf-page="rename">改名</a>
+    <a href="#settings" data-lf-page="settings">分類設定</a>
+  </nav>
+  <div class="lf-pill" id="lf-pill">未連線</div>
+</header>
+<main id="lf-main" class="lf-main"></main>
+<div id="lf-toast" class="lf-toast" hidden></div>
+<script src="/static/lf_app.js?v=3"></script>
+<script src="/static/lf_friends.js?v=2"></script>
+<script src="/static/lf_rename.js?v=2"></script>
+<script src="/static/lf_settings.js?v=2"></script>
+<script>lfBoot();</script>
+</body>
+</html>

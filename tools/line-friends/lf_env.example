@@ -1,0 +1,7 @@
+# 複製成 .env 後填入(.env 已在 .gitignore,不會進 git)
+#   Copy-Item lf_env.example .env
+ANTHROPIC_API_KEY=
+# AI 模型:預設 claude-opus-5-5;想省錢可改 claude-haiku-5-5
+LF_AI_MODEL=claude-opus-5-5
+# 本機網頁 port(只綁 127.0.0.1)
+LF_PORT=8766
