@@ -1,0 +1,87 @@
+name: Deploy sites to GitHub Pages repos
+
+# 通用上線：mainwork 的作品資料夾有改動並合併到 main 時，自動推到各自的 Pages repo。
+# 新增作品：在下方 SITES 加一行，並把資料夾加進 on.push.paths。
+on:
+  push:
+    branches: [main, claude/happy-thompson-8348ap]
+    paths:
+      - "aisec-seat/**"
+      - ".github/workflows/deploy-sites.yml"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "要上線的 mainwork 資料夾（留空 = 全部）"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-sites
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mainwork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy changed sites
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          INPUT_SITE: ${{ github.event.inputs.site }}
+        run: |
+          set -euo pipefail
+          # 清單格式：mainwork 資料夾|目標 repo|目標 repo 內的路徑（. = 根目錄）
+          SITES=(
+            "aisec-seat|PTgamingLife/aisec-seat|."
+          )
+
+          if [ -z "${DEPLOY_TOKEN}" ]; then echo "::error::DEPLOY_TOKEN 沒有設定"; exit 1; fi
+
+          CHANGED=""
+          if [ "${EVENT_NAME}" = "push" ] && [ -n "${BEFORE_SHA}" ] && ! echo "${BEFORE_SHA}" | grep -qE '^0+$'; then
+            CHANGED="$(git diff --name-only "${BEFORE_SHA}" "${GITHUB_SHA}")"
+          fi
+          WF_CHANGED=0
+          echo "${CHANGED}" | grep -q '^.github/workflows/deploy-sites.yml$' && WF_CHANGED=1
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          deployed=0
+          for entry in "${SITES[@]}"; do
+            IFS='|' read -r SRC REPO DEST <<< "${entry}"
+
+            if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+              if [ -n "${INPUT_SITE}" ] && [ "${INPUT_SITE}" != "${SRC}" ]; then continue; fi
+            elif [ -n "${CHANGED}" ] && [ "${WF_CHANGED}" = "0" ]; then
+              echo "${CHANGED}" | grep -q "^${SRC}/" || { echo "略過 ${SRC}（沒有改動）"; continue; }
+            fi
+
+            echo "::group::上線 ${SRC} → ${REPO}/${DEST}"
+            WORK="$(mktemp -d)"
+            git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/${REPO}.git" "${WORK}"
+            mkdir -p "${WORK}/${DEST}"
+            rsync -a --delete --exclude '.git' --exclude '.deployed-from' "${SRC}/" "${WORK}/${DEST}/"
+            echo "${GITHUB_REPOSITORY}@${GITHUB_SHA}" > "${WORK}/${DEST}/.deployed-from"
+            cd "${WORK}"
+            git add -A
+            if git diff --cached --quiet; then
+              echo "沒有變更"
+            else
+              git commit -m "deploy: ${SRC} from mainwork ${GITHUB_SHA::7}"
+              git push origin HEAD
+              deployed=$((deployed + 1))
+            fi
+            cd "${GITHUB_WORKSPACE}"
+            echo "::endgroup::"
+          done
+          echo "完成，共上線 ${deployed} 個網站"
