@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>AI 個人秘書工作坊 DM</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --aisec-bg:#0B3D2E; --aisec-bg2:#0E4A38; --aisec-white:#FFFFFF;
+  --aisec-green:#06C755; --aisec-soft:rgba(255,255,255,.08); --aisec-line:rgba(255,255,255,.16);
+  --aisec-muted:rgba(255,255,255,.72);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#222;font-family:"Noto Sans TC","WenQuanYi Zen Hei",sans-serif}
+.aisec-dm{width:1080px;height:1350px;margin:0 auto;position:relative;overflow:hidden;
+  background:radial-gradient(900px 600px at 95% -5%,rgba(6,199,85,.28),transparent 60%),
+             radial-gradient(700px 500px at -10% 105%,rgba(6,199,85,.18),transparent 60%),var(--aisec-bg);
+  color:var(--aisec-white);padding:52px 68px 0}
+.aisec-chip{display:inline-flex;gap:12px;align-items:center;font-size:24px;font-weight:700;
+  border:2px solid var(--aisec-green);color:var(--aisec-green);border-radius:40px;padding:8px 22px}
+.aisec-chip i{width:10px;height:10px;border-radius:50%;background:var(--aisec-green);display:block}
+.aisec-title{font-size:82px;font-weight:900;line-height:1.12;margin-top:20px;letter-spacing:2px}
+.aisec-title em{font-style:normal;color:var(--aisec-green)}
+.aisec-sub{font-size:30px;font-weight:500;margin-top:14px;color:var(--aisec-muted)}
+.aisec-sub b{color:var(--aisec-white)}
+.aisec-pain{margin-top:26px;background:var(--aisec-soft);border:1px solid var(--aisec-line);border-radius:22px;padding:18px 30px}
+.aisec-pain h3{font-size:25px;color:var(--aisec-green);margin-bottom:4px}
+.aisec-pain p{font-size:24px;line-height:1.6;color:var(--aisec-muted)}
+.aisec-pain p span{color:#FF6B6B;font-weight:900;margin-right:12px}
+.aisec-h{font-size:30px;font-weight:900;margin:24px 0 12px;display:flex;align-items:center;gap:14px}
+.aisec-h:before{content:"";width:8px;height:30px;background:var(--aisec-green);border-radius:4px}
+.aisec-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.aisec-card{background:var(--aisec-white);color:var(--aisec-bg);border-radius:22px;padding:18px 22px 20px}
+.aisec-card .n{width:42px;height:42px;border-radius:12px;flex:none;background:var(--aisec-green);color:#fff;
+  font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.aisec-card h4{font-size:27px;font-weight:900;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.aisec-card p{font-size:21px;line-height:1.5;color:#3C5A50}
+.aisec-bottom{display:grid;grid-template-columns:1.1fr 1fr;gap:34px}
+.aisec-tl{list-style:none}
+.aisec-tl li{display:flex;gap:18px;font-size:21px;line-height:1.35;padding:4px 0;border-bottom:1px dashed var(--aisec-line)}
+.aisec-tl li b{color:var(--aisec-green);min-width:68px;font-weight:700}
+.aisec-tl li span{color:var(--aisec-muted)}
+.aisec-promise{list-style:none}
+.aisec-promise li{font-size:22px;padding:4px 0;line-height:1.4}
+.aisec-promise li:before{content:"✔";color:var(--aisec-green);font-weight:900;margin-right:12px}
+.aisec-todo{color:#FFD166}
+.aisec-foot{position:absolute;left:0;right:0;bottom:0;height:176px;background:var(--aisec-green);color:var(--aisec-bg);
+  display:flex;align-items:center;padding:0 68px;gap:28px}
+.aisec-foot .info{flex:1}
+.aisec-foot .date{font-size:32px;white-space:nowrap;font-weight:900}
+.aisec-foot .meta{font-size:22px;font-weight:700;margin-top:4px;line-height:1.45}
+.aisec-price{text-align:right}
+.aisec-price small{display:block;font-size:22px;font-weight:700}
+.aisec-price strong{font-size:52px;font-weight:900;line-height:1;white-space:nowrap}
+.aisec-qr{width:136px;height:136px;flex:none;background:#fff;border-radius:16px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--aisec-bg);text-align:center;line-height:1.4}
+.aisec-qr span{font-size:16px;color:#C0392B}
+</style>
+</head>
+<body>
+<div class="aisec-dm" id="aisec_dm">
+  <div class="aisec-chip"><i></i>專為個人業務設計｜實體工作坊</div>
+  <h1 class="aisec-title">打造你的<br><em>LINE AI</em> 個人秘書</h1>
+  <p class="aisec-sub">3.5 小時，帶走一個<b>幫你記客戶、提醒跟進、寫訊息</b>的秘書</p>
+
+  <div class="aisec-pain">
+    <h3>你是不是也這樣？</h3>
+    <p><span>✗</span>見完客戶忘記記，資料散在筆記本、相簿、腦袋裡</p>
+    <p><span>✗</span>忘記回訪，眼看單子就這樣沒了</p>
+    <p><span>✗</span>每天花 2 小時打問候、想貼文</p>
+  </div>
+
+  <div class="aisec-h">秘書幫你做 3 件事</div>
+  <div class="aisec-cards">
+    <div class="aisec-card"><h4><div class="n">1</div>語音記客戶</h4><p>講 30 秒語音<br>自動整理成客戶紀錄</p></div>
+    <div class="aisec-card"><h4><div class="n">2</div>每日跟進提醒</h4><p>每天早上 8 點<br>推播今天該聯絡誰</p></div>
+    <div class="aisec-card"><h4><div class="n">3</div>訊息秒產生</h4><p>一句話寫好生日祝福<br>跟進訊息、貼文草稿</p></div>
+  </div>
+
+  <div class="aisec-bottom">
+    <div>
+      <div class="aisec-h">課程流程</div>
+      <ul class="aisec-tl">
+        <li><b>13:30</b><span>AI 概念：業務怎麼用 AI 多賺時間</span></li>
+        <li><b>14:00</b><span>實作①：建立秘書＋語音記客戶</span></li>
+        <li><b>15:00</b><span>中場休息</span></li>
+        <li><b>15:10</b><span>實作②：每日跟進提醒</span></li>
+        <li><b>16:00</b><span>實作③：訊息／貼文產生器</span></li>
+        <li><b>16:40</b><span>成果展示＋Q&amp;A</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="aisec-h">上課保證</div>
+      <ul class="aisec-promise">
+        <li>包做完：當天帶著秘書回家</li>
+        <li>不用寫程式，帶筆電就能上</li>
+        <li>小班制，限額 7 名</li>
+        <li>講師：柏廷老師</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="aisec-foot">
+    <div class="info">
+      <div class="date">2026/11/29（日）13:30–17:00</div>
+      <div class="meta">地點：澤米芋 804（小樹屋）</div>
+    </div>
+    <div class="aisec-price"><small>課程費用</small><strong>NT$3,680</strong></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LINE AI 個人秘書工作坊</title>
+<meta name="description" content="11/29（日）澤米芋 804，3.5 小時帶走你的 LINE AI 個人秘書。限額 7 位，線上選位。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Baloo+2:wght@600;800&display=swap">
+<style>
+/* 版面：奶油森林。上半部像一張課程邀請卡，下半部是房間俯瞰的選位遊戲 */
+:root{
+  --aisec-cream:#FFF8EC; --aisec-paper:#FFFDF8; --aisec-wood:#8B5E3C; --aisec-wood-d:#6B4528;
+  --aisec-leaf:#4CAF50; --aisec-leaf-d:#2E7D32; --aisec-ink:#3B2A1E; --aisec-muted:#7A6A5A;
+  --aisec-line:#EADFCB; --aisec-warn:#C0392B;
+  --aisec-f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --aisec-f-num:"Baloo 2","Noto Sans TC",sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--aisec-cream);color:var(--aisec-ink);font-family:var(--aisec-f-body);font-size:16px;line-height:1.6}
+.aisec-wrap{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance;margin:0}
+.aisec-num{font-family:var(--aisec-f-num);font-variant-numeric:tabular-nums}
+
+.aisec-hero{padding-block:40px 28px}
+.aisec-tag{display:inline-flex;gap:8px;align-items:center;font-size:14px;font-weight:700;color:var(--aisec-leaf-d);background:#E6F3E2;border-radius:999px;padding:6px 14px}
+.aisec-hero h1{font-size:clamp(34px,7vw,58px);font-weight:900;line-height:1.15;margin-top:16px;letter-spacing:.5px}
+.aisec-hero h1 em{font-style:normal;color:var(--aisec-leaf-d)}
+.aisec-hero .aisec-sub{font-size:clamp(17px,2.6vw,20px);color:var(--aisec-muted);margin:12px 0 0}
+.aisec-ticket{margin-top:24px;display:grid;grid-template-columns:repeat(4,auto);gap:12px 28px;align-items:end;background:var(--aisec-paper);border:2px dashed var(--aisec-line);border-radius:18px;padding:18px 22px}
+.aisec-ticket dt{font-size:13px;color:var(--aisec-muted);letter-spacing:1px}
+.aisec-ticket dd{margin:2px 0 0;font-weight:700;font-size:17px}
+.aisec-ticket .aisec-price{font-size:30px;color:var(--aisec-wood-d);line-height:1}
+.aisec-ticket .aisec-leftbox{font-size:30px;color:var(--aisec-leaf-d);line-height:1}
+.aisec-cta{display:inline-block;margin-top:20px;background:var(--aisec-leaf);color:#fff;font-weight:800;font-size:18px;text-decoration:none;border-radius:14px;padding:13px 26px;box-shadow:0 4px 0 var(--aisec-leaf-d)}
+.aisec-cta:active{transform:translateY(2px);box-shadow:0 2px 0 var(--aisec-leaf-d)}
+
+.aisec-sec{padding-block:26px}
+.aisec-sec h2{font-size:24px;font-weight:900;margin-bottom:14px}
+.aisec-three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.aisec-three div{background:var(--aisec-paper);border:1px solid var(--aisec-line);border-radius:16px;padding:16px}
+.aisec-three b{display:block;font-size:18px;margin-bottom:4px}
+.aisec-three p{margin:0;color:var(--aisec-muted);font-size:15px}
+.aisec-three .aisec-step{font-family:var(--aisec-f-num);font-weight:800;color:var(--aisec-leaf);font-size:15px}
+.aisec-flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 28px}
+.aisec-flow li{display:flex;gap:14px;padding:7px 0;border-bottom:1px dashed var(--aisec-line);font-size:15px}
+.aisec-flow time{font-family:var(--aisec-f-num);font-weight:800;color:var(--aisec-wood);min-width:48px}
+
+.aisec-pick{background:#F6EBD8;border-radius:28px 28px 0 0;margin-top:12px}
+.aisec-pick .aisec-wrap{padding-block:30px 40px}
+.aisec-pick-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.aisec-pick-head p{margin:0;color:var(--aisec-muted);font-size:15px}
+.aisec-room{margin-top:14px;background:var(--aisec-paper);border-radius:22px;padding:10px;border:1px solid var(--aisec-line)}
+.aisec-room svg{display:block;width:100%;height:auto}
+.aisec-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:14px;color:var(--aisec-muted);margin:10px 4px 0}
+.aisec-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.aisec-seat{cursor:pointer;outline:none}
+.aisec-ring{fill:rgba(76,175,80,.28);stroke:var(--aisec-leaf);stroke-width:3;stroke-dasharray:6 5}
+.aisec-pin{fill:var(--aisec-leaf);stroke:#fff;stroke-width:3}
+.aisec-seat--free:hover .aisec-ring,.aisec-seat--free:focus-visible .aisec-ring{fill:rgba(76,175,80,.5)}
+.aisec-seat.is-sel .aisec-ring{fill:rgba(139,94,60,.3);stroke:var(--aisec-wood);stroke-dasharray:none}
+.aisec-seat.is-sel .aisec-pin{fill:var(--aisec-wood)}
+.aisec-seat--taken:focus-visible rect{stroke-width:3}
+@media (prefers-reduced-motion:no-preference){
+  .aisec-seat--free:not(.is-sel) .aisec-ring{animation:aisec-pulse 1.8s ease-in-out infinite}
+  @keyframes aisec-pulse{50%{fill:rgba(76,175,80,.08)}}
+}
+.aisec-alert{margin:12px 0 0;padding:10px 14px;border-radius:12px;background:#FDECEA;color:var(--aisec-warn);font-weight:700}
+
+.aisec-panel{margin-top:18px;background:var(--aisec-paper);border-radius:22px;padding:20px;border:1px solid var(--aisec-line);display:grid;gap:18px}
+.aisec-row-label{font-size:14px;font-weight:700;color:var(--aisec-muted);margin-bottom:6px}
+#aisec_pick_seat{font-weight:800;font-size:18px;color:var(--aisec-wood-d)}
+#aisec_pick_seat.is-empty{color:var(--aisec-muted);font-weight:500;font-size:16px}
+.aisec-animals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.aisec-animal{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid var(--aisec-line);background:#fff;border-radius:16px;padding:8px 4px 6px;font:inherit;font-weight:700;color:var(--aisec-ink);cursor:pointer}
+.aisec-animal:hover:not(:disabled){border-color:var(--aisec-leaf)}
+.aisec-animal:focus-visible{outline:3px solid var(--aisec-leaf);outline-offset:2px}
+.aisec-animal.is-on{border-color:var(--aisec-wood);background:#FBEFD9;box-shadow:0 3px 0 var(--aisec-wood)}
+.aisec-animal:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(1)}
+.aisec-animal em{position:absolute;top:6px;right:6px;font-style:normal;font-size:11px;background:var(--aisec-ink);color:#fff;border-radius:6px;padding:0 5px}
+.aisec-fields{display:grid;grid-template-columns:1.2fr 1.2fr 1fr;gap:12px}
+.aisec-fields label{display:grid;gap:4px;font-size:14px;font-weight:700;color:var(--aisec-muted)}
+.aisec-fields input{font:inherit;font-size:17px;color:var(--aisec-ink);border:2px solid var(--aisec-line);border-radius:12px;padding:10px 12px;background:#fff;width:100%;min-width:0}
+.aisec-fields input:focus{outline:none;border-color:var(--aisec-leaf)}
+.aisec-hint{font-size:13px;color:var(--aisec-muted);margin:0}
+#aisec_submit{font:inherit;font-weight:800;font-size:18px;background:var(--aisec-leaf);color:#fff;border:0;border-radius:14px;padding:14px;cursor:pointer;box-shadow:0 4px 0 var(--aisec-leaf-d)}
+#aisec_submit:disabled{opacity:.6;cursor:wait}
+#aisec_msg{min-height:1.4em;margin:0;font-weight:700;color:var(--aisec-warn)}
+.aisec-done{text-align:center;display:grid;gap:12px;justify-items:center}
+.aisec-done-card{display:flex;gap:16px;align-items:center;text-align:left;background:#FBEFD9;border:2px solid var(--aisec-wood);border-radius:20px;padding:14px 22px}
+.aisec-done-card p{margin:0;color:var(--aisec-muted)}
+.aisec-done-card .aisec-done-name{font-size:22px;font-weight:900;color:var(--aisec-ink)}
+.aisec-linkbtn{font:inherit;background:none;border:0;color:var(--aisec-wood);text-decoration:underline;cursor:pointer;font-weight:700}
+
+.aisec-modal{position:fixed;inset:0;background:rgba(59,42,30,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.aisec-modal-box{background:var(--aisec-paper);border-radius:20px;padding:22px;width:min(360px,100%);display:grid;gap:12px}
+#aisec_cancel_who{display:flex;gap:12px;align-items:center}
+#aisec_cancel_who b{display:block;font-size:14px;color:var(--aisec-muted)}
+#aisec_cancel_who span{font-size:20px;font-weight:900}
+.aisec-modal-box input{font:inherit;font-size:22px;letter-spacing:8px;text-align:center;border:2px solid var(--aisec-line);border-radius:12px;padding:8px;width:100%}
+.aisec-modal-actions{display:flex;gap:10px}
+.aisec-modal-actions button{flex:1;font:inherit;font-weight:800;border-radius:12px;padding:11px;cursor:pointer;border:2px solid var(--aisec-line);background:#fff;color:var(--aisec-ink)}
+#aisec_cancel_go{background:var(--aisec-warn);border-color:var(--aisec-warn);color:#fff}
+#aisec_cancel_msg{margin:0;min-height:1.3em;color:var(--aisec-warn);font-weight:700;font-size:14px}
+
+.aisec-foot{background:var(--aisec-ink);color:#EADFCB}
+.aisec-foot .aisec-wrap{padding-block:26px 34px;display:grid;gap:6px;font-size:15px}
+.aisec-foot b{color:#fff}
+
+@media (max-width:640px){
+  .aisec-ticket{grid-template-columns:repeat(2,1fr)}
+  .aisec-three{grid-template-columns:1fr}
+  .aisec-flow{grid-template-columns:1fr}
+  .aisec-animals{grid-template-columns:repeat(4,1fr);gap:6px}
+  .aisec-animal span{font-size:13px}
+  .aisec-fields{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="aisec-wrap aisec-hero">
+  <span class="aisec-tag">專為個人業務設計｜實體小班工作坊</span>
+  <h1>打造你的<br><em>LINE AI</em> 個人秘書</h1>
+  <p class="aisec-sub">3.5 小時，帶走一個幫你記客戶、提醒跟進、寫訊息的秘書。不用寫程式，帶筆電就能上。</p>
+  <dl class="aisec-ticket">
+    <div><dt>日期</dt><dd>11/29（日）13:30–17:00</dd></div>
+    <div><dt>地點</dt><dd>澤米芋 804（小樹屋）</dd></div>
+    <div><dt>費用</dt><dd class="aisec-price aisec-num">NT$3,680</dd></div>
+    <div><dt>剩餘名額</dt><dd class="aisec-leftbox aisec-num"><span class="aisec-left">–</span> / 7</dd></div>
+  </dl>
+  <a class="aisec-cta" href="#aisec_pick">選我的座位 →</a>
+</header>
+
+<section class="aisec-wrap aisec-sec">
+  <h2>秘書幫你做 3 件事</h2>
+  <div class="aisec-three">
+    <div><span class="aisec-step">實作 1</span><b>語音記客戶</b><p>見完客戶講 30 秒語音，自動整理成客戶紀錄。</p></div>
+    <div><span class="aisec-step">實作 2</span><b>每日跟進提醒</b><p>每天早上 8 點推播今天該聯絡誰、上次聊到哪。</p></div>
+    <div><span class="aisec-step">實作 3</span><b>訊息秒產生</b><p>一句話寫好生日祝福、跟進訊息、貼文草稿。</p></div>
+  </div>
+</section>
+
+<section class="aisec-wrap aisec-sec">
+  <h2>當天流程</h2>
+  <ol class="aisec-flow">
+    <li><time>13:30</time>AI 概念：業務怎麼用 AI 多賺時間</li>
+    <li><time>14:00</time>實作 1：建立秘書＋語音記客戶</li>
+    <li><time>15:00</time>中場休息</li>
+    <li><time>15:10</time>實作 2：每日跟進提醒</li>
+    <li><time>16:00</time>實作 3：訊息／貼文產生器</li>
+    <li><time>16:40</time>成果展示＋Q&amp;A</li>
+  </ol>
+</section>
+
+<section class="aisec-pick" id="aisec_pick">
+  <div class="aisec-wrap">
+    <div class="aisec-pick-head">
+      <h2>選位置，選你的動物</h2>
+      <p>先選先贏，還剩 <b class="aisec-left aisec-num">–</b> 個位置</p>
+    </div>
+    <div class="aisec-room">
+      <svg id="aisec_room_svg" role="img" aria-label="澤米芋 804 教室俯瞰圖：窗邊三人沙發、L 型沙發、兩張圓桌、白板在左側牆面">
+        <g id="aisec_room_static"></g>
+        <g id="aisec_seats_layer"></g>
+      </svg>
+      <div class="aisec-legend">
+        <span><i style="background:var(--aisec-leaf)"></i>空位，點一下選擇</span>
+        <span><i style="background:var(--aisec-wood)"></i>你選的位置</span>
+        <span><i style="background:var(--aisec-ink)"></i>有人了，點一下可用密碼取消</span>
+      </div>
+    </div>
+    <p class="aisec-alert" id="aisec_load_err" hidden>座位資料讀取失敗，請重新整理頁面。</p>
+    <p class="aisec-alert" id="aisec_full" hidden>7 個位置都滿了，想排候補請私訊柏廷老師。</p>
+
+    <form class="aisec-panel" id="aisec_form" novalidate>
+      <div><div class="aisec-row-label">① 你的位置</div><div id="aisec_pick_seat" class="is-empty"></div></div>
+      <div><div class="aisec-row-label">② 選一隻代表你的動物（不能重複）</div><div class="aisec-animals" id="aisec_animals"></div></div>
+      <div>
+        <div class="aisec-row-label">③ 填寫資料</div>
+        <div class="aisec-fields">
+          <label for="aisec_name">姓名<input id="aisec_name" maxlength="20" autocomplete="name" placeholder="王小明"></label>
+          <label for="aisec_phone">手機<input id="aisec_phone" inputmode="numeric" maxlength="12" autocomplete="tel" placeholder="0912345678"></label>
+          <label for="aisec_pin">取消用密碼（4 位數字）<input id="aisec_pin" inputmode="numeric" maxlength="4" placeholder="例如 2580"></label>
+        </div>
+        <p class="aisec-hint">姓名會顯示在座位上；手機只有柏廷老師看得到。之後想換位子，點自己的座位輸入密碼即可取消。</p>
+      </div>
+      <button type="submit" id="aisec_submit">確認選位</button>
+      <p id="aisec_msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <div class="aisec-panel aisec-done" id="aisec_done" hidden>
+      <h3>選位成功！</h3>
+      <div class="aisec-done-card" id="aisec_done_card"></div>
+      <p class="aisec-hint">柏廷老師會用電話跟你確認繳費方式。請記住你的 4 位數密碼，換位子時要用。</p>
+      <button type="button" class="aisec-linkbtn" id="aisec_again">幫朋友再選一個位置</button>
+    </div>
+  </div>
+</section>
+
+<footer class="aisec-foot">
+  <div class="aisec-wrap">
+    <div><b>講師</b>　柏廷老師</div>
+    <div><b>地點</b>　臺北市大同區承德路一段 35 號 8 樓之 2（澤米芋 804，小樹屋）・捷運中山站步行 4 分鐘</div>
+    <div><b>提醒</b>　請攜帶筆電與充電線，現場插座有限。</div>
+  </div>
+</footer>
+
+<div class="aisec-modal" id="aisec_cancel" hidden>
+  <div class="aisec-modal-box" role="dialog" aria-modal="true" aria-labelledby="aisec_cancel_title">
+    <h3 id="aisec_cancel_title">取消這個座位？</h3>
+    <div id="aisec_cancel_who"></div>
+    <label for="aisec_cancel_pin" class="aisec-row-label">輸入選位時設定的 4 位數密碼</label>
+    <input id="aisec_cancel_pin" inputmode="numeric" maxlength="4" autocomplete="off">
+    <p id="aisec_cancel_msg" role="status" aria-live="polite"></p>
+    <div class="aisec-modal-actions">
+      <button type="button" id="aisec_cancel_close">不取消</button>
+      <button type="button" id="aisec_cancel_go">取消座位</button>
+    </div>
+  </div>
+</div>
+
+<script src="aisec_room.js"></script>
+<script src="aisec_app.js"></script>
+</body>
+</html>
