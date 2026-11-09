@@ -134,6 +134,7 @@
     try {
       const r = await aisecRpc('aisec_book', { p_seat: aisecState.seat, p_animal: aisecState.animal, p_name: name, p_phone: phone, p_pin: pin });
       if (r === 'ok') {
+        try { if (window.fbq) window.fbq('track', 'Lead', { content_name: 'aisec-1129-seat' }); } catch (e) { /* 像素失敗不影響選位 */ }
         const seat = R.AISEC_SEATS.find(s => s.no === aisecState.seat);
         $('aisec_done_card').innerHTML = `${R.aisecAnimalSvg(aisecState.animal, 84)}<div><p class="aisec-done-name">${aisecEsc(name)}</p>` +
           `<p>座位 ${seat.no}・${seat.label}</p><p>11/29（日）13:30 澤米芋 804</p></div>`;

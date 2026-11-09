@@ -107,6 +107,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .aisec-foot{background:var(--aisec-ink);color:#EADFCB}
 .aisec-foot .aisec-wrap{padding-block:26px 34px;display:grid;gap:6px;font-size:15px}
 .aisec-foot b{color:#fff}
+.aisec-privacy{font-size:12px;opacity:.7;margin-top:6px}
 
 @media (max-width:640px){
   .aisec-ticket{grid-template-columns:repeat(2,1fr)}
@@ -117,6 +118,13 @@ h1,h2,h3{text-wrap:balance;margin:0}
   .aisec-fields{grid-template-columns:1fr}
 }
 </style>
+<!-- Meta 像素：只回報瀏覽與「選位成功」，不傳姓名與手機 -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','2304791576969271');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=2304791576969271&amp;ev=PageView&amp;noscript=1"></noscript>
 </head>
 <body>
 <header class="aisec-wrap aisec-hero">
@@ -203,6 +211,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
     <div><b>講師</b>　柏廷老師</div>
     <div><b>地點</b>　臺北市大同區承德路一段 35 號 8 樓之 2（澤米芋 804，小樹屋）・捷運中山站步行 4 分鐘</div>
     <div><b>提醒</b>　請攜帶筆電與充電線，現場插座有限。</div>
+    <div class="aisec-privacy">本頁使用 Meta 像素統計廣告成效，只記錄瀏覽與是否完成選位，不會傳送你的姓名與手機。</div>
   </div>
 </footer>
 
