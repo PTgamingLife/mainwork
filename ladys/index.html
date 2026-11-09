@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LadyS 生活秘書</title>
+<style>
+  :root {
+    --ladys-husband: #6C8EBF; --ladys-wife: #D4A5A5; --ladys-both: #9A8FB0;
+    --ladys-bg: #F5F5F7; --ladys-card: #FFFFFF; --ladys-ink: #2E2E33; --ladys-muted: #8A8A93;
+    --ladys-line: #E6E6EB; --ladys-danger: #C0605A; --ladys-radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--ladys-bg); color: var(--ladys-ink);
+    font: 15px/1.5 -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--ladys-bg);
+    display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header h1 small { display: block; font-size: 12px; font-weight: 400; color: var(--ladys-muted); }
+  .ladys-icon-btn { border: 0; background: var(--ladys-card); width: 40px; height: 40px; border-radius: 50%;
+    font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.08); cursor: pointer; }
+  main { padding: 0 16px 110px; max-width: 640px; margin: 0 auto; }
+  .ladys-card { background: var(--ladys-card); border-radius: var(--ladys-radius); padding: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05); margin-bottom: 12px; }
+  .ladys-chips { display: flex; gap: 8px; margin: 4px 0 12px; overflow-x: auto; }
+  .ladys-chip { border: 1px solid var(--ladys-line); background: var(--ladys-card); border-radius: 999px;
+    padding: 5px 14px; white-space: nowrap; cursor: pointer; }
+  .ladys-chip.on { background: var(--ladys-ink); color: #fff; border-color: var(--ladys-ink); }
+  /* 月曆 */
+  .ladys-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .ladys-cal-head b { font-size: 17px; }
+  .ladys-cal-head button { border: 0; background: none; font-size: 20px; padding: 4px 12px; cursor: pointer; }
+  .ladys-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .ladys-grid .wd { font-size: 12px; color: var(--ladys-muted); padding: 4px 0; }
+  .ladys-day { border: 0; background: none; border-radius: 10px; padding: 6px 0 4px; min-height: 46px; cursor: pointer; }
+  .ladys-day.out { color: #C4C4CC; }
+  .ladys-day.today b { color: var(--ladys-husband); }
+  .ladys-day.sel { background: #ECEFF6; }
+  .ladys-dots { display: flex; justify-content: center; gap: 3px; height: 6px; margin-top: 2px; }
+  .ladys-dots i { width: 6px; height: 6px; border-radius: 50%; }
+  .ladys-o-husband { background: var(--ladys-husband); } .ladys-o-wife { background: var(--ladys-wife); }
+  .ladys-o-both { background: var(--ladys-both); }
+  /* 列表 */
+  .ladys-sec { font-size: 13px; color: var(--ladys-muted); margin: 16px 2px 6px; font-weight: 600; }
+  .ladys-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--ladys-line); cursor: pointer; }
+  .ladys-item:last-child { border-bottom: 0; }
+  .ladys-bar { width: 4px; align-self: stretch; border-radius: 4px; flex: none; }
+  .ladys-item .t { flex: 1; min-width: 0; }
+  .ladys-item .t div { overflow-wrap: anywhere; }
+  .ladys-item .s { font-size: 12px; color: var(--ladys-muted); }
+  .ladys-item .r { font-weight: 600; white-space: nowrap; }
+  .ladys-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ladys-line);
+    background: none; flex: none; cursor: pointer; font-size: 13px; line-height: 1; }
+  .ladys-check.on { background: var(--ladys-husband); border-color: var(--ladys-husband); color: #fff; }
+  .ladys-done .t div:first-child { text-decoration: line-through; color: var(--ladys-muted); }
+  .ladys-empty { text-align: center; color: var(--ladys-muted); padding: 22px 0; }
+  .ladys-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .ladys-stats b { display: block; font-size: 18px; }
+  .ladys-stats span { font-size: 12px; color: var(--ladys-muted); }
+  .ladys-catbar { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 6px 0; }
+  .ladys-catbar .bar { flex: 1; height: 8px; background: var(--ladys-line); border-radius: 8px; overflow: hidden; }
+  .ladys-catbar .bar i { display: block; height: 100%; background: var(--ladys-both); }
+  .ladys-catbar .n { width: 72px; text-align: right; }
+  .ladys-catbar .c { width: 48px; }
+  /* 底部分頁 + 新增 */
+  nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--ladys-card);
+    display: flex; border-top: 1px solid var(--ladys-line); padding-bottom: env(safe-area-inset-bottom); }
+  nav button { flex: 1; border: 0; background: none; padding: 8px 0 6px; font-size: 11px; color: var(--ladys-muted); cursor: pointer; }
+  nav button span { display: block; font-size: 20px; line-height: 1.2; }
+  nav button.on { color: var(--ladys-ink); font-weight: 600; }
+  .ladys-fab { position: fixed; right: 18px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 6;
+    width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--ladys-husband); color: #fff;
+    font-size: 28px; box-shadow: 0 4px 12px rgba(108,142,191,.45); cursor: pointer; }
+  /* 編輯面板 */
+  .ladys-sheet-bg { position: fixed; inset: 0; background: rgba(30,30,40,.35); z-index: 10; display: none; }
+  .ladys-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; background: var(--ladys-card);
+    border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    max-height: 88vh; overflow-y: auto; transform: translateY(105%); transition: transform .22s ease; max-width: 640px; margin: 0 auto; }
+  .ladys-sheet.open { transform: none; }
+  .ladys-sheet h3 { margin: 0 0 12px; }
+  .ladys-field { margin-bottom: 12px; }
+  .ladys-field label { display: block; font-size: 13px; color: var(--ladys-muted); margin-bottom: 4px; }
+  .ladys-field input, .ladys-field select, .ladys-field textarea { width: 100%; border: 1px solid var(--ladys-line);
+    border-radius: 10px; padding: 10px; background: #FAFAFC; }
+  .ladys-row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .ladys-mrow { margin-bottom: 8px; }
+  .ladys-mrow input, .ladys-mrow select { width: 100%; min-width: 0; border: 1px solid var(--ladys-line); border-radius: 10px; padding: 10px; background: #FAFAFC; }
+  .ladys-seg { display: flex; gap: 6px; }
+  .ladys-seg button { flex: 1; border: 1px solid var(--ladys-line); background: #FAFAFC; border-radius: 10px; padding: 8px 0; cursor: pointer; }
+  .ladys-seg button.on { color: #fff; border-color: transparent; }
+  .ladys-seg button.on[data-v=husband] { background: var(--ladys-husband); }
+  .ladys-seg button.on[data-v=wife] { background: var(--ladys-wife); }
+  .ladys-seg button.on[data-v=both], .ladys-seg button.on:not([data-v]) , .ladys-seg button.on[data-v=goal],
+  .ladys-seg button.on[data-v=todo] { background: var(--ladys-both); }
+  .ladys-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .ladys-btn { flex: 1; border: 0; border-radius: 12px; padding: 12px 0; font-weight: 600; cursor: pointer; background: var(--ladys-husband); color: #fff; }
+  .ladys-btn.ghost { background: #EFEFF3; color: var(--ladys-ink); }
+  .ladys-btn.danger { background: none; color: var(--ladys-danger); border: 1px solid var(--ladys-danger); flex: 0 0 80px; }
+  .ladys-switch { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ladys-line); }
+  .ladys-switch input { width: 20px; height: 20px; }
+  .ladys-toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 20; background: var(--ladys-ink);
+    color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; display: none; }
+  .ladys-center { text-align: center; padding: 60px 16px; color: var(--ladys-muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="ladysTitle">LadyS<small>生活秘書</small></h1>
+  <button class="ladys-icon-btn" id="ladysGear" aria-label="設定">⚙️</button>
+</header>
+<main id="ladysMain"><div class="ladys-center">載入中…</div></main>
+<button class="ladys-fab" id="ladysFab" aria-label="新增">＋</button>
+<nav id="ladysNav">
+  <button data-view="calendar"><span>📅</span>行事曆</button>
+  <button data-view="list"><span>📋</span>列表</button>
+  <button data-view="money"><span>💰</span>記帳</button>
+  <button data-view="goals"><span>🎯</span>目標</button>
+  <button data-view="todos"><span>☑️</span>待辦</button>
+</nav>
+<div class="ladys-sheet-bg" id="ladysSheetBg"></div>
+<div class="ladys-sheet" id="ladysSheet"></div>
+<div class="ladys-toast" id="ladysToast"></div>
+<script src="ladys.js"></script>
+</body>
+</html>

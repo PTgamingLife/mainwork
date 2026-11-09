@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>十神修行錄</title>
+  <meta name="description" content="看見你的五種能量,立下戒律、約束、誓言,由守護天使陪你修行。">
+  <meta name="theme-color" content="#EEEEEC">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/sg-style.css?v=20261031a">
+</head>
+<body>
+  <!-- 水墨筆觸濾鏡 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="sg-brush-soft" x="-5%" y="-30%" width="110%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03 0.6" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="sg-mist" x="-10%" y="-30%" width="120%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.02" numOctaves="3" seed="5" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="26"/>
+        <feGaussianBlur stdDeviation="3"/>
+      </filter>
+      <!-- 墨入水:大尺度扭曲成雲團,小尺度扭曲成絲縷 -->
+      <filter id="sg-inkwater" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.007" numOctaves="3" seed="9" result="n1"/>
+        <feDisplacementMap in="SourceGraphic" in2="n1" scale="110" xChannelSelector="R" yChannelSelector="B" result="d1"/>
+        <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="2" seed="4" result="n2"/>
+        <feDisplacementMap in="d1" in2="n2" scale="18" xChannelSelector="G" yChannelSelector="R" result="d2"/>
+        <feGaussianBlur in="d2" stdDeviation="3.5"/>
+      </filter>
+      <filter id="sg-inkwisp" x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="21" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feGaussianBlur in="d" stdDeviation="2"/>
+      </filter>
+      <radialGradient id="sg-ink-d"><stop offset="0" stop-color="#1E1E1E"/><stop offset=".55" stop-color="#1E1E1E" stop-opacity=".6"/><stop offset="1" stop-color="#1E1E1E" stop-opacity="0"/></radialGradient>
+      <radialGradient id="sg-ink-l"><stop offset="0" stop-color="#9C9D99"/><stop offset=".55" stop-color="#9C9D99" stop-opacity=".6"/><stop offset="1" stop-color="#9C9D99" stop-opacity="0"/></radialGradient>
+    </defs>
+  </svg>
+
+  <!-- 背景:遠山、近山、梅枝(參考煙雨水墨) -->
+  <div class="sg-scene" aria-hidden="true">
+    <div class="sg-sun"></div>
+    <!-- 墨滴入水暈開:右上濃墨、左側淡墨 -->
+    <svg class="sg-ink" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+      <g class="sg-bloom sg-bloom-1"><g filter="url(#sg-inkwater)"><circle cx="310" cy="180" r="63" fill="url(#sg-ink-d)" opacity="0.30"/><circle cx="280" cy="274" r="51" fill="url(#sg-ink-d)" opacity="0.22"/><circle cx="243" cy="272" r="28" fill="url(#sg-ink-d)" opacity="0.16"/><circle cx="226" cy="215" r="54" fill="url(#sg-ink-d)" opacity="0.12"/><circle cx="316" cy="238" r="43" fill="url(#sg-ink-d)" opacity="0.17"/><circle cx="364" cy="193" r="35" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="277" cy="219" r="51" fill="url(#sg-ink-d)" opacity="0.12"/><circle cx="296" cy="226" r="27" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="324" cy="233" r="56" fill="url(#sg-ink-d)" opacity="0.21"/><circle cx="281" cy="293" r="43" fill="url(#sg-ink-d)" opacity="0.19"/><circle cx="342" cy="291" r="48" fill="url(#sg-ink-d)" opacity="0.22"/><circle cx="359" cy="142" r="38" fill="url(#sg-ink-d)" opacity="0.12"/></g><g filter="url(#sg-inkwisp)"><path d="M342 222 Q341 300 294 284" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="7.6" fill="none" stroke-linecap="round"/><path d="M296 129 Q327 58 364 90" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="6.0" fill="none" stroke-linecap="round"/><path d="M258 186 Q164 239 203 260" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="9.5" fill="none" stroke-linecap="round"/><path d="M277 221 Q194 260 196 217" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="4.2" fill="none" stroke-linecap="round"/><path d="M360 195 Q439 188 419 162" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="8.8" fill="none" stroke-linecap="round"/><path d="M259 192 Q165 157 204 115" stroke="#1E1E1E" stroke-opacity="0.03" stroke-width="8.4" fill="none" stroke-linecap="round"/><path d="M325 130 Q308 15 266 47" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="5.3" fill="none" stroke-linecap="round"/><path d="M258 176 Q174 208 206 236" stroke="#1E1E1E" stroke-opacity="0.05" stroke-width="7.3" fill="none" stroke-linecap="round"/><path d="M290 229 Q311 317 356 287" stroke="#1E1E1E" stroke-opacity="0.04" stroke-width="8.3" fill="none" stroke-linecap="round"/></g></g>
+      <g class="sg-bloom sg-bloom-2"><g filter="url(#sg-inkwater)"><circle cx="70" cy="460" r="50" fill="url(#sg-ink-l)" opacity="0.50"/><circle cx="134" cy="528" r="25" fill="url(#sg-ink-l)" opacity="0.32"/><circle cx="112" cy="479" r="46" fill="url(#sg-ink-l)" opacity="0.22"/><circle cx="49" cy="516" r="32" fill="url(#sg-ink-l)" opacity="0.27"/><circle cx="134" cy="516" r="24" fill="url(#sg-ink-l)" opacity="0.22"/><circle cx="116" cy="472" r="31" fill="url(#sg-ink-l)" opacity="0.36"/><circle cx="83" cy="495" r="28" fill="url(#sg-ink-l)" opacity="0.37"/><circle cx="136" cy="486" r="31" fill="url(#sg-ink-l)" opacity="0.31"/><circle cx="30" cy="524" r="34" fill="url(#sg-ink-l)" opacity="0.30"/><circle cx="126" cy="420" r="25" fill="url(#sg-ink-l)" opacity="0.19"/><circle cx="129" cy="439" r="26" fill="url(#sg-ink-l)" opacity="0.36"/><circle cx="1" cy="423" r="43" fill="url(#sg-ink-l)" opacity="0.23"/></g><g filter="url(#sg-inkwisp)"><path d="M44 493 Q15 581 49 571" stroke="#9C9D99" stroke-opacity="0.07" stroke-width="7.1" fill="none" stroke-linecap="round"/><path d="M54 499 Q-4 543 -12 507" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="5.0" fill="none" stroke-linecap="round"/><path d="M29 452 Q-45 486 -11 518" stroke="#9C9D99" stroke-opacity="0.08" stroke-width="9.4" fill="none" stroke-linecap="round"/><path d="M30 448 Q-40 459 -21 485" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="4.3" fill="none" stroke-linecap="round"/><path d="M69 502 Q41 564 24 540" stroke="#9C9D99" stroke-opacity="0.06" stroke-width="5.2" fill="none" stroke-linecap="round"/><path d="M48 424 Q-44 385 -45 444" stroke="#9C9D99" stroke-opacity="0.05" stroke-width="4.9" fill="none" stroke-linecap="round"/><path d="M82 420 Q64 348 34 372" stroke="#9C9D99" stroke-opacity="0.08" stroke-width="5.0" fill="none" stroke-linecap="round"/><path d="M31 444 Q-43 454 -22 488" stroke="#9C9D99" stroke-opacity="0.06" stroke-width="4.8" fill="none" stroke-linecap="round"/><path d="M106 481 Q142 530 115 532" stroke="#9C9D99" stroke-opacity="0.09" stroke-width="7.0" fill="none" stroke-linecap="round"/></g></g>
+    </svg>
+    <svg class="sg-hills" viewBox="0 0 400 220" preserveAspectRatio="none">
+      <path d="M0 150 C40 110 70 120 100 95 C130 70 160 115 200 100 C240 85 260 60 300 80 C340 100 370 90 400 105 L400 220 L0 220Z" fill="#C9CAC6" opacity=".55" filter="url(#sg-mist)"/>
+      <path d="M0 185 C50 150 90 170 140 145 C190 120 220 165 270 150 C320 135 360 160 400 145 L400 220 L0 220Z" fill="#9C9D99" opacity=".45" filter="url(#sg-mist)"/>
+      <path d="M0 205 C70 190 120 200 190 188 C260 176 330 198 400 190 L400 220 L0 220Z" fill="#5E5F5C" opacity=".35" filter="url(#sg-mist)"/>
+    </svg>
+    <svg class="sg-plum" viewBox="0 0 160 200">
+      <path d="M0 200 C30 160 40 130 70 110 C95 92 110 70 150 40 M70 110 C80 90 76 70 90 52 M45 140 C30 120 26 100 10 88" stroke="#2A2A28" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#sg-brush-soft)"/>
+      <g fill="#E3BE2B"><circle cx="150" cy="40" r="6"/><circle cx="138" cy="50" r="5"/><circle cx="90" cy="52" r="6"/><circle cx="100" cy="64" r="4"/><circle cx="10" cy="88" r="5"/><circle cx="70" cy="110" r="5"/><circle cx="26" cy="100" r="4"/></g>
+    </svg>
+  </div>
+
+  <header class="sg-top">
+    <div class="sg-seal" aria-hidden="true">修</div>
+    <div>
+      <h1 class="sg-title">十神修行錄</h1>
+      <p class="sg-sub" id="sg-greet">以命為墨,以行為筆</p>
+    </div>
+  </header>
+
+  <main id="sg-main" class="sg-main" aria-live="polite"></main>
+
+
+  <div class="sg-toast" id="sg-toast" role="status" hidden></div>
+
+  <script type="module" src="./js/sg-app.js?v=20261031a"></script>
+</body>
+</html>
