@@ -105,16 +105,55 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
 </svg>
 <!-- 小人獨立一層,疊在卡片之上:走到卡片旁邊時不能被卡片角蓋住 -->
 <svg id="walkerLayer" aria-hidden="true">
+  <defs>
+    <!-- 立體感的做法:每一節肢體都是圓柱(左亮右暗的橫向漸層),頭是球(左上高光的放射漸層),
+         遠側的手腳用更暗的顏色先畫,近側後畫蓋上去,就有前後。 -->
+    <radialGradient id="wHead" cx="36%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#5E7391"/><stop offset="55%" stop-color="#27384E"/><stop offset="100%" stop-color="#121B28"/>
+    </radialGradient>
+    <linearGradient id="wLimb" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4C6180"/><stop offset="55%" stop-color="#25354A"/><stop offset="100%" stop-color="#141D2A"/>
+    </linearGradient>
+    <linearGradient id="wFar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2A3A50"/><stop offset="100%" stop-color="#0F1722"/>
+    </linearGradient>
+    <radialGradient id="wHeadN" cx="36%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="60%" stop-color="#EFE7D6"/><stop offset="100%" stop-color="#BDB199"/>
+    </radialGradient>
+    <linearGradient id="wLimbN" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFDF6"/><stop offset="60%" stop-color="#E9E0CC"/><stop offset="100%" stop-color="#B9AD95"/>
+    </linearGradient>
+    <linearGradient id="wFarN" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#CFC5AF"/><stop offset="100%" stop-color="#9A8F7A"/>
+    </linearGradient>
+    <linearGradient id="wPack" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F29A80"/><stop offset="100%" stop-color="#B9523A"/>
+    </linearGradient>
+    <radialGradient id="wShadow">
+      <stop offset="0%" stop-color="rgba(20,29,42,.42)"/><stop offset="100%" stop-color="rgba(20,29,42,0)"/>
+    </radialGradient>
+  </defs>
+  <style>
+    #fig .near{fill:url(#wLimb)} #fig .far{fill:url(#wFar)} #fig .head{fill:url(#wHead)}
+    #fig.night .near{fill:url(#wLimbN)} #fig.night .far{fill:url(#wFarN)} #fig.night .head{fill:url(#wHeadN)}
+  </style>
   <g id="walker">
-    <ellipse cx="0" cy="2" rx="13" ry="4.5" fill="rgba(29,43,58,.28)"/>
-    <g id="fig" stroke="#1D2B3A" stroke-width="5.5" stroke-linecap="round" fill="none">
-      <line id="legA" x1="0" y1="-17" x2="0" y2="-1"/>
-      <line id="legB" x1="0" y1="-17" x2="0" y2="-1"/>
-      <line x1="0" y1="-34" x2="0" y2="-17" stroke-width="7.5"/>
-      <rect x="-9" y="-33" width="7" height="12" rx="3" fill="#E07A5F" stroke="none"/>
-      <line id="armA" x1="0" y1="-31" x2="0" y2="-19" stroke-width="4"/>
-      <line id="armB" x1="0" y1="-31" x2="0" y2="-19" stroke-width="4"/>
-      <circle cx="0" cy="-43" r="7" fill="#1D2B3A" stroke="none"/>
+    <ellipse cx="2" cy="3" rx="19" ry="6.5" fill="url(#wShadow)"/>
+    <g id="fig">
+      <!-- 遠側的手腳(先畫、較暗) -->
+      <g id="legB"><rect class="far" x="-3.4" y="-19" width="6.8" height="19" rx="3.4"/>
+                   <ellipse class="far" cx="2.2" cy="-.6" rx="5" ry="2.6"/></g>
+      <g id="armB"><rect class="far" x="-2.6" y="-34" width="5.2" height="15" rx="2.6"/></g>
+      <!-- 背包、身體 -->
+      <rect x="-12" y="-36" width="9" height="14" rx="3.5" fill="url(#wPack)"/>
+      <rect class="near" x="-5.5" y="-37" width="11" height="21" rx="5.5"/>
+      <!-- 近側的手腳 -->
+      <g id="legA"><rect class="near" x="-3.6" y="-19" width="7.2" height="19" rx="3.6"/>
+                   <ellipse class="near" cx="2.4" cy="-.6" rx="5.4" ry="2.8"/></g>
+      <g id="armA"><rect class="near" x="-2.8" y="-34" width="5.6" height="15" rx="2.8"/></g>
+      <!-- 頭:球體 + 一點高光 -->
+      <circle class="head" cx="0" cy="-46" r="8"/>
+      <ellipse cx="-2.8" cy="-49.4" rx="2.6" ry="1.7" fill="#fff" opacity=".28" transform="rotate(-28 -2.8 -49.4)"/>
     </g>
   </g>
 </svg>
@@ -257,15 +296,16 @@ function update() {
   // 面向路彎過去的方向;腳步跟著捲動距離擺,不捲就站著
   const face = ahead.x >= pt.x ? 1 : -1;
   const swing = Math.sin(scrollY / 13) * 30;
-  walker.setAttribute('transform', `translate(${pt.x} ${pt.y}) scale(${face * 1.15} 1.15)`);
-  $('legA').setAttribute('transform', `rotate(${swing} 0 -17)`);
-  $('legB').setAttribute('transform', `rotate(${-swing} 0 -17)`);
-  $('armA').setAttribute('transform', `rotate(${-swing * 0.8} 0 -31)`);
-  $('armB').setAttribute('transform', `rotate(${swing * 0.8} 0 -31)`);
+  // 走路時身體跟著腳步微微上下,不然像在路上平移
+  const bob = -Math.abs(Math.sin(scrollY / 13)) * 1.6;
+  walker.setAttribute('transform', `translate(${pt.x} ${pt.y}) scale(${face * 1.25} 1.25)`);
+  $('fig').setAttribute('transform', `translate(0 ${bob})`);
+  $('legA').setAttribute('transform', `rotate(${swing} 0 -18)`);
+  $('legB').setAttribute('transform', `rotate(${-swing} 0 -18)`);
+  $('armA').setAttribute('transform', `rotate(${-swing * 0.8} 0 -33)`);
+  $('armB').setAttribute('transform', `rotate(${swing * 0.8} 0 -33)`);
   // 走進夜色,小人換成亮色才看得見
-  const night = pt.y / document.body.scrollHeight > 0.84;
-  $('fig').setAttribute('stroke', night ? '#F6F1E6' : '#1D2B3A');
-  $('fig').querySelector('circle').setAttribute('fill', night ? '#F6F1E6' : '#1D2B3A');
+  $('fig').classList.toggle('night', pt.y / document.body.scrollHeight > 0.84);
 
   // 小人快走到卡片旁邊時,卡片從路邊跳出來(跳出後就留著)
   STOPS.forEach(({ sec, y: sy }) => {
