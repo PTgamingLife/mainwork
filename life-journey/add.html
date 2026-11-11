@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>增加我的生命之旅</title>
+<link rel="stylesheet" href="css/lj.css">
+<!-- 再紀錄自己:一張照片 + 3 個問題 → AI 寫標題(20–50 字)與故事 → 可改字、可重生成(3 次)→ 存進旅程。 -->
+<style>
+.pick{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+      width:100%;aspect-ratio:1/1;border-radius:18px;border:2px dashed rgba(46,64,87,.25);background:rgba(255,255,255,.55);
+      color:#475A70;font-size:15px;letter-spacing:1px;overflow:hidden;cursor:pointer}
+.pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pick .plus{font-size:34px;color:var(--dusk);line-height:1}
+.pick .change{position:absolute;right:10px;bottom:10px;z-index:2;padding:6px 12px;border-radius:999px;
+              background:rgba(29,43,58,.7);color:#fff;font-size:12px}
+.row{display:flex;gap:10px}
+.row select{flex:1}
+select.field{appearance:none;background:#fff}
+.q{margin-top:22px}
+.q h3{font-size:16.5px;line-height:1.7;font-weight:normal;margin-bottom:10px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opt{padding:13px 10px;border-radius:13px;border:1.5px solid transparent;background:rgba(255,253,247,.94);
+     font-family:inherit;font-size:14.5px;color:var(--ink);box-shadow:0 3px 10px rgba(29,43,58,.06);cursor:pointer}
+.opt.sel{border-color:var(--dusk);background:#FFF4EE}
+.opt.other{grid-column:1 / -1;background:transparent;border:1.5px dashed rgba(46,64,87,.25);box-shadow:none;color:#475A70}
+.opt.other.sel{border-style:solid;border-color:var(--dusk)}
+.note{font-size:12.5px;line-height:1.8;color:var(--muted);margin-top:16px;text-align:center}
+.foot{margin-top:24px;display:flex;flex-direction:column;gap:10px}
+/* 結果 */
+.res-photo{width:100%;aspect-ratio:1/1;border-radius:16px;overflow:hidden;box-shadow:0 14px 30px rgba(29,43,58,.2)}
+.res-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.ed{border-radius:6px;padding:2px 4px;margin:0 -4px;outline:none;transition:background .2s,box-shadow .2s}
+.ed:focus{background:#FFF8EE;box-shadow:0 0 0 1.5px var(--gold)}
+.res-title{font-size:20px;line-height:1.6;letter-spacing:.5px;margin:18px 0 10px}
+.res-story{font-size:15px;line-height:1.95;color:#2F4055}
+.hint{text-align:center;font-size:12.5px;color:var(--muted);margin:14px 0 4px}
+.left{font-size:12.5px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="lj-wait" id="boot"><p>正在打開⋯</p></div>
+<div class="lj-wait hidden" id="busy"><p id="busyMsg">正在看你的照片⋯</p></div>
+
+<!-- ① 照片 + 3 題 -->
+<main class="page" id="form">
+  <button class="link" id="back" style="align-self:flex-start">← 我的旅程</button>
+  <h1 class="h1" style="margin:18px 0 16px">增加我的生命之旅</h1>
+
+  <label class="pick" id="pick" for="file">
+    <span class="plus">＋</span><span>選一張照片</span>
+  </label>
+  <input type="file" id="file" accept="image/*" hidden>
+
+  <div class="q">
+    <h3>這是什麼時候？<span style="font-size:13px;color:var(--muted)">（可以不填）</span></h3>
+    <div class="row">
+      <select class="field" id="year"></select>
+      <select class="field" id="season">
+        <option value="">季節</option><option>春</option><option>夏</option><option>秋</option><option>冬</option>
+      </select>
+    </div>
+  </div>
+  <div id="qs"></div>
+
+  <p class="note">照片會交給 AI 看過，用來幫你寫這一段的故事。<br>只有你、和知道你編號的人看得到你的旅程。</p>
+  <div class="foot"><button class="btn btn-main" id="write" disabled>請 AI 幫我寫</button></div>
+</main>
+
+<!-- ② 結果 -->
+<main class="page hidden" id="result">
+  <div class="res-photo"><img id="rPhoto" alt=""></div>
+  <div class="res-title ed" contenteditable="true" id="rTitle"></div>
+  <div class="res-story ed" contenteditable="true" id="rStory"></div>
+  <div class="hint">✎ 點文字就能直接修改</div>
+  <div class="foot">
+    <button class="btn btn-main" id="save">就用這版，放進我的旅程</button>
+    <button class="btn btn-soft" id="regen">重新生成</button>
+    <div class="left" id="left"></div>
+    <button class="link" id="discard">不要這張了</button>
+  </div>
+</main>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script src="js/add.js"></script>
+</body>
+</html>

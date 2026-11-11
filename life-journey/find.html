@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>看別人的旅程</title>
+<link rel="stylesheet" href="css/lj.css">
+<style>
+.code-in{width:100%;text-align:center;font-family:inherit;font-size:34px;letter-spacing:14px;text-indent:14px;
+         padding:16px 10px;border-radius:16px;border:1.5px solid rgba(46,64,87,.2);background:#fff;color:var(--ink);
+         text-transform:uppercase;outline:none}
+.code-in:focus{border-color:var(--dusk)}
+.found{margin-top:16px;text-align:center;font-size:16px;line-height:1.8;min-height:1.8em}
+.mine{margin-top:auto;text-align:center;font-size:13px;letter-spacing:3px;color:var(--muted);padding-top:30px}
+</style>
+</head>
+<body>
+<div class="lj-wait" id="boot"><p>正在打開⋯</p></div>
+<main class="page">
+  <button class="link" id="back" style="align-self:flex-start">← 我的旅程</button>
+  <h1 class="h1" style="margin:26px 0 8px">看別人的旅程</h1>
+  <p class="sub" style="margin-bottom:22px">輸入對方的 4 碼編號。編號在每個人旅程的最下面。</p>
+  <input class="code-in" id="code" maxlength="4" autocomplete="off" autocapitalize="characters" inputmode="text" placeholder="K7M2">
+  <div class="found" id="found"></div>
+  <button class="btn btn-main" id="go" style="margin-top:14px" disabled>去看他的旅程</button>
+  <div class="mine" id="mine"></div>
+</main>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let found = '';
+  // 4 碼都輸入完才去查,打字途中不打擾
+  async function check() {
+    const c = $('code').value.trim().toUpperCase();
+    found = '';
+    $('go').disabled = true;
+    if (c.length < 4) { $('found').textContent = ''; return; }
+    $('found').textContent = '找找看⋯';
+    const r = await LJ.api('lookup', { code: c });
+    if (c !== $('code').value.trim().toUpperCase()) return;   // 查的途中又改了
+    if (!r.ok) { $('found').textContent = LJ.say(r.error); return; }
+    if (r.isMine) { $('found').textContent = '這是你自己的編號喔'; return; }
+    found = c;
+    $('found').innerHTML = `找到了：<b style="font-weight:normal;color:var(--dusk)">${LJ.esc(r.name)}</b>`;
+    $('go').disabled = false;
+  }
+  $('code').addEventListener('input', check);
+  $('go').onclick = () => found && LJ.go('journey.html', { code: found });
+  $('back').onclick = () => LJ.go('journey.html');
+  LJ.boot((me) => {
+    $('mine').textContent = `我的編號 · ${me.member.code}`;
+    $('boot').classList.add('hidden');
+    $('code').focus();
+  });
+})();
+</script>
+</body>
+</html>

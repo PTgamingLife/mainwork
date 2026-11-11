@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>生命之旅圖文選單 2500x1686</title>
+<!--
+  生命之旅 — LINE 圖文選單底圖(配色 B 黎明到黃昏)。
+  截圖成 2500x1686 存成 life-journey/richmenu.png;要改字改色就改這裡再重截一次。
+  四格順序必須與 scripts/lj_line_setup.py 的 LJ_CELLS 一致:
+    左上 增加我的生命之旅 / 右上 我的生命之旅 / 左下 看別人的旅程 / 右下 送一段回憶
+  這台機器的中文字型沒有粗體,所以不用 font-weight。
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 2500px; height: 1686px; overflow: hidden; background: #F4F1DE;
+         font-family: "WenQuanYi Zen Hei", "PingFang TC", "Noto Sans CJK TC", sans-serif; }
+  .grid { width: 2500px; height: 1686px; display: grid; grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr; gap: 6px; background: #F4F1DE; }
+  .cell { position: relative; display: flex; flex-direction: column; align-items: center;
+          justify-content: center; gap: 40px; overflow: hidden; }
+  .c1 { background: linear-gradient(160deg, #F2CC8F 0%, #E9A97A 100%); color: #2E4057; }
+  .c2 { background: linear-gradient(160deg, #E07A5F 0%, #C9604A 100%); color: #FFF8EE; }
+  .c3 { background: linear-gradient(160deg, #3D5573 0%, #2E4057 100%); color: #F4F1DE; }
+  .c4 { background: linear-gradient(160deg, #C9DCEB 0%, #9DBAD2 100%); color: #2E4057; }
+  .cell::after { content: ""; position: absolute; right: -160px; bottom: -200px; width: 640px; height: 640px;
+                 border-radius: 50%; background: rgba(255,255,255,.12); }
+  svg { width: 270px; height: 270px; position: relative; z-index: 1; }
+  .t { font-size: 118px; letter-spacing: 10px; position: relative; z-index: 1; }
+  .s { font-size: 60px; letter-spacing: 6px; opacity: .78; position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <!-- 增加我的生命之旅:相機 + 加號 -->
+  <div class="cell c1">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="10" y="28" width="66" height="50" rx="9"/><path d="M28 28l6-10h18l6 10"/><circle cx="43" cy="53" r="13"/>
+      <path d="M84 12v22M73 23h22"/>
+    </svg>
+    <div class="t">增加旅程</div><div class="s">一張照片，一個時刻</div>
+  </div>
+  <!-- 我的生命之旅:蜿蜒道路 -->
+  <div class="cell c2">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 90c0-22 60-14 60-36S30 36 30 18"/><circle cx="30" cy="12" r="5" fill="currentColor"/>
+      <circle cx="80" cy="54" r="4" fill="currentColor"/><circle cx="20" cy="90" r="4" fill="currentColor"/>
+    </svg>
+    <div class="t">我的旅程</div><div class="s">一路走來的樣子</div>
+  </div>
+  <!-- 看別人的旅程:放大鏡 -->
+  <div class="cell c3">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="42" cy="42" r="26"/><path d="M61 61l25 25"/>
+    </svg>
+    <div class="t">看別人的旅程</div><div class="s">輸入四碼走進去</div>
+  </div>
+  <!-- 送一段回憶:禮物 -->
+  <div class="cell c4">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="14" y="38" width="72" height="50" rx="6"/><path d="M10 38h80M50 38v50"/>
+      <path d="M50 38c-6-16-26-20-26-8s20 8 26 8c6 0 26 4 26-8s-20-8-26 8z"/>
+    </svg>
+    <div class="t">送一段回憶</div><div class="s">放進朋友的旅程</div>
+  </div>
+</div>
+</body>
+</html>

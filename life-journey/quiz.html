@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>先認識自己</title>
+<link rel="stylesheet" href="css/lj.css">
+<!-- 自我探索問答。6 題答完由 lj-api 請 AI 判斷要不要追問,最後生成結果。
+     網址加 ?mock=1 走假後端,可在電腦上離線走完整條流程。
+     視覺跟旅程頁一致:配色 B、紙質卡片、道路與小人。
+     這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight。 -->
+<style>
+:root{--ivory:#F4F1DE;--dusk:#E07A5F;--night:#2E4057;--gold:#F2CC8F;--ink:#1D2B3A;--muted:#6B7A8C}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:"WenQuanYi Zen Hei","PingFang TC","Noto Sans CJK TC",sans-serif;color:var(--ink);
+     min-height:100svh;background:linear-gradient(180deg,#C9DCEB 0%,#EEF0EA 34%,var(--ivory) 70%,#F3DFC4 100%)}
+.screen{display:none;max-width:520px;margin:0 auto;min-height:100svh;padding:22px 18px 30px;flex-direction:column}
+.screen.on{display:flex;animation:in .45s ease}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.btn{width:100%;padding:15px;border-radius:13px;border:none;font-family:inherit;font-size:16px;
+     letter-spacing:2px;text-indent:2px;cursor:pointer}
+.btn-main{background:var(--night);color:#F6F1E6;box-shadow:0 8px 20px rgba(46,64,87,.25)}
+.btn-main:disabled{opacity:.35;box-shadow:none}
+.btn-soft{background:rgba(255,255,255,.7);color:var(--night);border:1px solid rgba(46,64,87,.18)}
+.btn-soft:disabled{opacity:.4}
+.link{background:none;border:none;font-family:inherit;font-size:14px;color:var(--muted);
+      letter-spacing:1px;padding:6px 2px;cursor:pointer}
+
+/* ── 歡迎 ── */
+#welcome{justify-content:center;text-align:center}
+#welcome .road{margin:0 auto 34px}
+#welcome h1{font-size:27px;line-height:1.6;letter-spacing:1px;font-weight:normal}
+#welcome h1 b{font-weight:normal;color:var(--dusk)}
+#welcome p{margin:18px auto 40px;font-size:15px;line-height:2;color:#475A70;max-width:18em}
+
+/* ── 進度:一小段路,小人隨題數往前 ── */
+.progress{position:relative;height:58px;margin:4px 0 6px}
+.progress svg{width:100%;height:100%;overflow:visible}
+.top{display:flex;align-items:center;justify-content:space-between;min-height:30px}
+.count{font-size:13px;letter-spacing:2px;color:var(--muted)}
+.badge{display:inline-block;font-size:12px;letter-spacing:2px;text-indent:2px;padding:5px 12px;
+       border-radius:999px;background:var(--dusk);color:#fff}
+
+/* ── 題目 ── */
+.q{font-size:21px;line-height:1.65;letter-spacing:.5px;margin:18px 2px 8px}
+.q-sub{font-size:13px;color:var(--muted);letter-spacing:1px;margin:0 2px 16px;min-height:1em}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{width:100%;text-align:left;padding:15px 16px;border-radius:14px;font-family:inherit;font-size:15.5px;
+     line-height:1.6;color:var(--ink);background:rgba(255,253,247,.92);border:1.5px solid transparent;
+     box-shadow:0 4px 12px rgba(29,43,58,.07);cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.opt:active{transform:scale(.98)}
+.opt.sel{border-color:var(--dusk);background:#FFF4EE}
+.opt.other{background:transparent;border:1.5px dashed rgba(46,64,87,.25);box-shadow:none;color:#475A70}
+.opt.other.sel{border-style:solid;border-color:var(--dusk);background:rgba(255,244,238,.6)}
+/* 複選:兩欄小卡 */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.grid .opt{padding:14px 12px;font-size:15px;text-align:center}
+.grid .opt.other{grid-column:1 / -1}
+textarea{width:100%;margin-top:10px;padding:13px 14px;border-radius:13px;border:1.5px solid rgba(46,64,87,.2);
+         background:#fff;font-family:inherit;font-size:15px;line-height:1.7;color:var(--ink);resize:none;outline:none}
+textarea:focus{border-color:var(--dusk)}
+.foot{margin-top:auto;padding-top:20px;display:flex;flex-direction:column;gap:10px}
+.hidden{display:none !important}
+
+/* ── 整理中 ── */
+#loading{justify-content:center;align-items:center;text-align:center}
+.walk{width:120px;height:120px;margin-bottom:26px}
+.walk .lA{transform-origin:60px 78px;animation:sw .8s ease-in-out infinite alternate}
+.walk .lB{transform-origin:60px 78px;animation:sw .8s ease-in-out infinite alternate-reverse}
+.walk .aA{transform-origin:60px 58px;animation:sw .8s ease-in-out infinite alternate-reverse}
+.walk .aB{transform-origin:60px 58px;animation:sw .8s ease-in-out infinite alternate}
+.walk .body{animation:bob .4s ease-in-out infinite alternate}
+.walk .dash{animation:roll .8s linear infinite}
+@keyframes sw{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-2px)}}
+@keyframes roll{from{stroke-dashoffset:0}to{stroke-dashoffset:26}}
+#loadMsg{font-size:16px;letter-spacing:2px;color:#475A70;min-height:1.6em;transition:opacity .4s}
+
+/* ── 結果確認 ── */
+.r-head{text-align:center;margin:10px 0 18px}
+.r-head .k{font-size:13px;letter-spacing:4px;text-indent:4px;color:var(--dusk);margin-bottom:12px}
+.r-head .tag{font-size:23px;line-height:1.6;letter-spacing:1px;padding:4px 6px;border-radius:8px}
+.block{background:rgba(255,253,247,.94);border-radius:16px;padding:16px 16px 18px;margin-bottom:12px;
+       box-shadow:0 8px 22px rgba(29,43,58,.08)}
+.block h3{font-size:13px;letter-spacing:3px;color:var(--dusk);font-weight:normal;margin-bottom:8px}
+.ed{font-size:15px;line-height:1.95;color:#2F4055;border-radius:6px;padding:2px 4px;margin:0 -4px;outline:none;
+    transition:background .2s,box-shadow .2s}
+.ed:focus{background:#FFF8EE;box-shadow:0 0 0 1.5px var(--gold)}
+ul.ed{list-style:none}
+ul.ed li{position:relative;padding-left:16px}
+ul.ed li::before{content:"";position:absolute;left:2px;top:.85em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.note{background:var(--night);color:#F6F1E6}
+.note h3{color:var(--gold)}
+.note .ed{color:#F6F1E6;font-size:16.5px}
+.note .ed:focus{background:rgba(255,255,255,.08)}
+.hint{text-align:center;font-size:12.5px;color:var(--muted);letter-spacing:1px;margin:2px 0 18px}
+.ask{font-size:17px;text-align:center;letter-spacing:1px;margin:8px 0 12px}
+.fb{display:flex;flex-direction:column;gap:9px}
+.fb .btn{text-align:left;padding:14px 16px;letter-spacing:1px;text-indent:0;font-size:15.5px}
+.fb .btn.sel{border-color:var(--dusk);background:#FFF4EE}
+.panel{margin-top:12px;padding:14px;border-radius:14px;background:rgba(255,255,255,.55);
+       border:1px solid rgba(46,64,87,.12);display:flex;flex-direction:column;gap:10px}
+.panel p{font-size:14px;line-height:1.8;color:#475A70}
+.left{font-size:12.5px;color:var(--muted);text-align:center;letter-spacing:1px}
+.sticky{position:sticky;bottom:0;padding:12px 0 4px;margin-top:14px;
+        background:linear-gradient(180deg,rgba(243,223,196,0),#F3DFC4 35%)}
+
+/* ── 完成 ── */
+#done{justify-content:center;text-align:center}
+#done h2{font-size:24px;font-weight:normal;letter-spacing:1px;line-height:1.6;margin:8px 0 12px}
+#done p{font-size:15px;color:#475A70;line-height:1.9;margin-bottom:36px}
+</style>
+</head>
+<body>
+<div class="lj-wait" id="boot"><p>正在打開你的旅程⋯</p></div>
+<div class="lj-wait hidden" id="miniWait"><p id="miniWaitMsg"></p></div>
+
+<!-- ① 歡迎 -->
+<section class="screen" id="welcome">
+  <svg class="road" width="180" height="120" viewBox="0 0 180 120" aria-hidden="true">
+    <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#B9A57C" stroke-width="26" stroke-linecap="round"/>
+    <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#F1E3C4" stroke-width="21" stroke-linecap="round"/>
+    <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6 9"/>
+    <g transform="translate(73 104) scale(.62)"><use href="#fig"/></g>
+  </svg>
+  <h1>歡迎來到<br><b id="who"></b> 的旅程</h1>
+  <p>回答幾個小問題，大約 3–5 分鐘。<br>我們會幫你整理成一段屬於你的故事。<br>每個選擇都沒有好壞。</p>
+  <button class="btn btn-main" id="start">開始</button>
+</section>
+
+<!-- ② 題目 -->
+<section class="screen" id="ask">
+  <div class="top">
+    <button class="link" id="back">← 上一題</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="progress"><svg id="prog" viewBox="0 0 340 58" preserveAspectRatio="none"></svg></div>
+  <div><span class="badge hidden" id="more">多問一題</span></div>
+  <h2 class="q" id="qText"></h2>
+  <div class="q-sub" id="qSub"></div>
+  <div id="qOpts"></div>
+  <textarea id="other" class="hidden" rows="3" maxlength="200" placeholder="寫下你自己的答案"></textarea>
+  <div class="foot"><button class="btn btn-main hidden" id="next">下一步</button></div>
+</section>
+
+<!-- ③ 整理中 -->
+<section class="screen" id="loading">
+  <svg class="walk" viewBox="0 0 120 120" aria-hidden="true">
+    <path class="dash" d="M10 104 H110" stroke="#B9A57C" stroke-width="3" stroke-dasharray="14 12" stroke-linecap="round"/>
+    <g class="body">
+      <rect class="lB" x="56.5" y="78" width="7" height="22" rx="3.5" fill="#1C2838"/>
+      <rect class="aB" x="57" y="58" width="6" height="17" rx="3" fill="#1C2838"/>
+      <rect x="44" y="55" width="10" height="16" rx="4" fill="#D9694D"/>
+      <rect x="54" y="54" width="12" height="26" rx="6" fill="#2B3C53"/>
+      <rect class="lA" x="56.5" y="78" width="7" height="22" rx="3.5" fill="#33475F"/>
+      <rect class="aA" x="57" y="58" width="6" height="17" rx="3" fill="#33475F"/>
+      <circle cx="60" cy="44" r="9" fill="#27384E"/>
+      <circle cx="57" cy="40.5" r="2.6" fill="#fff" opacity=".3"/>
+    </g>
+  </svg>
+  <div id="loadMsg">正在讀你的回答⋯</div>
+</section>
+
+<!-- ④ 結果確認 -->
+<section class="screen" id="result">
+  <div class="r-head">
+    <div class="k">你的個人標語</div>
+    <div class="tag ed" contenteditable="true" id="rTag"></div>
+  </div>
+  <div class="block"><h3>原來，我是這樣的人</h3><div class="ed" contenteditable="true" id="rStory"></div></div>
+  <div class="block"><h3>我的生活亮點</h3><ul class="ed" contenteditable="true" id="rLights"></ul></div>
+  <div class="block"><h3>我期待的生活</h3><div class="ed" contenteditable="true" id="rFuture"></div></div>
+  <div class="block note"><h3>給自己的話</h3><div class="ed" contenteditable="true" id="rNote"></div></div>
+  <div class="hint">✎ 點任何一段文字，都可以直接修改</div>
+
+  <div class="ask">這樣的描述，有像你嗎？</div>
+  <div class="fb">
+    <button class="btn btn-soft" data-fb="love">❤️　很像我！</button>
+    <button class="btn btn-soft" data-fb="part">🌱　有一部分像，想調整</button>
+    <button class="btn btn-soft" data-fb="not">💬　不太像，我想再說說自己</button>
+  </div>
+  <div class="panel hidden" id="pPart">
+    <p>直接點上面的文字修改，改完按「就用這版」。<br>想讓 AI 換個寫法，也可以重新生成。</p>
+    <button class="btn btn-soft" id="regen">重新生成</button>
+  </div>
+  <div class="panel hidden" id="pNot">
+    <p>哪裡不像你？多說一點，AI 會依你的補充重寫。<br>也可以直接改上面的文字。</p>
+    <textarea id="more2" rows="3" maxlength="300" placeholder="例如：我其實很喜歡熱鬧，只是需要獨處充電"></textarea>
+    <button class="btn btn-soft" id="rewrite">請 AI 重寫</button>
+  </div>
+  <div class="left" id="left"></div>
+  <div class="sticky"><button class="btn btn-main" id="useIt">就用這版</button></div>
+</section>
+
+<!-- ⑤ 完成 -->
+<section class="screen" id="done">
+  <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
+    <circle cx="60" cy="60" r="52" fill="rgba(242,204,143,.35)"/>
+    <g transform="translate(43 98) scale(.62)"><use href="#fig"/></g>
+  </svg>
+  <h2>你的旅程開始了</h2>
+  <p>這段故事已經放在你的旅程起點。<br>接下來，用照片紀錄走過的路。</p>
+  <div class="foot" style="margin-top:0">
+    <button class="btn btn-main" id="goJourney">前往我的旅程</button>
+    <button class="btn btn-soft" id="goAdd">＋ 加上第一段旅程</button>
+  </div>
+</section>
+
+<!-- 共用的小人(進度條、歡迎頁、完成頁) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gH" cx="36%" cy="30%" r="75%"><stop offset="0%" stop-color="#5E7391"/><stop offset="55%" stop-color="#27384E"/><stop offset="100%" stop-color="#121B28"/></radialGradient>
+    <linearGradient id="gL" x1="0" x2="1"><stop offset="0%" stop-color="#4C6180"/><stop offset="100%" stop-color="#141D2A"/></linearGradient>
+    <g id="fig">
+      <ellipse cx="2" cy="2" rx="15" ry="5" fill="rgba(20,29,42,.25)"/>
+      <rect x="-3.4" y="-19" width="6.8" height="19" rx="3.4" fill="#1C2838" transform="rotate(-20 0 -18)"/>
+      <rect x="-12" y="-36" width="9" height="14" rx="3.5" fill="#D9694D"/>
+      <rect x="-5.5" y="-37" width="11" height="21" rx="5.5" fill="url(#gL)"/>
+      <rect x="-3.6" y="-19" width="7.2" height="19" rx="3.6" fill="url(#gL)" transform="rotate(20 0 -18)"/>
+      <rect x="-2.8" y="-34" width="5.6" height="15" rx="2.8" fill="url(#gL)" transform="rotate(-18 0 -33)"/>
+      <circle cx="0" cy="-46" r="8" fill="url(#gH)"/>
+    </g>
+  </defs>
+</svg>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script src="js/quiz-data.js"></script>
+<script src="js/quiz.js"></script>
+</body>
+</html>

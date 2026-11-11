@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>送一段回憶</title>
+<link rel="stylesheet" href="css/lj.css">
+<!-- 兩個分頁:送一段回憶給別人(編號 + 照片 + 回憶)/ 收到的回憶(同意 → 雙方旅程各長一段,婉拒 → 都不出現)。
+     收到新的回憶只在 App 裡亮紅點,不推播(使用者確認)。 -->
+<style>
+.tabs{display:flex;gap:6px;padding:4px;border-radius:14px;background:rgba(46,64,87,.08);margin:16px 0 20px}
+.tab{flex:1;position:relative;padding:11px 6px;border:none;border-radius:11px;background:transparent;font-family:inherit;
+     font-size:15px;letter-spacing:1px;color:#475A70;cursor:pointer}
+.tab.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(29,43,58,.1)}
+.tab .dot{position:absolute;top:6px;right:12px;width:9px;height:9px;border-radius:50%;background:#E5484D}
+.code-in{width:100%;text-align:center;font-family:inherit;font-size:28px;letter-spacing:12px;text-indent:12px;padding:12px;
+         border-radius:14px;border:1.5px solid rgba(46,64,87,.2);background:#fff;color:var(--ink);text-transform:uppercase;outline:none}
+.code-in:focus{border-color:var(--dusk)}
+.found{margin:10px 0 4px;text-align:center;font-size:15px;min-height:1.6em}
+.pick{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;width:100%;
+      aspect-ratio:4/3;border-radius:16px;border:2px dashed rgba(46,64,87,.25);background:rgba(255,255,255,.55);
+      color:#475A70;font-size:15px;overflow:hidden;cursor:pointer;margin-top:18px}
+.pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pick .plus{font-size:30px;color:var(--dusk);line-height:1}
+.block{margin-top:18px}
+.row{display:flex;gap:10px}
+.row select{flex:1}
+select.field{appearance:none;background:#fff}
+.count{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+.gift{margin-bottom:16px;padding:12px 12px 16px}
+.gift .ph{width:100%;aspect-ratio:4/3;border-radius:11px;overflow:hidden;background:#eee}
+.gift .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.gift .from{margin:12px 2px 6px;font-size:13px;letter-spacing:2px;color:var(--dusk)}
+.gift .mem{margin:0 2px 14px;font-size:15px;line-height:1.9;color:#2F4055}
+.gift .acts{display:flex;gap:10px}
+.gift .acts .btn{padding:12px}
+.empty{text-align:center;color:#475A70;font-size:15px;line-height:1.9;margin-top:40px}
+.sent{text-align:center;margin-top:40px}
+.sent p{font-size:16px;line-height:1.9;color:#475A70;margin:12px 0 26px}
+</style>
+</head>
+<body>
+<div class="lj-wait" id="boot"><p>正在打開⋯</p></div>
+<div class="lj-wait hidden" id="busy"><p>正在送出⋯</p></div>
+<main class="page">
+  <button class="link" id="back" style="align-self:flex-start">← 我的旅程</button>
+  <div class="tabs">
+    <button class="tab on" data-tab="send">送一段回憶</button>
+    <button class="tab" data-tab="inbox">收到的回憶<i class="dot hidden" id="dot"></i></button>
+  </div>
+
+  <!-- 送 -->
+  <section id="send">
+    <p class="sub">送一張照片和一段回憶給對方。他同意之後，這段回憶會同時出現在你們兩個人的旅程上。</p>
+    <div class="block">
+      <div class="label">對方的編號</div>
+      <input class="code-in" id="code" maxlength="4" autocomplete="off" placeholder="K7M2">
+      <div class="found" id="found"></div>
+    </div>
+    <label class="pick" id="pick" for="file"><span class="plus">＋</span><span>選一張你們的照片</span></label>
+    <input type="file" id="file" accept="image/*" hidden>
+    <div class="block">
+      <div class="label">這是什麼時候？（可以不填）</div>
+      <div class="row">
+        <select class="field" id="year"></select>
+        <select class="field" id="season"><option value="">季節</option><option>春</option><option>夏</option><option>秋</option><option>冬</option></select>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">關於這張照片的回憶</div>
+      <textarea class="field" id="memory" rows="5" maxlength="500" placeholder="例如：那年一起爬合歡山，你說累了，結果還是第一個到山頂。"></textarea>
+      <div class="count" id="count">0 / 500</div>
+    </div>
+    <button class="btn btn-main" id="sendBtn" style="margin-top:18px" disabled>送出</button>
+  </section>
+  <section id="sent" class="hidden sent">
+    <div style="font-size:40px">💌</div>
+    <p id="sentMsg"></p>
+    <button class="btn btn-main" id="again">再送一段</button>
+  </section>
+
+  <!-- 收 -->
+  <section id="inbox" class="hidden"><div id="list"></div></section>
+</main>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script src="js/gift.js"></script>
+</body>
+</html>

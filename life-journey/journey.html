@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>我的生命之旅</title>
+<!-- 一頁式生命之旅。主角是「人」跟「路」:
+     一條寬的 S 型道路貫穿整頁,小人固定在畫面中段、沿著路往前走(腳步跟著捲動擺動),
+     介紹、照片、故事都是路邊的卡片,走到了才從路旁跳出來。
+     配色 B「黎明到黃昏」:背景從晨光藍 → 象牙白 → 夕陽橘 → 深藍夜。
+     這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight。 -->
+<link rel="stylesheet" href="css/lj.css">
+<style>
+:root{
+  --ivory:#F4F1DE; --dusk:#E07A5F; --night:#2E4057; --gold:#F2CC8F; --ink:#1D2B3A;
+  --maxw:560px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  position:relative;   /* 道路 SVG 以整頁為座標,不是 viewport */
+  font-family:"WenQuanYi Zen Hei","PingFang TC","Noto Sans CJK TC",sans-serif;
+  color:var(--ink);overflow-x:hidden;
+  background:linear-gradient(180deg,
+    #BFD6E8 0%, #E3ECF1 10%, var(--ivory) 24%, #F7F0DD 40%, #F3DDBE 55%,
+    #EBAA88 68%, var(--dusk) 78%, #8A5A6B 87%, var(--night) 95%, #1B2838 100%);
+}
+body::after{  /* 顆粒:純漸層太像塑膠 */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:5;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{position:relative;max-width:var(--maxw);margin:0 auto;padding:0 16px}
+
+/* ── 道路與小人 ── */
+#road{position:absolute;top:0;left:0;width:100%;z-index:1;pointer-events:none}
+#walkerLayer{position:absolute;top:0;left:0;width:100%;z-index:4;pointer-events:none}
+
+/* ── 開場 ── */
+.hero{position:relative;z-index:2;height:70svh;display:flex;flex-direction:column;
+      justify-content:center;text-align:center;padding-top:20px}
+.tagline{font-size:29px;line-height:1.6;letter-spacing:1px;max-width:14em;margin:0 auto}
+.hint{margin-top:30px;font-size:12px;letter-spacing:4px;text-indent:4px;color:#7B8CA3}
+
+/* ── 路邊的卡片 ── 走到了才跳出來 */
+.stop{position:relative;z-index:2;min-height:64svh;display:flex;align-items:center;padding:18px 0}
+.stop.R{justify-content:flex-end}
+.card{width:58%;background:rgba(255,253,247,.94);border-radius:16px;padding:10px 10px 16px;
+      box-shadow:0 18px 38px rgba(29,43,58,.24),0 2px 6px rgba(29,43,58,.12);
+      opacity:0;transform:translateX(34%) scale(.55) rotate(6deg);transform-origin:right center;
+      transition:opacity .45s ease,transform .75s cubic-bezier(.2,1.35,.4,1)}
+.stop.R .card{transform:translateX(-34%) scale(.55) rotate(-6deg);transform-origin:left center}
+.stop.on .card{opacity:1;transform:rotate(-1.2deg)}
+.stop.R.on .card{transform:rotate(1.2deg)}
+.photo{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden}
+.photo .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+           font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.7)}
+.photo .when{position:absolute;left:10px;bottom:8px;font-size:11px;letter-spacing:2px;
+             color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.card .num{display:block;margin:12px 4px 4px;font-size:11px;letter-spacing:3px;color:var(--dusk)}
+.card h3{margin:0 4px 6px;font-size:17px;line-height:1.5;letter-spacing:.5px;font-weight:normal}
+.card p{margin:0 4px;font-size:13.5px;line-height:1.85;color:#3B4C60}
+/* 文字卡(自我介紹、期待、給自己的話):沒有照片,用色條區分 */
+.card.text{padding:18px 16px 18px;border-top:4px solid var(--dusk)}
+.card.text .num{margin:0 0 8px}
+.card.text p{margin:0;font-size:14px;line-height:1.95}
+.card.text .num .who{font-weight:normal;font-size:15px;color:var(--ink);letter-spacing:1px}
+.card.quote{border-top-color:var(--gold);background:rgba(46,64,87,.92)}
+.card.quote .num{color:var(--gold)}
+.card.quote p{color:#F6F1E6;font-size:16px;line-height:1.9}
+
+/* ── 路的盡頭 ── */
+.end{position:relative;z-index:2;padding:46svh 6px 64px;text-align:center}
+.btns{display:flex;flex-direction:column;gap:11px}
+.btn{padding:15px;border-radius:12px;font-size:16px;letter-spacing:2px;text-indent:2px;
+     border:none;font-family:inherit}
+.btn-main{background:var(--gold);color:#3A2D18}
+.btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(242,204,143,.45)}
+.code{margin-top:26px;font-size:12px;letter-spacing:4px;text-indent:4px;color:rgba(242,204,143,.6)}
+/* ── 頂部按鈕 ── */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;gap:8px;align-items:center;
+        padding:12px 14px;pointer-events:none}
+.topbar .grow{flex:1}
+.topbar{transition:transform .3s ease,opacity .3s ease}
+.topbar.away{transform:translateY(-110%);opacity:0}
+.pill{pointer-events:auto;position:relative;border:none;font-family:inherit;font-size:13px;letter-spacing:1px;
+      padding:8px 13px;border-radius:999px;background:rgba(255,253,247,.86);color:var(--night);
+      box-shadow:0 4px 12px rgba(29,43,58,.14);backdrop-filter:blur(6px)}
+.pill .dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;
+           background:#E5484D;box-shadow:0 0 0 2px #fff}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.empty{font-size:14px;line-height:1.9;color:rgba(246,241,230,.85);text-align:center;margin-bottom:22px}
+</style>
+</head>
+<body>
+
+<svg id="road" aria-hidden="true">
+  <defs>
+    <!-- 路面顏色跟著天色:白天是沙土色,黃昏偏暖,入夜變深 -->
+    <linearGradient id="gRoad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F3E7CC"/>
+      <stop offset="50%"  stop-color="#E6CFA4"/>
+      <stop offset="78%"  stop-color="#B98065"/>
+      <stop offset="100%" stop-color="#4A5874"/>
+    </linearGradient>
+    <linearGradient id="gEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#B9A57C"/>
+      <stop offset="70%"  stop-color="#8E5A45"/>
+      <stop offset="100%" stop-color="#27344A"/>
+    </linearGradient>
+  </defs>
+  <path id="rShadow" fill="none" stroke="rgba(29,43,58,.16)" stroke-width="58" stroke-linecap="round"
+        transform="translate(0 7)" style="filter:blur(7px)"/>
+  <path id="rEdge" fill="none" stroke="url(#gEdge)" stroke-width="50" stroke-linecap="round"/>
+  <path id="rBody" fill="none" stroke="url(#gRoad)" stroke-width="44" stroke-linecap="round"/>
+  <!-- 中線:還沒走的是白色虛線,走過的那段疊上金色實線 -->
+  <path id="rDash" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="3"
+        stroke-linecap="round" stroke-dasharray="10 16"/>
+  <path id="rDone" fill="none" stroke="#F2B45E" stroke-width="4" stroke-linecap="round"/>
+  <g id="pins"></g>
+</svg>
+<!-- 小人獨立一層,疊在卡片之上:走到卡片旁邊時不能被卡片角蓋住 -->
+<svg id="walkerLayer" aria-hidden="true">
+  <defs>
+    <!-- 立體感的做法:每一節肢體都是圓柱(左亮右暗的橫向漸層),頭是球(左上高光的放射漸層),
+         遠側的手腳用更暗的顏色先畫,近側後畫蓋上去,就有前後。 -->
+    <radialGradient id="wHead" cx="36%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#5E7391"/><stop offset="55%" stop-color="#27384E"/><stop offset="100%" stop-color="#121B28"/>
+    </radialGradient>
+    <linearGradient id="wLimb" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4C6180"/><stop offset="55%" stop-color="#25354A"/><stop offset="100%" stop-color="#141D2A"/>
+    </linearGradient>
+    <linearGradient id="wFar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2A3A50"/><stop offset="100%" stop-color="#0F1722"/>
+    </linearGradient>
+    <radialGradient id="wHeadN" cx="36%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="60%" stop-color="#EFE7D6"/><stop offset="100%" stop-color="#BDB199"/>
+    </radialGradient>
+    <linearGradient id="wLimbN" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFDF6"/><stop offset="60%" stop-color="#E9E0CC"/><stop offset="100%" stop-color="#B9AD95"/>
+    </linearGradient>
+    <linearGradient id="wFarN" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#CFC5AF"/><stop offset="100%" stop-color="#9A8F7A"/>
+    </linearGradient>
+    <linearGradient id="wPack" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F29A80"/><stop offset="100%" stop-color="#B9523A"/>
+    </linearGradient>
+    <radialGradient id="wShadow">
+      <stop offset="0%" stop-color="rgba(20,29,42,.42)"/><stop offset="100%" stop-color="rgba(20,29,42,0)"/>
+    </radialGradient>
+  </defs>
+  <style>
+    #fig .near{fill:url(#wLimb)} #fig .far{fill:url(#wFar)} #fig .head{fill:url(#wHead)}
+    #fig.night .near{fill:url(#wLimbN)} #fig.night .far{fill:url(#wFarN)} #fig.night .head{fill:url(#wHeadN)}
+  </style>
+  <g id="walker">
+    <ellipse cx="2" cy="3" rx="19" ry="6.5" fill="url(#wShadow)"/>
+    <g id="fig">
+      <!-- 遠側的手腳(先畫、較暗) -->
+      <g id="legB"><rect class="far" x="-3.4" y="-19" width="6.8" height="19" rx="3.4"/>
+                   <ellipse class="far" cx="2.2" cy="-.6" rx="5" ry="2.6"/></g>
+      <g id="armB"><rect class="far" x="-2.6" y="-34" width="5.2" height="15" rx="2.6"/></g>
+      <!-- 背包、身體 -->
+      <rect x="-12" y="-36" width="9" height="14" rx="3.5" fill="url(#wPack)"/>
+      <rect class="near" x="-5.5" y="-37" width="11" height="21" rx="5.5"/>
+      <!-- 近側的手腳 -->
+      <g id="legA"><rect class="near" x="-3.6" y="-19" width="7.2" height="19" rx="3.6"/>
+                   <ellipse class="near" cx="2.4" cy="-.6" rx="5.4" ry="2.8"/></g>
+      <g id="armA"><rect class="near" x="-2.8" y="-34" width="5.6" height="15" rx="2.8"/></g>
+      <!-- 頭:球體 + 一點高光 -->
+      <circle class="head" cx="0" cy="-46" r="8"/>
+      <ellipse cx="-2.8" cy="-49.4" rx="2.6" ry="1.7" fill="#fff" opacity=".28" transform="rotate(-28 -2.8 -49.4)"/>
+    </g>
+  </g>
+</svg>
+
+<!-- 右上角:看別人、收到的回憶(有新的會亮紅點);看別人的旅程時左上角是返回 -->
+<nav class="topbar hidden" id="topbar">
+  <button class="pill hidden" id="goBack">← 我的旅程</button>
+  <span class="grow"></span>
+  <button class="pill hidden" id="goFind">看別人的旅程</button>
+  <button class="pill hidden" id="goInbox">收到的回憶<i class="dot hidden" id="dot"></i></button>
+</nav>
+
+<div class="wrap">
+  <section class="hero" id="hero">
+    <h1 class="tagline" id="tagline"></h1>
+    <div class="hint">往下滑，開始走</div>
+  </section>
+  <div id="stops"></div>
+  <section class="end" id="end">
+    <div class="btns" id="endBtns"></div>
+    <div class="code" id="code"></div>
+  </section>
+</div>
+
+<div class="lj-wait" id="boot"><p>正在打開旅程⋯</p></div>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script src="js/journey-road.js"></script>
+<script src="js/journey.js"></script>
+</body>
+</html>
