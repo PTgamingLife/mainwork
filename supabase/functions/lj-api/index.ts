@@ -277,7 +277,7 @@ async function whoIs(req: Request, b: any) {
     if (!sameKey(testKey, rows[0]?.token ?? "") || !/^LJTEST-[A-Za-z0-9-]{1,40}$/.test(user)) {
       throw new Error("UNAUTHORIZED");
     }
-    return ensureMember(user, str(b.testName, 40) || "測試旅人", "");
+    return ensureMember(user, str(b.testName, 40), "");   // 沒帶名字就不改,免得測試帳號互相蓋名字
   }
   const p = await verifyIdToken(String(b.idToken ?? ""));
   return ensureMember(p.sub, p.name, p.picture);

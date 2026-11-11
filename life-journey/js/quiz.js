@@ -1,19 +1,18 @@
-// 自我探索問答的流程控制:歡迎 → 6 題(+最多 2 題追問)→ 整理中 → 結果確認 → 完成。
+// 自我探索問答:歡迎 → 6 題 →(AI 判斷)最多 2 題追問 → 整理中 → 結果確認 → 完成。
 // 規則(使用者確認):
 // - 不存進度,中途離開下次從頭開始
 // - 結果每一段都能直接改字,按「就用這版」就定稿,不經 AI
-// - 第一次生成不算;「重新生成」與「補充後重寫」合計每人 3 次,自己改字不限
+// - 第一次生成不算;「重新生成」與「補充後重寫」合計每人 3 次(後端把關),自己改字不限
 (function () {
   const $ = (id) => document.getElementById(id);
   const D = window.LJ_QUIZ;
-  const LJ_MAX_REGEN = 3;
 
-  let lj_steps = [];      // 這一輪要問的題目(核心 6 題,追問判斷後再接上去)
+  let lj_steps = [];      // 這一輪要問的題目(核心 6 題,AI 判斷後再接追問)
   let lj_idx = 0;
   let lj_answers = {};    // { q1: { choice, labels, other } }
   let lj_followDone = false;
-  let lj_regenLeft = LJ_MAX_REGEN;
-  let lj_sample = 0;
+  let lj_regenLeft = 3;
+  let lj_busy = false;
 
   function show(id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
@@ -30,9 +29,8 @@
 
   function renderQuestion() {
     const step = resolve(lj_steps[lj_idx]);
-    const total = lj_followDone ? lj_steps.length : D.core.length;
     const isFollow = lj_idx >= D.core.length;
-    $('count').textContent = isFollow ? '' : `第 ${lj_idx + 1} 題 / ${total}`;
+    $('count').textContent = isFollow ? '' : `第 ${lj_idx + 1} 題 / ${D.core.length}`;
     $('more').classList.toggle('hidden', !isFollow);
     $('back').style.visibility = lj_idx === 0 ? 'hidden' : 'visible';
     $('qText').textContent = step.text;
@@ -114,27 +112,46 @@
   function syncNext(step) {
     const a = lj_answers[step.id];
     const writing = a && a.other !== null;
-    const need = step.multi || writing;
-    $('next').classList.toggle('hidden', !need);
+    $('next').classList.toggle('hidden', !(step.multi || writing));
     let ok = true;
     if (step.multi) ok = countSel(step) > 0;
     if (writing) ok = ok && a.other.trim().length > 0;
     $('next').disabled = !ok;
   }
 
-  function advance() {
+  // 送給後端的格式:題目原文 + 選了什麼 + 自己說的
+  function payload() {
+    return lj_steps.map((st) => {
+      const step = resolve(st);
+      const a = lj_answers[step.id] || { labels: [], other: null };
+      return { question: step.text, picked: a.labels, other: a.other || '' };
+    });
+  }
+
+  async function advance() {
+    if (lj_busy) return;
     lj_idx++;
     if (lj_idx === D.core.length && !lj_followDone) {
-      // 核心 6 題答完:判斷要不要追問(正式版由 AI 判斷)
+      // 核心 6 題答完:請 AI 判斷要不要追問。失敗就跳過追問,不卡住使用者
+      lj_busy = true;
+      wait(true, '再想想要不要多問你一題⋯');
+      const r = await LJ.api('quiz-followup', { answers: payload() });
+      wait(false);
+      lj_busy = false;
       lj_followDone = true;
-      const extra = D.followups.filter((f) => f.when(lj_answers)).slice(0, 2);
+      const extra = (r.ok ? r.questions : []).slice(0, 2)
+        .map((q, i) => ({ id: 'f' + (i + 1), text: q.text, options: q.options }));
       lj_steps = lj_steps.concat(extra);
     }
-    if (lj_idx >= lj_steps.length) return generate();
+    if (lj_idx >= lj_steps.length) return generate('quiz-generate', { answers: payload() });
     renderQuestion();
   }
 
-  // 進度:一小段路,每題一個站點,小人站在現在這一題
+  function wait(on, msg) {
+    $('miniWait').classList.toggle('hidden', !on);
+    if (msg) $('miniWaitMsg').textContent = msg;
+  }
+
   function drawProgress() {
     const n = lj_followDone ? lj_steps.length : D.core.length;
     const W = 340, y = (x) => 34 + Math.sin((x / W) * Math.PI * 2) * 9;
@@ -150,28 +167,33 @@
   }
 
   // ── 整理中 → 結果 ──
-  const LOAD_MSG = ['正在讀你的回答⋯', '正在找你的故事⋯', '快好了⋯'];
-  function generate(note) {
+  const LOAD_MSG = ['正在讀你的回答⋯', '正在找你的故事⋯', '正在寫下來⋯', '快好了⋯'];
+  async function generate(action, body) {
+    const from = document.querySelector('.screen.on').id;
     show('loading');
     let k = 0;
     $('loadMsg').textContent = LOAD_MSG[0];
-    const t = setInterval(() => { $('loadMsg').textContent = LOAD_MSG[++k % LOAD_MSG.length]; }, 1200);
-    // 正式版這裡打 AI;稿子先等 2.6 秒,換一組範例
-    setTimeout(() => {
-      clearInterval(t);
-      fill(D.samples[lj_sample % D.samples.length]);
-      lj_sample++;
-      show('result');
-    }, 2600);
+    const t = setInterval(() => { $('loadMsg').textContent = LOAD_MSG[++k % LOAD_MSG.length]; }, 2500);
+    const r = await LJ.api(action, body);
+    clearInterval(t);
+    if (!r.ok) {
+      show(from === 'loading' ? 'ask' : from);
+      if (from === 'ask' || from === 'loading') { lj_idx = lj_steps.length - 1; renderQuestion(); }
+      LJ.toast(LJ.say(r.error));
+      return;
+    }
+    fill(r.profile);
+    show('result');
   }
 
-  function fill(r) {
-    $('rTag').textContent = r.tagline;
-    $('rStory').textContent = r.story;
+  function fill(p) {
+    $('rTag').textContent = p.tagline;
+    $('rStory').textContent = p.story;
     $('rLights').innerHTML = '';
-    r.lights.forEach((x) => { const li = document.createElement('li'); li.textContent = x; $('rLights').appendChild(li); });
-    $('rFuture').textContent = r.future;
-    $('rNote').textContent = r.note;
+    (p.highlights || []).forEach((x) => { const li = document.createElement('li'); li.textContent = x; $('rLights').appendChild(li); });
+    $('rFuture').textContent = p.future;
+    $('rNote').textContent = p.note;
+    lj_regenLeft = p.regenLeft;
     document.querySelectorAll('.fb .btn').forEach((b) => b.classList.remove('sel'));
     $('pPart').classList.add('hidden');
     $('pNot').classList.add('hidden');
@@ -188,42 +210,56 @@
     $('left').textContent = out ? '已用完 3 次，可以直接修改上面的文字' : '';
   }
 
-  function useAI() {
-    if (lj_regenLeft <= 0) return;
-    lj_regenLeft--;
-    generate();
+  // 現在畫面上的文字(含使用者改過的)就是最終版
+  async function finalize() {
+    const lights = [...$('rLights').querySelectorAll('li')].map((li) => li.textContent.trim()).filter(Boolean);
+    $('useIt').disabled = true;
+    const r = await LJ.api('profile-save', {
+      tagline: $('rTag').textContent.trim(), story: $('rStory').textContent.trim(),
+      highlights: lights, future: $('rFuture').textContent.trim(), note: $('rNote').textContent.trim(),
+    });
+    $('useIt').disabled = false;
+    if (!r.ok) return LJ.toast(r.error === 'TEXT_REQUIRED' ? '標語和介紹不能是空的喔' : LJ.say(r.error));
+    show('done');
   }
 
   // ── 綁定 ──
+  LJ.boot((me) => {
+    if (me.profile && me.profile.status === 'final') return LJ.go('journey.html');   // 已經認識過自己了
+    $('who').textContent = me.member.name || '你';
+    $('boot').classList.add('hidden');
+    show('welcome');
+  });
+
   $('start').onclick = () => {
     lj_steps = D.core.slice(); lj_idx = 0; lj_answers = {}; lj_followDone = false;
     show('ask'); renderQuestion();
   };
   $('back').onclick = () => {
-    if (lj_idx === 0) return;
+    if (lj_idx === 0 || lj_busy) return;
     lj_idx--;
     // 退回核心題就把追問收掉:改了答案,要不要追問、問什麼都可能不同
-    if (lj_idx < D.core.length && lj_followDone) {
-      lj_followDone = false;
-      lj_steps = D.core.slice();
-    }
+    if (lj_idx < D.core.length && lj_followDone) { lj_followDone = false; lj_steps = D.core.slice(); }
     renderQuestion();
   };
   $('next').onclick = advance;
   document.querySelectorAll('.fb .btn').forEach((b) => {
     b.onclick = () => {
       const k = b.dataset.fb;
-      if (k === 'love') return show('done');
+      if (k === 'love') return finalize();
       document.querySelectorAll('.fb .btn').forEach((x) => x.classList.toggle('sel', x === b));
       $('pPart').classList.toggle('hidden', k !== 'part');
       $('pNot').classList.toggle('hidden', k !== 'not');
       syncLeft();
     };
   });
-  $('regen').onclick = useAI;
+  $('regen').onclick = () => { if (lj_regenLeft > 0) generate('quiz-generate', { answers: payload() }); };
   $('rewrite').onclick = () => {
-    if (!$('more2').value.trim()) { $('more2').focus(); return; }
-    useAI();
+    const extra = $('more2').value.trim();
+    if (!extra) { $('more2').focus(); return; }
+    if (lj_regenLeft > 0) generate('quiz-rewrite', { extra });
   };
-  $('useIt').onclick = () => show('done');   // 不經 AI,現在畫面上的文字就是最終版
+  $('useIt').onclick = finalize;
+  $('goJourney').onclick = () => LJ.go('journey.html');
+  $('goAdd').onclick = () => LJ.go('add.html');
 })();

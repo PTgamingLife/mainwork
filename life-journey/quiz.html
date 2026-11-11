@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>先認識自己</title>
-<!-- 自我探索問答的介面稿。AI 還沒接:追問的判斷規則照規格寫在前端模擬,
-     結果是兩組寫死的範例,用來看畫面與流程。
+<link rel="stylesheet" href="css/lj.css">
+<!-- 自我探索問答。6 題答完由 lj-api 請 AI 判斷要不要追問,最後生成結果。
+     網址加 ?mock=1 走假後端,可在電腦上離線走完整條流程。
      視覺跟旅程頁一致:配色 B、紙質卡片、道路與小人。
      這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight。 -->
 <style>
@@ -111,16 +112,18 @@ ul.ed li::before{content:"";position:absolute;left:2px;top:.85em;width:6px;heigh
 </style>
 </head>
 <body>
+<div class="lj-wait" id="boot"><p>正在打開你的旅程⋯</p></div>
+<div class="lj-wait hidden" id="miniWait"><p id="miniWaitMsg"></p></div>
 
 <!-- ① 歡迎 -->
-<section class="screen on" id="welcome">
+<section class="screen" id="welcome">
   <svg class="road" width="180" height="120" viewBox="0 0 180 120" aria-hidden="true">
     <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#B9A57C" stroke-width="26" stroke-linecap="round"/>
     <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#F1E3C4" stroke-width="21" stroke-linecap="round"/>
     <path d="M90 118 C 30 90, 150 60, 90 14" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6 9"/>
     <g transform="translate(73 104) scale(.62)"><use href="#fig"/></g>
   </svg>
-  <h1>歡迎來到<br><b id="who">小安</b> 的旅程</h1>
+  <h1>歡迎來到<br><b id="who"></b> 的旅程</h1>
   <p>回答幾個小問題，大約 3–5 分鐘。<br>我們會幫你整理成一段屬於你的故事。<br>每個選擇都沒有好壞。</p>
   <button class="btn btn-main" id="start">開始</button>
 </section>
@@ -198,8 +201,8 @@ ul.ed li::before{content:"";position:absolute;left:2px;top:.85em;width:6px;heigh
   <h2>你的旅程開始了</h2>
   <p>這段故事已經放在你的旅程起點。<br>接下來，用照片紀錄走過的路。</p>
   <div class="foot" style="margin-top:0">
-    <a class="btn btn-main" href="journey.html" style="text-decoration:none">前往我的旅程</a>
-    <button class="btn btn-soft">＋ 加上第一段旅程</button>
+    <button class="btn btn-main" id="goJourney">前往我的旅程</button>
+    <button class="btn btn-soft" id="goAdd">＋ 加上第一段旅程</button>
   </div>
 </section>
 
@@ -220,6 +223,10 @@ ul.ed li::before{content:"";position:absolute;left:2px;top:.85em;width:6px;heigh
   </defs>
 </svg>
 
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
 <script src="js/quiz-data.js"></script>
 <script src="js/quiz.js"></script>
 </body>
