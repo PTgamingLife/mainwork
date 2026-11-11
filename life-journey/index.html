@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>生命之旅</title>
+<link rel="stylesheet" href="css/lj.css">
+<!-- LIFF 的 Endpoint 就是這一頁。
+     圖文選單用 liff.line.me/<LIFF_ID>/add.html 這種帶路徑的網址時,LIFF 會先開這頁、再自己轉過去;
+     直接開這頁則看狀態分流:還沒做問答 → 問答,做過 → 我的旅程。 -->
+</head>
+<body>
+<div class="lj-wait" id="boot"><p>正在打開你的旅程⋯</p></div>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script>
+  // 帶路徑開進來時 LIFF 會自己轉頁,這裡不要搶著轉
+  if (!new URLSearchParams(location.search).has('liff.state')) {
+    LJ.boot((me) => LJ.go(me.profile && me.profile.status === 'final' ? 'journey.html' : 'quiz.html'));
+  } else {
+    liff.init({ liffId: LJ_CONFIG.LIFF_ID });
+  }
+</script>
+</body>
+</html>

@@ -9,6 +9,7 @@
      介紹、照片、故事都是路邊的卡片,走到了才從路旁跳出來。
      配色 B「黎明到黃昏」:背景從晨光藍 → 象牙白 → 夕陽橘 → 深藍夜。
      這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight。 -->
+<link rel="stylesheet" href="css/lj.css">
 <style>
 :root{
   --ivory:#F4F1DE; --dusk:#E07A5F; --night:#2E4057; --gold:#F2CC8F; --ink:#1D2B3A;
@@ -74,6 +75,19 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
 .btn-main{background:var(--gold);color:#3A2D18}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(242,204,143,.45)}
 .code{margin-top:26px;font-size:12px;letter-spacing:4px;text-indent:4px;color:rgba(242,204,143,.6)}
+/* ── 頂部按鈕 ── */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;gap:8px;align-items:center;
+        padding:12px 14px;pointer-events:none}
+.topbar .grow{flex:1}
+.topbar{transition:transform .3s ease,opacity .3s ease}
+.topbar.away{transform:translateY(-110%);opacity:0}
+.pill{pointer-events:auto;position:relative;border:none;font-family:inherit;font-size:13px;letter-spacing:1px;
+      padding:8px 13px;border-radius:999px;background:rgba(255,253,247,.86);color:var(--night);
+      box-shadow:0 4px 12px rgba(29,43,58,.14);backdrop-filter:blur(6px)}
+.pill .dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;
+           background:#E5484D;box-shadow:0 0 0 2px #fff}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.empty{font-size:14px;line-height:1.9;color:rgba(246,241,230,.85);text-align:center;margin-bottom:22px}
 </style>
 </head>
 <body>
@@ -158,165 +172,33 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
   </g>
 </svg>
 
+<!-- 右上角:看別人、收到的回憶(有新的會亮紅點);看別人的旅程時左上角是返回 -->
+<nav class="topbar hidden" id="topbar">
+  <button class="pill hidden" id="goBack">← 我的旅程</button>
+  <span class="grow"></span>
+  <button class="pill hidden" id="goFind">看別人的旅程</button>
+  <button class="pill hidden" id="goInbox">收到的回憶<i class="dot hidden" id="dot"></i></button>
+</nav>
+
 <div class="wrap">
   <section class="hero" id="hero">
-    <h1 class="tagline">我用慢一點的方式，<br>把日子走成自己的樣子</h1>
+    <h1 class="tagline" id="tagline"></h1>
     <div class="hint">往下滑，開始走</div>
   </section>
-
-  <section class="stop L"><div class="card text">
-    <!-- 稱謂是使用者自己的名字,正式版由資料帶入 -->
-    <span class="num">歡迎來到 <b class="who">小安</b> 的旅程</span>
-    <p>我喜歡安靜下來的時間，那時候才聽得見自己在想什麼。沒做過的事，我習慣先看一陣子再動——走得慢，但很少後悔。</p>
-  </div></section>
-
-  <section class="stop R"><div class="card">
-    <div class="photo" style="background:linear-gradient(145deg,#8FA9C4,#C9D8E4)"><div class="ph">照片</div><div class="when">2019 · 春</div></div>
-    <span class="num">第 1 段</span>
-    <h3>那年我把鬧鐘關掉，世界也沒有塌</h3>
-    <p>離職後的第一個早晨，我睡到自然醒。那天才知道，我一直在替一個不存在的人趕路。</p>
-  </div></section>
-
-  <section class="stop L"><div class="card">
-    <div class="photo" style="background:linear-gradient(145deg,#D9B98F,#F0DCC0)"><div class="ph">照片</div><div class="when">2021 · 夏</div></div>
-    <span class="num">第 2 段</span>
-    <h3>兩個人的餐桌，比一個人的遠方更遠</h3>
-    <p>我們沒有去哪裡，就是每個禮拜三一起吃飯。那些平凡的晚上加起來，比任何旅行都遠。</p>
-  </div></section>
-
-  <section class="stop R"><div class="card">
-    <div class="photo" style="background:linear-gradient(145deg,#C97B63,#E8A989)"><div class="ph">照片</div><div class="when">2023 · 秋</div></div>
-    <span class="num">第 3 段</span>
-    <h3>我第一次說「我不行」，然後被接住了</h3>
-    <p>一直以為示弱會讓人失望。原來承認做不到，也是一種信任。</p>
-  </div></section>
-
-  <section class="stop L"><div class="card">
-    <div class="photo" style="background:linear-gradient(145deg,#4A5B78,#6E7F9C)"><div class="ph">照片</div><div class="when">2026 · 冬</div></div>
-    <span class="num">第 4 段</span>
-    <h3>走到這裡，我開始喜歡現在的自己</h3>
-    <p>不是變得更厲害，是不再急著跟誰比。慢慢走也會到。</p>
-  </div></section>
-
-  <section class="stop R"><div class="card text">
-    <span class="num">我期待的生活</span>
-    <p>未來三年，我想要多一點能自己安排的時間，把力氣留給真正在乎的人跟事。</p>
-  </div></section>
-
-  <section class="stop L"><div class="card text quote">
-    <span class="num">給自己的話</span>
-    <p>「你不用跑得比誰快，你只要繼續走就好。」</p>
-  </div></section>
-
+  <div id="stops"></div>
   <section class="end" id="end">
-    <div class="btns">
-      <button class="btn btn-main">＋ 增加我的生命之旅</button>
-      <button class="btn btn-ghost">分享給朋友</button>
-    </div>
-    <div class="code">我的編號 · K7M2</div>
+    <div class="btns" id="endBtns"></div>
+    <div class="code" id="code"></div>
   </section>
 </div>
 
-<script>
-const $ = (id) => document.getElementById(id);
-const svg = $('road'), walker = $('walker'), done = $('rDone');
-const roadPaths = ['rShadow', 'rEdge', 'rBody', 'rDash', 'rDone'].map($);
-let LEN = 0, STOPS = [], Y0 = 0, Y1 = 0;
+<div class="lj-wait" id="boot"><p>正在打開旅程⋯</p></div>
 
-// 道路穿過每張卡片「另一側」的空位:卡片在左,路走右;卡片在右,路走左。
-// 段數每人不同,所以座標全部現場量,不寫死。
-function buildRoad() {
-  const W = document.documentElement.clientWidth;
-  const H = document.body.scrollHeight;
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('width', W); svg.setAttribute('height', H);
-  svg.style.height = H + 'px';
-  const wl = $('walkerLayer');
-  wl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  wl.setAttribute('width', W); wl.setAttribute('height', H);
-  wl.style.height = H + 'px';
-
-  const top = (el) => el.getBoundingClientRect().top + scrollY;
-  const hero = $('hero'), end = $('end');
-  Y0 = top(hero) + hero.offsetHeight * 0.80;
-  Y1 = top(end) + end.offsetHeight * 0.52;
-
-  const pts = [{ x: W / 2, y: Y0 }];
-  STOPS = [];
-  document.querySelectorAll('.stop').forEach(sec => {
-    const s = sec.getBoundingClientRect(), c = sec.querySelector('.card');
-    // 用版面寬度推算,不能量卡片本身 —— 它還沒跳出來時帶著位移與縮放
-    const cardW = c.offsetWidth, onRight = sec.classList.contains('R');
-    const gutter = s.width - cardW;
-    const x = onRight ? s.left + gutter / 2 : s.right - gutter / 2;
-    const y = s.top + scrollY + s.height / 2;
-    pts.push({ x, y });
-    STOPS.push({ sec, x, y, onRight });
-  });
-  pts.push({ x: W / 2, y: Y1 });
-
-  // 相鄰兩點用垂直切線的三次貝茲相接,整條路才是連續的 S
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1], b = pts[i], ym = (a.y + b.y) / 2;
-    d += ` C ${a.x} ${ym}, ${b.x} ${ym}, ${b.x} ${b.y}`;
-  }
-  roadPaths.forEach(p => p.setAttribute('d', d));
-  LEN = done.getTotalLength();
-  done.style.strokeDasharray = LEN;
-
-  // 每張卡片在路邊立一個小路標
-  $('pins').innerHTML = STOPS.map(({ x, y, onRight }) => {
-    const dx = onRight ? 30 : -30;
-    return `<line x1="${x}" y1="${y}" x2="${x + dx}" y2="${y}" stroke="#fff" stroke-width="2" opacity=".7"/>
-            <circle cx="${x + dx}" cy="${y}" r="5" fill="#E07A5F" stroke="#fff" stroke-width="2"/>`;
-  }).join('');
-  update();
-}
-
-// 路上「高度 = y」的那一點。y 沿路單調遞增,二分就找得到。
-function lengthAtY(y) {
-  let lo = 0, hi = LEN;
-  for (let i = 0; i < 26; i++) {
-    const mid = (lo + hi) / 2;
-    (done.getPointAtLength(mid).y < y) ? (lo = mid) : (hi = mid);
-  }
-  return lo;
-}
-
-function update() {
-  if (!LEN) return;
-  // 小人固定在畫面中段偏上,是路在腳下往後退 —— 這樣才有「我在走」的感覺
-  const y = Math.min(Y1, Math.max(Y0, scrollY + innerHeight * 0.46));
-  const L = lengthAtY(y);
-  const pt = done.getPointAtLength(L);
-  const ahead = done.getPointAtLength(Math.min(LEN, L + 6));
-  done.style.strokeDashoffset = LEN - L;
-
-  // 面向路彎過去的方向;腳步跟著捲動距離擺,不捲就站著
-  const face = ahead.x >= pt.x ? 1 : -1;
-  const swing = Math.sin(scrollY / 13) * 30;
-  // 走路時身體跟著腳步微微上下,不然像在路上平移
-  const bob = -Math.abs(Math.sin(scrollY / 13)) * 1.6;
-  walker.setAttribute('transform', `translate(${pt.x} ${pt.y}) scale(${face * 1.25} 1.25)`);
-  $('fig').setAttribute('transform', `translate(0 ${bob})`);
-  $('legA').setAttribute('transform', `rotate(${swing} 0 -18)`);
-  $('legB').setAttribute('transform', `rotate(${-swing} 0 -18)`);
-  $('armA').setAttribute('transform', `rotate(${-swing * 0.8} 0 -33)`);
-  $('armB').setAttribute('transform', `rotate(${swing * 0.8} 0 -33)`);
-  // 走進夜色,小人換成亮色才看得見
-  $('fig').classList.toggle('night', pt.y / document.body.scrollHeight > 0.84);
-
-  // 小人快走到卡片旁邊時,卡片從路邊跳出來(跳出後就留著)
-  STOPS.forEach(({ sec, y: sy }) => {
-    if (pt.y > sy - innerHeight * 0.30) sec.classList.add('on');
-  });
-}
-
-addEventListener('scroll', update, { passive: true });
-addEventListener('resize', buildRoad);
-addEventListener('load', buildRoad);
-buildRoad();
-</script>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="js/lj-config.js"></script>
+<script src="js/lj-core.js"></script>
+<script src="js/lj-mock.js"></script>
+<script src="js/journey-road.js"></script>
+<script src="js/journey.js"></script>
 </body>
 </html>
