@@ -4,315 +4,283 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>我的生命之旅</title>
-<!-- 一頁式生命之旅。配色 B「黎明到黃昏」:背景隨捲動從晨光藍 → 象牙白 → 夕陽橘 → 深藍夜,
-     走到底真的像走了一天。S 型小徑由 JS 依實際頁高生成,所以里程碑不管幾段都對得上。
-     這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight,
-     要「看起來重」就加字級與字距 —— 合成假粗體會把筆畫糊在一起。 -->
+<!-- 一頁式生命之旅。主角是「人」跟「路」:
+     一條寬的 S 型道路貫穿整頁,小人固定在畫面中段、沿著路往前走(腳步跟著捲動擺動),
+     介紹、照片、故事都是路邊的卡片,走到了才從路旁跳出來。
+     配色 B「黎明到黃昏」:背景從晨光藍 → 象牙白 → 夕陽橘 → 深藍夜。
+     這台機器只有 WenQuanYi Zen Hei(沒有粗體字面),中文一律不用 font-weight。 -->
 <style>
 :root{
-  --dawn:#A8C0D6;      /* 晨光藍 */
-  --ivory:#F4F1DE;     /* 象牙 */
-  --dusk:#E07A5F;      /* 夕陽橘 */
-  --night:#2E4057;     /* 深藍夜 */
-  --gold:#F2CC8F;      /* 暖黃 */
-  --ink:#1D2B3A;       /* 深字 */
-  --path:#F2CC8F;
+  --ivory:#F4F1DE; --dusk:#E07A5F; --night:#2E4057; --gold:#F2CC8F; --ink:#1D2B3A;
   --maxw:560px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
 body{
+  position:relative;   /* 道路 SVG 以整頁為座標,不是 viewport */
   font-family:"WenQuanYi Zen Hei","PingFang TC","Noto Sans CJK TC",sans-serif;
-  color:var(--ink);
-  position:relative;   /* 小徑 SVG 以整頁為座標,不是 viewport */
-  /* 一條長漸層走完一天。百分比對應到各段落的位置。 */
+  color:var(--ink);overflow-x:hidden;
   background:linear-gradient(180deg,
-    #C9DCEB  0%,     /* 破曉 */
-    #E8EEF2  9%,     /* 晨光 */
-    var(--ivory) 22%,/* 上午 */
-    #F7F2E4 38%,     /* 正午 */
-    #F3DFC4 54%,     /* 午後 */
-    #E8A989 68%,     /* 黃昏 */
-    var(--dusk) 78%, /* 日落 */
-    #8A5A6B 87%,     /* 暮色 */
-    var(--night) 95%,
-    #1B2838 100%);   /* 夜 */
-  overflow-x:hidden;
+    #BFD6E8 0%, #E3ECF1 10%, var(--ivory) 24%, #F7F0DD 40%, #F3DDBE 55%,
+    #EBAA88 68%, var(--dusk) 78%, #8A5A6B 87%, var(--night) 95%, #1B2838 100%);
 }
-/* 顆粒感:純漸層會太像塑膠,加一層極淡的雜訊 */
-body::after{
-  content:"";position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.035;
+body::after{  /* 顆粒:純漸層太像塑膠 */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:5;opacity:.04;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.wrap{position:relative;max-width:var(--maxw);margin:0 auto;padding:0 22px}
+.wrap{position:relative;max-width:var(--maxw);margin:0 auto;padding:0 16px}
 
-/* ── 小徑 ── 絕對定位覆蓋整頁,內容壓在它上面 */
-#trail{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none}
-#trailDone{filter:drop-shadow(0 0 6px rgba(242,204,143,.5))}
-/* 走路的人 */
-#walker{filter:drop-shadow(0 4px 10px rgba(0,0,0,.28))}
+/* ── 道路與小人 ── */
+#road{position:absolute;top:0;left:0;width:100%;z-index:1;pointer-events:none}
+#walkerLayer{position:absolute;top:0;left:0;width:100%;z-index:4;pointer-events:none}
 
-/* ── 封面 ── */
-.cover{position:relative;z-index:1;min-height:100svh;display:flex;flex-direction:column;
-       justify-content:center;padding:72px 0 96px;text-align:center}
-.eyebrow{font-size:13px;letter-spacing:5px;text-indent:5px;color:#6E8098;margin-bottom:26px}
-.tagline{font-size:30px;line-height:1.55;letter-spacing:1px;color:var(--ink);
-         margin:0 auto 30px;max-width:15em}
-.kw{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:34px}
-.kw span{font-size:14px;letter-spacing:2px;text-indent:2px;padding:7px 15px;border-radius:999px;
-         background:rgba(46,64,87,.07);border:1px solid rgba(46,64,87,.14);color:#3C5068}
-.card-self{background:rgba(255,255,255,.62);backdrop-filter:blur(8px);
-           border:1px solid rgba(255,255,255,.8);border-radius:20px;padding:26px 24px;
-           box-shadow:0 14px 34px rgba(46,64,87,.1);text-align:left}
-.card-self h2{font-size:15px;letter-spacing:4px;text-indent:4px;color:var(--dusk);
-              margin-bottom:14px;font-weight:normal}
-.card-self p{font-size:15.5px;line-height:2.05;color:#2C3B4C}
-.scroll-hint{margin-top:44px;font-size:12px;letter-spacing:4px;text-indent:4px;color:#7B8CA3}
-.scroll-hint i{display:block;width:1px;height:38px;margin:12px auto 0;
-               background:linear-gradient(180deg,rgba(123,140,163,.7),transparent)}
+/* ── 開場 ── */
+.hero{position:relative;z-index:2;height:70svh;display:flex;flex-direction:column;
+      justify-content:center;text-align:center;padding-top:20px}
+.eyebrow{font-size:13px;letter-spacing:5px;text-indent:5px;color:#62778F;margin-bottom:22px}
+.tagline{font-size:29px;line-height:1.6;letter-spacing:1px;max-width:14em;margin:0 auto}
+.hint{margin-top:30px;font-size:12px;letter-spacing:4px;text-indent:4px;color:#7B8CA3}
 
-/* ── 里程碑 ── */
-.stop{position:relative;z-index:1;min-height:76svh;display:flex;flex-direction:column;
-      justify-content:center;padding:26px 0}
-.stop .inner{width:67%;opacity:0;transform:translateY(26px);
-             transition:opacity .9s ease,transform .9s cubic-bezier(.22,1,.36,1)}
-.stop.on .inner{opacity:1;transform:none}
-.stop:nth-child(even) .inner{margin-left:auto}
-.photo{position:relative;width:100%;aspect-ratio:4/5;border-radius:18px;overflow:hidden;
-       box-shadow:0 22px 44px rgba(29,43,58,.26),0 3px 8px rgba(29,43,58,.14);
-       transform:rotate(-1.4deg)}
-.stop:nth-child(even) .photo{transform:rotate(1.4deg)}
-.photo::after{content:"";position:absolute;inset:0;
-              background:linear-gradient(180deg,transparent 55%,rgba(29,43,58,.42))}
+/* ── 路邊的卡片 ── 走到了才跳出來 */
+.stop{position:relative;z-index:2;min-height:64svh;display:flex;align-items:center;padding:18px 0}
+.stop.R{justify-content:flex-end}
+.card{width:58%;background:rgba(255,253,247,.94);border-radius:16px;padding:10px 10px 16px;
+      box-shadow:0 18px 38px rgba(29,43,58,.24),0 2px 6px rgba(29,43,58,.12);
+      opacity:0;transform:translateX(34%) scale(.55) rotate(6deg);transform-origin:right center;
+      transition:opacity .45s ease,transform .75s cubic-bezier(.2,1.35,.4,1)}
+.stop.R .card{transform:translateX(-34%) scale(.55) rotate(-6deg);transform-origin:left center}
+.stop.on .card{opacity:1;transform:rotate(-1.2deg)}
+.stop.R.on .card{transform:rotate(1.2deg)}
+.photo{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden}
 .photo .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-           font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.65)}
-.photo .when{position:absolute;left:16px;bottom:14px;z-index:2;font-size:12px;
-             letter-spacing:3px;color:rgba(255,255,255,.9)}
-.stop h3{margin:20px 2px 10px;font-size:22px;letter-spacing:1.5px;line-height:1.5;
-         font-weight:normal}
-.stop p{margin:0 2px;font-size:15px;line-height:2;color:#33455A}
-.stop .num{display:inline-block;margin-bottom:12px;font-size:12px;letter-spacing:4px;
-           text-indent:4px;color:var(--dusk)}
-/* 走到夜色那幾段,字要翻白 */
-.stop.dark h3{color:#F6F1E6}
-.stop.dark p{color:rgba(246,241,230,.82)}
-.stop.dark .num{color:var(--gold)}
+           font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.7)}
+.photo .when{position:absolute;left:10px;bottom:8px;font-size:11px;letter-spacing:2px;
+             color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.card .num{display:block;margin:12px 4px 4px;font-size:11px;letter-spacing:3px;color:var(--dusk)}
+.card h3{margin:0 4px 6px;font-size:17px;line-height:1.5;letter-spacing:.5px;font-weight:normal}
+.card p{margin:0 4px;font-size:13.5px;line-height:1.85;color:#3B4C60}
+/* 文字卡(自我介紹、期待、給自己的話):沒有照片,用色條區分 */
+.card.text{padding:18px 16px 18px;border-top:4px solid var(--dusk)}
+.card.text .num{margin:0 0 8px}
+.card.text p{margin:0;font-size:14px;line-height:1.95}
+.kw{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.kw span{font-size:12px;letter-spacing:1px;padding:4px 10px;border-radius:999px;
+         background:rgba(224,122,95,.12);color:#B4553C}
+.card.quote{border-top-color:var(--gold);background:rgba(46,64,87,.92)}
+.card.quote .num{color:var(--gold)}
+.card.quote p{color:#F6F1E6;font-size:16px;line-height:1.9}
 
-/* ── 結尾 ── */
-.ending{position:relative;z-index:1;min-height:100svh;display:flex;flex-direction:column;
-        justify-content:center;text-align:center;padding:80px 0 72px;color:#F6F1E6}
-.ending .lead{font-size:13px;letter-spacing:5px;text-indent:5px;color:var(--gold);margin-bottom:22px}
-.ending .future{font-size:17px;line-height:2.1;color:rgba(246,241,230,.9);
-                max-width:19em;margin:0 auto 42px}
-.selfnote{border-top:1px solid rgba(242,204,143,.3);border-bottom:1px solid rgba(242,204,143,.3);
-          padding:26px 10px;margin-bottom:40px}
-.selfnote .lbl{font-size:12px;letter-spacing:4px;text-indent:4px;color:var(--gold);margin-bottom:12px}
-.selfnote .txt{font-size:19px;line-height:1.85;letter-spacing:1px}
+/* ── 路的盡頭 ── */
+.end{position:relative;z-index:2;padding:46svh 6px 64px;text-align:center}
 .btns{display:flex;flex-direction:column;gap:11px}
-.btn{display:block;padding:15px;border-radius:12px;font-size:16px;letter-spacing:2px;
-     text-indent:2px;text-decoration:none;border:none;cursor:pointer;
-     font-family:inherit;text-align:center}
+.btn{padding:15px;border-radius:12px;font-size:16px;letter-spacing:2px;text-indent:2px;
+     border:none;font-family:inherit}
 .btn-main{background:var(--gold);color:#3A2D18}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(242,204,143,.45)}
-.code{margin-top:30px;font-size:12px;letter-spacing:4px;text-indent:4px;color:rgba(242,204,143,.6)}
+.code{margin-top:26px;font-size:12px;letter-spacing:4px;text-indent:4px;color:rgba(242,204,143,.6)}
 </style>
 </head>
 <body>
 
-<svg id="trail" preserveAspectRatio="none" aria-hidden="true">
+<svg id="road" aria-hidden="true">
   <defs>
-    <!-- 小徑顏色跟著天色走:白天用暖褐(米白上看得見),入夜轉金(深藍上看得見) -->
-    <linearGradient id="gTrail" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#7E94AD"/>
-      <stop offset="30%"  stop-color="#B99A74"/>
-      <stop offset="62%"  stop-color="#C2714F"/>
-      <stop offset="82%"  stop-color="#F2CC8F"/>
-      <stop offset="100%" stop-color="#F7DCA8"/>
+    <!-- 路面顏色跟著天色:白天是沙土色,黃昏偏暖,入夜變深 -->
+    <linearGradient id="gRoad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F3E7CC"/>
+      <stop offset="50%"  stop-color="#E6CFA4"/>
+      <stop offset="78%"  stop-color="#B98065"/>
+      <stop offset="100%" stop-color="#4A5874"/>
     </linearGradient>
-    <linearGradient id="gGhost" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#2E4057" stop-opacity=".22"/>
-      <stop offset="60%"  stop-color="#2E4057" stop-opacity=".20"/>
-      <stop offset="85%"  stop-color="#F2CC8F" stop-opacity=".26"/>
-      <stop offset="100%" stop-color="#F2CC8F" stop-opacity=".30"/>
+    <linearGradient id="gEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#B9A57C"/>
+      <stop offset="70%"  stop-color="#8E5A45"/>
+      <stop offset="100%" stop-color="#27344A"/>
     </linearGradient>
   </defs>
-  <path id="trailBase" fill="none" stroke="url(#gGhost)" stroke-width="3"
-        stroke-linecap="round" stroke-dasharray="2 11"/>
-  <path id="trailDone" fill="none" stroke="url(#gTrail)" stroke-width="3.5" stroke-linecap="round"/>
-  <g id="stops"></g>
-  <g id="walker"></g>
+  <path id="rShadow" fill="none" stroke="rgba(29,43,58,.16)" stroke-width="58" stroke-linecap="round"
+        transform="translate(0 7)" style="filter:blur(7px)"/>
+  <path id="rEdge" fill="none" stroke="url(#gEdge)" stroke-width="50" stroke-linecap="round"/>
+  <path id="rBody" fill="none" stroke="url(#gRoad)" stroke-width="44" stroke-linecap="round"/>
+  <!-- 中線:還沒走的是白色虛線,走過的那段疊上金色實線 -->
+  <path id="rDash" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="3"
+        stroke-linecap="round" stroke-dasharray="10 16"/>
+  <path id="rDone" fill="none" stroke="#F2B45E" stroke-width="4" stroke-linecap="round"/>
+  <g id="pins"></g>
+</svg>
+<!-- 小人獨立一層,疊在卡片之上:走到卡片旁邊時不能被卡片角蓋住 -->
+<svg id="walkerLayer" aria-hidden="true">
+  <g id="walker">
+    <ellipse cx="0" cy="2" rx="13" ry="4.5" fill="rgba(29,43,58,.28)"/>
+    <g id="fig" stroke="#1D2B3A" stroke-width="5.5" stroke-linecap="round" fill="none">
+      <line id="legA" x1="0" y1="-17" x2="0" y2="-1"/>
+      <line id="legB" x1="0" y1="-17" x2="0" y2="-1"/>
+      <line x1="0" y1="-34" x2="0" y2="-17" stroke-width="7.5"/>
+      <rect x="-9" y="-33" width="7" height="12" rx="3" fill="#E07A5F" stroke="none"/>
+      <line id="armA" x1="0" y1="-31" x2="0" y2="-19" stroke-width="4"/>
+      <line id="armB" x1="0" y1="-31" x2="0" y2="-19" stroke-width="4"/>
+      <circle cx="0" cy="-43" r="7" fill="#1D2B3A" stroke="none"/>
+    </g>
+  </g>
 </svg>
 
 <div class="wrap">
-
-  <!-- 封面：先認識自己 -->
-  <section class="cover">
+  <section class="hero" id="hero">
     <div class="eyebrow">先認識自己 · 再紀錄自己</div>
     <h1 class="tagline">我用慢一點的方式，<br>把日子走成自己的樣子</h1>
-    <div class="kw">
-      <span>向內探索</span><span>細水長流</span><span>重視連結</span>
-    </div>
-    <div class="card-self">
-      <h2>原來，我是這樣的人</h2>
-      <p>我喜歡一個人的時間，不是因為不喜歡人群，而是安靜下來的時候，我才聽得見自己在想什麼。面對沒做過的事，我習慣先看一陣子，確定適合才動——這讓我走得慢，但很少後悔。朋友心情不好的時候會想到我，大概是因為我願意聽完，不急著給答案。我想要的生活不複雜：穩定一點，自由一點，身邊有幾個說真話的人。</p>
-    </div>
-    <div class="scroll-hint">往下，開始走<i></i></div>
+    <div class="hint">往下滑，開始走</div>
   </section>
 
-  <!-- 里程碑 -->
-  <section class="stop">
-    <div class="inner">
-      <div class="num">第 1 段</div>
-      <div class="photo" style="background:linear-gradient(145deg,#8FA9C4,#C9D8E4)">
-        <div class="ph">照片</div><div class="when">2019 · 春</div>
-      </div>
-      <h3>那年我把鬧鐘關掉，世界也沒有塌</h3>
-      <p>離職後的第一個早晨，我睡到自然醒。沒有人找我，也沒有事要交。那天我才知道，原來我一直在替一個不存在的人趕路。</p>
-    </div>
-  </section>
+  <section class="stop L"><div class="card text">
+    <span class="num">原來，我是這樣的人</span>
+    <div class="kw"><span>向內探索</span><span>細水長流</span><span>重視連結</span></div>
+    <p>我喜歡安靜下來的時間，那時候才聽得見自己在想什麼。沒做過的事，我習慣先看一陣子再動——走得慢，但很少後悔。</p>
+  </div></section>
 
-  <section class="stop">
-    <div class="inner">
-      <div class="num">第 2 段</div>
-      <div class="photo" style="background:linear-gradient(145deg,#D9B98F,#F0DCC0)">
-        <div class="ph">照片</div><div class="when">2021 · 夏</div>
-      </div>
-      <h3>兩個人的餐桌，比一個人的遠方更遠</h3>
-      <p>我們沒有去哪裡，就是每個禮拜三一起吃飯。三年後我才發現，那些平凡的晚上加起來，比我任何一次旅行都走得更遠。</p>
-    </div>
-  </section>
+  <section class="stop R"><div class="card">
+    <div class="photo" style="background:linear-gradient(145deg,#8FA9C4,#C9D8E4)"><div class="ph">照片</div><div class="when">2019 · 春</div></div>
+    <span class="num">第 1 段</span>
+    <h3>那年我把鬧鐘關掉，世界也沒有塌</h3>
+    <p>離職後的第一個早晨，我睡到自然醒。那天才知道，我一直在替一個不存在的人趕路。</p>
+  </div></section>
 
-  <section class="stop">
-    <div class="inner">
-      <div class="num">第 3 段</div>
-      <div class="photo" style="background:linear-gradient(145deg,#C97B63,#E8A989)">
-        <div class="ph">照片</div><div class="when">2023 · 秋</div>
-      </div>
-      <h3>我第一次說「我不行」，然後被接住了</h3>
-      <p>一直以為示弱會讓人失望。那天我撐不住說了，對方只回我一句「我知道了，交給我」。原來承認做不到，也是一種信任。</p>
-    </div>
-  </section>
+  <section class="stop L"><div class="card">
+    <div class="photo" style="background:linear-gradient(145deg,#D9B98F,#F0DCC0)"><div class="ph">照片</div><div class="when">2021 · 夏</div></div>
+    <span class="num">第 2 段</span>
+    <h3>兩個人的餐桌，比一個人的遠方更遠</h3>
+    <p>我們沒有去哪裡，就是每個禮拜三一起吃飯。那些平凡的晚上加起來，比任何旅行都遠。</p>
+  </div></section>
 
-  <section class="stop">
-    <div class="inner">
-      <div class="num">第 4 段</div>
-      <div class="photo" style="background:linear-gradient(145deg,#4A5B78,#6E7F9C)">
-        <div class="ph">照片</div><div class="when">2026 · 冬</div>
-      </div>
-      <h3>走到這裡，我開始喜歡現在的自己</h3>
-      <p>不是變得更厲害了，是不再急著跟誰比。慢慢走也會到，而且沿路看到的東西，比較多。</p>
-    </div>
-  </section>
+  <section class="stop R"><div class="card">
+    <div class="photo" style="background:linear-gradient(145deg,#C97B63,#E8A989)"><div class="ph">照片</div><div class="when">2023 · 秋</div></div>
+    <span class="num">第 3 段</span>
+    <h3>我第一次說「我不行」，然後被接住了</h3>
+    <p>一直以為示弱會讓人失望。原來承認做不到，也是一種信任。</p>
+  </div></section>
 
-  <!-- 結尾：我期待的生活 + 給自己的話 -->
-  <section class="ending">
-    <div class="lead">我期待的生活</div>
-    <p class="future">未來三年，我想要多一點能自己安排的時間。不是為了去更遠的地方，而是想把力氣留給真正在乎的人跟事。</p>
-    <div class="selfnote">
-      <div class="lbl">給自己的話</div>
-      <div class="txt">「你不用跑得比誰快，<br>你只要繼續走就好。」</div>
-    </div>
+  <section class="stop L"><div class="card">
+    <div class="photo" style="background:linear-gradient(145deg,#4A5B78,#6E7F9C)"><div class="ph">照片</div><div class="when">2026 · 冬</div></div>
+    <span class="num">第 4 段</span>
+    <h3>走到這裡，我開始喜歡現在的自己</h3>
+    <p>不是變得更厲害，是不再急著跟誰比。慢慢走也會到。</p>
+  </div></section>
+
+  <section class="stop R"><div class="card text">
+    <span class="num">我期待的生活</span>
+    <p>未來三年，我想要多一點能自己安排的時間，把力氣留給真正在乎的人跟事。</p>
+  </div></section>
+
+  <section class="stop L"><div class="card text quote">
+    <span class="num">給自己的話</span>
+    <p>「你不用跑得比誰快，你只要繼續走就好。」</p>
+  </div></section>
+
+  <section class="end" id="end">
     <div class="btns">
       <button class="btn btn-main">＋ 增加我的生命之旅</button>
       <button class="btn btn-ghost">分享給朋友</button>
     </div>
     <div class="code">我的編號 · K7M2</div>
   </section>
-
 </div>
 
 <script>
-// S 型小徑:依實際頁高生成,所以里程碑幾段都對得上,不用改座標。
-const svg  = document.getElementById('trail');
-const base = document.getElementById('trailBase');
-const done = document.getElementById('trailDone');
-const walker = document.getElementById('walker');
+const $ = (id) => document.getElementById(id);
+const svg = $('road'), walker = $('walker'), done = $('rDone');
+const roadPaths = ['rShadow', 'rEdge', 'rBody', 'rDash', 'rDone'].map($);
+let LEN = 0, STOPS = [], Y0 = 0, Y1 = 0;
 
-function buildTrail() {
+// 道路穿過每張卡片「另一側」的空位:卡片在左,路走右;卡片在右,路走左。
+// 段數每人不同,所以座標全部現場量,不寫死。
+function buildRoad() {
   const W = document.documentElement.clientWidth;
   const H = document.body.scrollHeight;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('width', W);
-  svg.setAttribute('height', H);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
   svg.style.height = H + 'px';
+  const wl = $('walkerLayer');
+  wl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  wl.setAttribute('width', W); wl.setAttribute('height', H);
+  wl.style.height = H + 'px';
 
-  // 小徑不是固定的正弦波,而是「穿過每個里程碑旁邊的空位」:
-  // 卡片靠右,小徑就走左邊;卡片靠左,小徑走右邊。
-  // 這樣線永遠不會壓在照片或文字上,段數再多也成立。
-  const cx = W / 2;
-  const pts = [{ x: cx, y: H * 0.075 }];
-  const stops = [];
+  const top = (el) => el.getBoundingClientRect().top + scrollY;
+  const hero = $('hero'), end = $('end');
+  Y0 = top(hero) + hero.offsetHeight * 0.80;
+  Y1 = top(end) + end.offsetHeight * 0.52;
+
+  const pts = [{ x: W / 2, y: Y0 }];
+  STOPS = [];
   document.querySelectorAll('.stop').forEach(sec => {
-    const inner = sec.querySelector('.inner').getBoundingClientRect();
-    const wrap  = sec.getBoundingClientRect();
-    const y = wrap.top + scrollY + wrap.height / 2;
-    const cardOnRight = (inner.left - wrap.left) > (wrap.right - inner.right);
-    // 空位的正中央
-    const x = cardOnRight ? (wrap.left + inner.left) / 2 : (inner.right + wrap.right) / 2;
+    const s = sec.getBoundingClientRect(), c = sec.querySelector('.card');
+    // 用版面寬度推算,不能量卡片本身 —— 它還沒跳出來時帶著位移與縮放
+    const cardW = c.offsetWidth, onRight = sec.classList.contains('R');
+    const gutter = s.width - cardW;
+    const x = onRight ? s.left + gutter / 2 : s.right - gutter / 2;
+    const y = s.top + scrollY + s.height / 2;
     pts.push({ x, y });
-    stops.push({ x, y, sec });
+    STOPS.push({ sec, x, y, onRight });
   });
-  pts.push({ x: cx, y: H * 0.955 });
+  pts.push({ x: W / 2, y: Y1 });
 
-  // 相鄰兩點用「垂直切線」的三次貝茲相接,接點才會順,看起來是一條連續的 S
+  // 相鄰兩點用垂直切線的三次貝茲相接,整條路才是連續的 S
   let d = `M ${pts[0].x} ${pts[0].y}`;
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1], b = pts[i], ym = (a.y + b.y) / 2;
     d += ` C ${a.x} ${ym}, ${b.x} ${ym}, ${b.x} ${b.y}`;
   }
-  base.setAttribute('d', d);
-  done.setAttribute('d', d);
+  roadPaths.forEach(p => p.setAttribute('d', d));
+  LEN = done.getTotalLength();
+  done.style.strokeDasharray = LEN;
 
-  const len = done.getTotalLength();
-  done.style.strokeDasharray = len;
-  done.dataset.len = len;
-  drawStops(stops, H);
+  // 每張卡片在路邊立一個小路標
+  $('pins').innerHTML = STOPS.map(({ x, y, onRight }) => {
+    const dx = onRight ? 30 : -30;
+    return `<line x1="${x}" y1="${y}" x2="${x + dx}" y2="${y}" stroke="#fff" stroke-width="2" opacity=".7"/>
+            <circle cx="${x + dx}" cy="${y}" r="5" fill="#E07A5F" stroke="#fff" stroke-width="2"/>`;
+  }).join('');
   update();
 }
 
-// 每段里程碑在小徑上留一個停靠點 —— 讓「走到這裡」這件事看得見。
-function drawStops(stops, H) {
-  const g = document.getElementById('stops');
-  g.innerHTML = '';
-  stops.forEach(({ x, y, sec }) => {
-    // 字色跟著天色:段數每人不同,不能寫死哪一段翻白,用該段在整頁的位置判斷
-    sec.classList.toggle('dark', y / H > 0.8);
-    g.insertAdjacentHTML('beforeend',
-      `<circle cx="${x}" cy="${y}" r="10" fill="none"
-               stroke="url(#gTrail)" stroke-width="2" opacity=".5"/>
-       <circle cx="${x}" cy="${y}" r="4" fill="url(#gTrail)"/>`);
-  });
+// 路上「高度 = y」的那一點。y 沿路單調遞增,二分就找得到。
+function lengthAtY(y) {
+  let lo = 0, hi = LEN;
+  for (let i = 0; i < 26; i++) {
+    const mid = (lo + hi) / 2;
+    (done.getPointAtLength(mid).y < y) ? (lo = mid) : (hi = mid);
+  }
+  return lo;
 }
 
 function update() {
-  const len = parseFloat(done.dataset.len || 0);
-  if (!len) return;
-  const max = document.body.scrollHeight - window.innerHeight;
-  // 進度:畫面中央走到哪裡
-  const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-  done.style.strokeDashoffset = len * (1 - p);
+  if (!LEN) return;
+  // 小人固定在畫面中段偏上,是路在腳下往後退 —— 這樣才有「我在走」的感覺
+  const y = Math.min(Y1, Math.max(Y0, scrollY + innerHeight * 0.46));
+  const L = lengthAtY(y);
+  const pt = done.getPointAtLength(L);
+  const ahead = done.getPointAtLength(Math.min(LEN, L + 6));
+  done.style.strokeDashoffset = LEN - L;
 
-  // 小人放在已走路徑的最前端
-  const pt = done.getPointAtLength(len * p);
-  walker.setAttribute('transform', `translate(${pt.x} ${pt.y})`);
+  // 面向路彎過去的方向;腳步跟著捲動距離擺,不捲就站著
+  const face = ahead.x >= pt.x ? 1 : -1;
+  const swing = Math.sin(scrollY / 13) * 30;
+  walker.setAttribute('transform', `translate(${pt.x} ${pt.y}) scale(${face * 1.15} 1.15)`);
+  $('legA').setAttribute('transform', `rotate(${swing} 0 -17)`);
+  $('legB').setAttribute('transform', `rotate(${-swing} 0 -17)`);
+  $('armA').setAttribute('transform', `rotate(${-swing * 0.8} 0 -31)`);
+  $('armB').setAttribute('transform', `rotate(${swing * 0.8} 0 -31)`);
+  // 走進夜色,小人換成亮色才看得見
+  const night = pt.y / document.body.scrollHeight > 0.84;
+  $('fig').setAttribute('stroke', night ? '#F6F1E6' : '#1D2B3A');
+  $('fig').querySelector('circle').setAttribute('fill', night ? '#F6F1E6' : '#1D2B3A');
+
+  // 小人快走到卡片旁邊時,卡片從路邊跳出來(跳出後就留著)
+  STOPS.forEach(({ sec, y: sy }) => {
+    if (pt.y > sy - innerHeight * 0.30) sec.classList.add('on');
+  });
 }
 
-// 走路的小人:白色線條,簡單到在任何底色上都看得見
-walker.innerHTML = `
-  <circle r="13" fill="#F2CC8F" opacity=".22"/>
-  <circle r="7.5" fill="#F2CC8F"/>
-  <circle r="3.4" fill="#2E4057"/>`;
-
-// 里程碑進場
-const io = new IntersectionObserver((es) => {
-  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('on'); });
-}, { threshold: 0.25 });
-document.querySelectorAll('.stop').forEach(s => io.observe(s));
-
 addEventListener('scroll', update, { passive: true });
-addEventListener('resize', buildTrail);
-addEventListener('load', buildTrail);
-buildTrail();
+addEventListener('resize', buildRoad);
+addEventListener('load', buildRoad);
+buildRoad();
 </script>
 </body>
 </html>
