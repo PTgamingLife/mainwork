@@ -88,10 +88,13 @@ async function ladysCmdExpenses() {
   const byPayer: Record<string, number> = {};
   for (const r of rows) byPayer[r.ladys_payer] = (byPayer[r.ladys_payer] ?? 0) + Number(r.ladys_amount);
   const fmt = (n: number) => `$${n.toLocaleString("en-US")}`;
+  const recv = await ladysSelect("ladys_receivables", "ladys_deleted=eq.false&ladys_status=eq.open&select=ladys_amount");
+  const recvTotal = recv.reduce((s, r) => s + Number(r.ladys_amount), 0);
   const lines = [
     `本月支出 ${fmt(total)}(${rows.length} 筆)`,
     ...(income ? [`本月收入 ${fmt(income)}・結餘 ${fmt(income - total)}`] : []),
     ...Object.entries(byPayer).map(([p, n]) => `${LADYS_OWNER_LABEL[p as "husband"]} ${fmt(n)}`),
+    ...(recv.length ? [`應收未收 ${fmt(recvTotal)}(${recv.length} 筆)`] : []),
     "【最近 5 筆】",
     ...rows.slice(0, 5).map((r) => `${r.ladys_date.slice(5)} ${r.ladys_category} ${fmt(Number(r.ladys_amount))} ${r.ladys_note}`.trim()),
   ];

@@ -46,7 +46,7 @@ async function ladysVerify(idToken: string): Promise<string> {
 
 async function ladysLoad(uid: string) {
   const today = ladysTodayTaipei();
-  const [settings, members, events, yearly, expenses, notes, life] = await Promise.all([
+  const [settings, members, events, yearly, expenses, notes, life, receivables] = await Promise.all([
     ladysSettings(),
     ladysSelect("ladys_members", "select=ladys_line_uid,ladys_name,ladys_emoji,ladys_role&order=ladys_created_at.asc"),
     ladysSelect("ladys_events", `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, -62)))}` +
@@ -59,6 +59,8 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_notes", "ladys_deleted=eq.false&order=ladys_done.asc,ladys_created_at.desc&select=id,ladys_content,ladys_kind,ladys_owner,ladys_done"),
     ladysSelect("ladys_life", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -400)}&order=ladys_date.desc,ladys_created_at.desc` +
       "&select=id,ladys_date,ladys_kind,ladys_content,ladys_owner"),
+    ladysSelect("ladys_receivables", "ladys_deleted=eq.false&order=ladys_status.asc,ladys_created_at.desc&limit=300" +
+      "&select=id,ladys_party,ladys_amount,ladys_owner,ladys_status,ladys_received_at,ladys_created_at"),
   ]);
   delete settings.ladys_group_id;
   const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
@@ -68,7 +70,7 @@ async function ladysLoad(uid: string) {
     catch { return { id, name: "工作群(名稱讀取失敗)" }; }
   }));
   const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
-  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, notes, life, period: ladysPeriodStats(life) };
+  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, receivables, notes, life, period: ladysPeriodStats(life) };
 }
 
 function ladysEventRow(b: any) {
@@ -102,6 +104,25 @@ function ladysNoteRow(b: any) {
   };
 }
 
+function ladysReceivableRow(b: any) {
+  const amount = Math.round(Number(b.amount));
+  if (!Number.isFinite(amount) || amount <= 0 || amount >= 100_000_000) bad("BAD_AMOUNT");
+  return { ladys_party: str(b.party, 10) || bad("BAD_PARTY"), ladys_amount: amount, ladys_owner: owner(b.owner) };
+}
+
+// 標記已收款:先把狀態從 open 改掉(搶到才寫入),再記一筆收入;連按兩次不會重複
+async function ladysReceive(id: unknown) {
+  if (!isUuid(id)) bad("BAD_ID");
+  const [r] = await ladysUpdate("ladys_receivables", `id=eq.${id}&ladys_deleted=eq.false&ladys_status=eq.open`,
+    { ladys_status: "received", ladys_received_at: now(), ladys_updated_at: now() });
+  if (!r) bad("NOT_FOUND");
+  await ladysInsert("ladys_expenses", {
+    ladys_date: ladysTodayTaipei(), ladys_amount: r.ladys_amount, ladys_category: "其他", ladys_payer: r.ladys_owner,
+    ladys_note: `應收:${r.ladys_party}`, ladys_flow: "in", ladys_source: "manual",
+  }, "return=minimal");
+  return r;
+}
+
 const LIFE_KINDS = ["period_start", "period_end", "health", "other"];
 function ladysLifeRow(b: any) {
   if (!isYmd(b.date)) bad("BAD_DATE");
@@ -115,6 +136,7 @@ const TABLES: Record<string, [string, (b: any) => Record<string, unknown>]> = {
   expense: ["ladys_expenses", ladysExpenseRow],
   note: ["ladys_notes", ladysNoteRow],
   life: ["ladys_life", ladysLifeRow],
+  receivable: ["ladys_receivables", ladysReceivableRow],
 };
 
 async function ladysSave(kind: string, b: any) {
@@ -214,6 +236,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, gcal: body.kind === "event" ? await ladysGcalSafe() : null });
     }
     if (a === "settings") { await ladysSaveSettings(body.data ?? {}); return json({ ok: true, gcal: await ladysGcalSafe() }); }
+    if (a === "receive") return json({ ok: true, row: await ladysReceive(body.id) });
     if (a === "member") return json({ ok: true, row: await ladysSaveMember(body.data ?? {}) });
     if (a === "unbindWork") return json({ ok: true, ...(await ladysUnbindWork(body.id)) });
     return json({ error: "BAD_ACTION" }, 400);

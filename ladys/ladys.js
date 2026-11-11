@@ -178,6 +178,8 @@ function openSheet(kind, row) {
       <label class="ladys-switch"><span>💝 每年重複(生日、紀念日)</span><input type="checkbox" id="fYearly" ${row?.ladys_recur === "yearly" ? "checked" : ""}></label>`;
   } else if (kind === "life") {
     html = lifeSheet(row, isNew, ladysS.view === "calendar" ? ladysS.sel : d.today);
+  } else if (kind === "receivable") {
+    html = receivableSheet(row, isNew);
   } else if (kind === "expense") {
     html = expenseSheet(row, isNew, d.today);
   } else {
@@ -199,10 +201,13 @@ async function saveSheet() {
   let data;
   if (kind === "event") data = { id, title: v("fTitle"), date: v("fDate"), time: v("fTime"), end_time: v("fEnd"), location: v("fLoc"), note: v("fNote"), owner: segVal("owner"), yearly: $("fYearly").checked };
   else if (kind === "life") data = { id, date: v("fDate"), kind: segVal("lkind"), content: v("fContent"), owner: segVal("owner") };
+  else if (kind === "receivable") data = { id, party: v("fParty"), amount: v("fAmount"), owner: segVal("owner") };
   else if (kind === "expense") data = { id, amount: v("fAmount"), date: v("fDate"), category: v("fCat"), note: v("fNote"), payer: segVal("owner"), flow: v("fFlow") };
   else { const old = ladysS.data.notes.find((n) => n.id === id); data = { id, content: v("fContent"), kind: segVal("kind"), owner: segVal("owner"), done: old?.ladys_done === true }; }
   if (kind === "event" && !data.title.trim()) return toast("請填內容");
   if (kind === "expense" && !(Number(data.amount) > 0)) return toast("請填金額");
+  if (kind === "receivable" && !data.party.trim()) return toast("請填對象");
+  if (kind === "receivable" && !(Number(data.amount) > 0)) return toast("請填金額");
   if (kind === "note" && !data.content.trim()) return toast("請填內容");
   if (kind === "life" && !data.content.trim() && !data.kind.startsWith("period")) return toast("請填內容");
   try { await ladysApi("save", { kind, data }); closeSheet(); await reload(); toast("已儲存"); } catch (e) { toast("儲存失敗:" + e.message); }
@@ -214,7 +219,7 @@ document.addEventListener("click", async (ev) => {
   const d = ladysS.data;
   if (t.closest("#ladysNav")) { ladysS.view = t.dataset.view; render(); window.scrollTo(0, 0); return; }
   if (t.id === "ladysGear") { ladysS.view = "settings"; render(); return; }
-  if (t.id === "ladysFab") return openSheet({ calendar: "event", list: "event", money: "expense", life: "life" }[ladysS.view] || "note");
+  if (t.id === "ladysFab") return openSheet(ladysS.view === "money" && ladysS.moneyTab === "recv" ? "receivable" : { calendar: "event", list: "event", money: "expense", life: "life" }[ladysS.view] || "note");
   if (t.dataset.filter) { ladysS.filter = t.dataset.filter; render(); return; }
   if (t.dataset.month) { ladysS.month = addMonths(ladysS.month, +t.dataset.month); render(); return; }
   if (t.dataset.mtab) { ladysS.moneyTab = t.dataset.mtab; render(); return; }
@@ -227,8 +232,15 @@ document.addEventListener("click", async (ev) => {
     try { await ladysApi("save", { kind: "note", data: { id: n.id, content: n.ladys_content, kind: n.ladys_kind, owner: n.ladys_owner, done: !n.ladys_done } }); await reload(); } catch (e) { toast("更新失敗"); }
     return;
   }
+  if (t.dataset.recv) {
+    ev.stopPropagation();
+    const x = d.receivables.find((r) => r.id === t.dataset.recv);
+    if (!confirm(`${x.ladys_party} 已經還 ${fmt$(x.ladys_amount)} 了嗎?\n會自動記成一筆收入`)) return;
+    try { await ladysApi("receive", { id: x.id }); await reload(); toast("已收款,已記入收入"); } catch (e) { toast("操作失敗:" + e.message); }
+    return;
+  }
   if (t.dataset.edit) {
-    const list = { event: [...d.events, ...d.yearly], expense: d.expenses, note: d.notes, life: d.life }[t.dataset.edit];
+    const list = { event: [...d.events, ...d.yearly], expense: d.expenses, receivable: d.receivables, note: d.notes, life: d.life }[t.dataset.edit];
     return openSheet(t.dataset.edit, list.find((x) => x.id === t.dataset.id));
   }
   if (t.closest("[data-seg]")) { t.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === t)); return; }
@@ -284,10 +296,13 @@ function ladysMockApi(action, extra) {
         { id: id(), ladys_date: today.slice(0, 8) + "05", ladys_amount: 52000, ladys_category: "薪資", ladys_payer: "husband", ladys_note: "公司薪水", ladys_flow: "in" },
         { id: id(), ladys_date: today.slice(0, 5) + "03-10", ladys_amount: 30000, ladys_category: "獎金", ladys_payer: "wife", ladys_note: "年終", ladys_flow: "in" },
         { id: id(), ladys_date: today.slice(0, 5) + "03-12", ladys_amount: 4200, ladys_category: "交通", ladys_payer: "both", ladys_note: "加油", ladys_flow: "out" }],
+      receivables: [{ id: id(), ladys_party: "小明", ladys_amount: 3000, ladys_owner: "husband", ladys_status: "open", ladys_created_at: at(-2) },
+        { id: id(), ladys_party: "阿姨", ladys_amount: 20000, ladys_owner: "both", ladys_status: "open", ladys_created_at: at(-9) },
+        { id: id(), ladys_party: "同事小華", ladys_amount: 1500, ladys_owner: "wife", ladys_status: "received", ladys_received_at: at(-1), ladys_created_at: at(-20) }],
       notes: [{ id: id(), ladys_content: "利用半年把債務還清", ladys_kind: "goal", ladys_owner: "both", ladys_done: false },
         { id: id(), ladys_content: "準備戶口名簿、401 報表、國泰存摺", ladys_kind: "todo", ladys_owner: "both", ladys_done: false }] };
   })());
-  const key = { event: "events", expense: "expenses", note: "notes", life: "life" };
+  const key = { event: "events", expense: "expenses", note: "notes", life: "life", receivable: "receivables" };
   if (action === "load") {
     const starts = db.life.filter((r) => r.ladys_kind === "period_start").map((r) => r.ladys_date).sort();
     const gaps = starts.slice(1).map((d, i) => daysBetween(starts[i], d)).filter((g) => g >= 15 && g <= 60);
@@ -302,11 +317,18 @@ function ladysMockApi(action, extra) {
     if (extra.kind === "event") { const all = !b.time; row = { ladys_title: b.title, ladys_start_at: new Date(`${b.date}T${all ? "00:00" : b.time}:00+08:00`).toISOString(), ladys_end_at: !all && b.end_time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null, ladys_all_day: all, ladys_location: b.location, ladys_note: b.note, ladys_owner: b.owner, ladys_recur: b.yearly ? "yearly" : "none" }; }
     else if (extra.kind === "life") row = { ladys_date: b.date, ladys_kind: b.kind, ladys_content: b.content || (b.kind === "period_start" ? "經期開始" : "經期結束"), ladys_owner: b.kind.startsWith("period") ? "wife" : b.owner };
     else if (extra.kind === "expense") row = { ladys_date: b.date, ladys_amount: Math.round(+b.amount), ladys_category: b.category, ladys_payer: b.payer, ladys_note: b.note, ladys_flow: b.flow };
+    else if (extra.kind === "receivable") row = { ladys_party: b.party, ladys_amount: Math.round(+b.amount), ladys_owner: b.owner, ladys_status: "open", ladys_created_at: new Date().toISOString() };
     else row = { ladys_content: b.content, ladys_kind: b.kind, ladys_owner: b.owner, ladys_done: b.done };
     if (extra.kind === "event") { db.events = db.events.filter((x) => x.id !== b.id || !b.yearly); db.yearly = db.yearly.filter((x) => x.id !== b.id || b.yearly); }
     const list = extra.kind === "event" && b.yearly ? db.yearly : db[key[extra.kind]], i = list.findIndex((x) => x.id === b.id);
     if (i >= 0) Object.assign(list[i], row); else list.push({ id: b.id || crypto.randomUUID(), ...row });
     if (extra.kind === "event") list.sort((a, c) => a.ladys_start_at.localeCompare(c.ladys_start_at));
+    return Promise.resolve({ ok: true });
+  }
+  if (action === "receive") {
+    const r = db.receivables.find((x) => x.id === extra.id && x.ladys_status === "open"); if (!r) return Promise.reject(new Error("NOT_FOUND"));
+    r.ladys_status = "received"; r.ladys_received_at = new Date().toISOString();
+    db.expenses.unshift({ id: crypto.randomUUID(), ladys_date: db.today, ladys_amount: r.ladys_amount, ladys_category: "其他", ladys_payer: r.ladys_owner, ladys_note: "應收:" + r.ladys_party, ladys_flow: "in" });
     return Promise.resolve({ ok: true });
   }
   if (action === "settings" && extra.data.gcal_calendar_id && !/^[\w.+-]+@[\w.-]+$/.test(extra.data.gcal_calendar_id)) return Promise.reject(new Error("BAD_CALENDAR_ID"));
