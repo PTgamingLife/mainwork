@@ -36,7 +36,6 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
 /* ── 開場 ── */
 .hero{position:relative;z-index:2;height:70svh;display:flex;flex-direction:column;
       justify-content:center;text-align:center;padding-top:20px}
-.eyebrow{font-size:13px;letter-spacing:5px;text-indent:5px;color:#62778F;margin-bottom:22px}
 .tagline{font-size:29px;line-height:1.6;letter-spacing:1px;max-width:14em;margin:0 auto}
 .hint{margin-top:30px;font-size:12px;letter-spacing:4px;text-indent:4px;color:#7B8CA3}
 
@@ -62,9 +61,7 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
 .card.text{padding:18px 16px 18px;border-top:4px solid var(--dusk)}
 .card.text .num{margin:0 0 8px}
 .card.text p{margin:0;font-size:14px;line-height:1.95}
-.kw{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.kw span{font-size:12px;letter-spacing:1px;padding:4px 10px;border-radius:999px;
-         background:rgba(224,122,95,.12);color:#B4553C}
+.card.text .num .who{font-weight:normal;font-size:15px;color:var(--ink);letter-spacing:1px}
 .card.quote{border-top-color:var(--gold);background:rgba(46,64,87,.92)}
 .card.quote .num{color:var(--gold)}
 .card.quote p{color:#F6F1E6;font-size:16px;line-height:1.9}
@@ -124,14 +121,13 @@ body::after{  /* 顆粒:純漸層太像塑膠 */
 
 <div class="wrap">
   <section class="hero" id="hero">
-    <div class="eyebrow">先認識自己 · 再紀錄自己</div>
     <h1 class="tagline">我用慢一點的方式，<br>把日子走成自己的樣子</h1>
     <div class="hint">往下滑，開始走</div>
   </section>
 
   <section class="stop L"><div class="card text">
-    <span class="num">原來，我是這樣的人</span>
-    <div class="kw"><span>向內探索</span><span>細水長流</span><span>重視連結</span></div>
+    <!-- 稱謂是使用者自己的名字,正式版由資料帶入 -->
+    <span class="num">歡迎來到 <b class="who">小安</b> 的旅程</span>
     <p>我喜歡安靜下來的時間，那時候才聽得見自己在想什麼。沒做過的事，我習慣先看一陣子再動——走得慢，但很少後悔。</p>
   </div></section>
 
