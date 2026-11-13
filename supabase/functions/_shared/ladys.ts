@@ -83,7 +83,7 @@ export async function ladysCheckCronKey(req: Request): Promise<boolean> {
 }
 
 // 同一天同一種排程只跑一次:插得進去才繼續
-export async function ladysClaimRun(kind: "morning" | "nightly", runDate: string): Promise<number | null> {
+export async function ladysClaimRun(kind: "morning" | "nightly" | "workout", runDate: string): Promise<number | null> {
   const rows = await ladysInsert(
     "ladys_runs?on_conflict=ladys_kind,ladys_run_date",
     { ladys_kind: kind, ladys_run_date: runDate },

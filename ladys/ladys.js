@@ -136,6 +136,8 @@ function viewSettings() {
     <div class="ladys-sec">推播時間</div><div class="ladys-card"><div class="ladys-row2">
     <div class="ladys-field"><label>早上推播行程</label><input type="time" id="ladysMorning" value="${s.ladys_morning_time}"></div>
     <div class="ladys-field"><label>晚上整理對話</label><input type="time" id="ladysNightly" value="${s.ladys_nightly_time}"></div></div>
+    <div class="ladys-field"><label>傍晚運動提醒(推兩招雙人運動動畫)</label><input type="time" id="ladysWorkoutTime" value="${s.ladys_workout_time || "18:00"}"></div>
+    ${sw("workout_enabled", "🏃 每天推運動提醒")}
     ${sw("push_empty", "今天沒行程也推「今天沒有安排」")}</div>
     <div class="ladys-sec">晚上要整理哪些</div><div class="ladys-card">${sw("extract_events", "📅 行事曆")}${sw("extract_expenses", "💰 收入與支出")}${sw("extract_notes", "🎯 目標與 ☑️ 待辦")}</div>
     <div class="ladys-sec">Google 日曆同步</div><div class="ladys-card">
@@ -261,7 +263,7 @@ document.addEventListener("click", async (ev) => {
     return;
   }
   if (t.id === "ladysSaveSettings") {
-    const data = { persona: document.querySelector("[data-persona].on")?.dataset.persona, persona_custom: $("ladysCustom").value, morning_time: $("ladysMorning").value, nightly_time: $("ladysNightly").value, gcal_calendar_id: $("ladysGcalId").value.trim(),
+    const data = { persona: document.querySelector("[data-persona].on")?.dataset.persona, persona_custom: $("ladysCustom").value, morning_time: $("ladysMorning").value, nightly_time: $("ladysNightly").value, workout_time: $("ladysWorkoutTime").value, gcal_calendar_id: $("ladysGcalId").value.trim(),
       anniv_remind_days: $("ladysAnnivDays").value.split(/[,，\s]+/).filter(Boolean).map(Number), period_remind_days: Number($("ladysPeriodDays").value),
       period_remind_to: document.querySelector('[data-seg="premto"] .on')?.dataset.v };
     document.querySelectorAll("[data-set]").forEach((c) => (data[c.dataset.set] = c.checked));
@@ -282,7 +284,7 @@ function ladysMockApi(action, extra) {
   const db = (ladysMockApi.db ||= (() => {
     const today = ymdOf(new Date().toISOString()), at = (n, hm) => new Date(new Date(today + "T" + (hm || "00:00") + ":00+08:00").getTime() + n * 864e5).toISOString();
     const id = () => crypto.randomUUID();
-    return { me: "Umock", today, settings: { ladys_persona: "butler", ladys_persona_custom: "", ladys_morning_time: "07:30", ladys_nightly_time: "23:00", ladys_push_empty: true, ladys_extract_events: true, ladys_extract_expenses: true, ladys_extract_notes: true, ladys_gcal_enabled: false, ladys_gcal_calendar_id: null, ladys_anniv_remind_days: [7, 0], ladys_period_remind_days: 2, ladys_period_remind_to: "both" }, gcalReady: false,
+    return { me: "Umock", today, settings: { ladys_persona: "butler", ladys_persona_custom: "", ladys_morning_time: "07:30", ladys_nightly_time: "23:00", ladys_workout_time: "18:00", ladys_workout_enabled: true, ladys_push_empty: true, ladys_extract_events: true, ladys_extract_expenses: true, ladys_extract_notes: true, ladys_gcal_enabled: false, ladys_gcal_calendar_id: null, ladys_anniv_remind_days: [7, 0], ladys_period_remind_days: 2, ladys_period_remind_to: "both" }, gcalReady: false,
       workGroups: [{ id: "C" + "c".repeat(32), name: "某某公司專案群" }],
       yearly: [{ id: id(), ladys_title: "結婚紀念日", ladys_start_at: "2020-07-02T16:00:00.000Z", ladys_end_at: null, ladys_all_day: true, ladys_owner: "both", ladys_location: "", ladys_recur: "yearly" }],
       life: [{ id: id(), ladys_date: addDaysYmd(today, -3), ladys_kind: "period_start", ladys_content: "經期開始", ladys_owner: "wife" },
