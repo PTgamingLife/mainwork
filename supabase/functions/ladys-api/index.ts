@@ -163,6 +163,7 @@ async function ladysSaveSettings(b: any) {
   if (b.persona_custom !== undefined) patch.ladys_persona_custom = str(b.persona_custom, 200);
   if (isHm(b.morning_time)) patch.ladys_morning_time = b.morning_time;
   if (isHm(b.nightly_time)) patch.ladys_nightly_time = b.nightly_time;
+  if (isHm(b.workout_time)) patch.ladys_workout_time = b.workout_time;
   if (b.gcal_calendar_id !== undefined) {
     const id = str(b.gcal_calendar_id, 200);
     if (id && !/^[\w.+-]+@[\w.-]+$/.test(id)) bad("BAD_CALENDAR_ID");
@@ -177,7 +178,7 @@ async function ladysSaveSettings(b: any) {
     if (Number.isInteger(n) && n >= 0 && n <= 14) patch.ladys_period_remind_days = n;
   }
   if (["wife", "both", "off"].includes(b.period_remind_to)) patch.ladys_period_remind_to = b.period_remind_to;
-  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled"]) {
+  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled", "workout_enabled"]) {
     if (typeof b[k] === "boolean") patch[`ladys_${k}`] = b[k];
   }
   await ladysUpdate("ladys_settings", "id=eq.1", patch);
