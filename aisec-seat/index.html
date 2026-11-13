@@ -45,6 +45,11 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .aisec-three b{display:block;font-size:18px;margin-bottom:4px}
 .aisec-three p{margin:0;color:var(--aisec-muted);font-size:15px}
 .aisec-three .aisec-step{font-family:var(--aisec-f-num);font-weight:800;color:var(--aisec-leaf);font-size:15px}
+.aisec-quote{margin:0 0 14px;padding-left:14px;border-left:4px solid var(--aisec-leaf);color:var(--aisec-ink);font-size:16px;font-weight:500}
+.aisec-plan{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.aisec-plan li{background:var(--aisec-paper);border:1px solid var(--aisec-line);border-radius:14px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.aisec-plan b{color:var(--aisec-wood-d);font-size:17px}
+.aisec-plan span{color:var(--aisec-muted);font-size:14px}
 .aisec-flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 28px}
 .aisec-flow li{display:flex;gap:14px;padding:7px 0;border-bottom:1px dashed var(--aisec-line);font-size:15px}
 .aisec-flow time{font-family:var(--aisec-f-num);font-weight:800;color:var(--aisec-wood);min-width:48px}
@@ -115,6 +120,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
   .aisec-ticket{grid-template-columns:repeat(2,1fr)}
   .aisec-three{grid-template-columns:1fr}
   .aisec-flow{grid-template-columns:1fr}
+  .aisec-plan{grid-template-columns:1fr}
   .aisec-animals{grid-template-columns:repeat(4,1fr);gap:6px}
   .aisec-animal span{font-size:13px}
   .aisec-fields{grid-template-columns:1fr}
@@ -139,7 +145,7 @@ fbq('track','PageView');
     <div><dt>費用</dt><dd class="aisec-price aisec-num">NT$3,680</dd></div>
     <div><dt>剩餘名額</dt><dd class="aisec-leftbox aisec-num"><span class="aisec-left">–</span> / 7</dd></div>
   </dl>
-  <p class="aisec-points"><b>學費已含 NT$1,680 會員點數</b>：下課後秘書直接能用，點數用完再自行充值。</p>
+  <p class="aisec-points"><b>學費已含第一年 AI 秘書訂閱</b>：不用申請 AI 帳號，下課後在 LINE 上直接用。</p>
   <a class="aisec-cta" href="#aisec_pick">選我的座位 →</a>
 </header>
 
@@ -150,6 +156,17 @@ fbq('track','PageView');
     <div><span class="aisec-step">實作 2</span><b>每日跟進提醒</b><p>每天早上 8 點推播今天該聯絡誰、上次聊到哪。</p></div>
     <div><span class="aisec-step">實作 3</span><b>訊息秒產生</b><p>一句話寫好生日祝福、跟進訊息、貼文草稿。</p></div>
   </div>
+</section>
+
+<section class="aisec-wrap aisec-sec">
+  <h2>用兩個麥當勞套餐的錢，讓 AI 幫你工作</h2>
+  <p class="aisec-quote">AI 時代的第一步，不是學更多工具去適應 AI，而是練習讓 AI 適應你的工作方式。</p>
+  <ul class="aisec-plan">
+    <li><b>每月 NT$370</b><span>不用申請 AI 帳號，在 LINE 上直接用</span></li>
+    <li><b>每月 500 點</b><span>足夠 30 天每天整理行程與帳務</span></li>
+    <li><b>用完不中斷</b><span>可加購點數、升級方案，或等下個月重置</span></li>
+    <li><b>工作坊學員</b><span>學費 NT$3,680 已含第一年訂閱（12 個月）</span></li>
+  </ul>
 </section>
 
 <section class="aisec-wrap aisec-sec">
