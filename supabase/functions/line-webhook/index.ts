@@ -15,15 +15,35 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const CONFIRM_KEYWORDS = ["確認", "confirm", "ok", "OK", "確认"];
 const ANALYSIS_KEYWORDS = ["分析", "analyze", "analysis"];
 
+// 驗證 LINE 簽章(x-line-signature = base64(HMAC-SHA256(channel secret, raw body)))
+async function lwVerifySignature(rawBody: string, signature: string | null): Promise<boolean> {
+  const secret = Deno.env.get("LINE_CHANNEL_SECRET");
+  if (!secret || !signature) return false;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody)));
+  const expected = btoa(String.fromCharCode(...mac));
+  if (expected.length !== signature.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   // LINE sends POST requests
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  const rawBody = await req.text();
+  if (!(await lwVerifySignature(rawBody, req.headers.get("x-line-signature")))) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = JSON.parse(rawBody);
   } catch {
     return new Response("Bad request", { status: 400 });
   }
