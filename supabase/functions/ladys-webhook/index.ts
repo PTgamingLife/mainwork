@@ -12,6 +12,7 @@ import {
 import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
+import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
 import { ladysHandleNotePostback } from "../_shared/ladys-eventnote.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
@@ -20,7 +21,7 @@ const LADYS_BIND_CODE = Deno.env.get("LADYS_BIND_CODE") ?? "";
 // 帳號擁有者(陳柏廷)的 LINE userId,沿用既有每日推播的 LINE_USER_ID;還沒綁定群組前也能用一對一指令
 const LADYS_OWNER_UID = "U55b426b2cefa9787c9c23c97b45963fe";
 const enc = new TextEncoder();
-const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆", "記憶圖片", "記憶以上圖片", "記憶以下圖片"];
+const LADYS_COMMANDS = ["行程", "帳", "目標", "待辦", "瑣事", "選單", "更新行事曆", "記憶圖片", "記憶以上圖片", "記憶以下圖片", "確認時間"];
 
 async function ladysVerifySignature(raw: string, sig: string): Promise<boolean> {
   if (!LADYS_LINE_SECRET || !sig) return false;
@@ -128,6 +129,7 @@ async function ladysCmdUpdateNow() {
 
 async function ladysRunCommand(text: string, ev?: any, groupId = "") {
   switch (text) {
+    case "確認時間": return await ladysCheckTime(ev, groupId);
     case "記憶圖片": return await ladysMemorizeImages(ev, groupId, false);
     case "記憶以上圖片": case "記憶以下圖片": return await ladysMemorizeImages(ev, groupId, true);
     case "更新行事曆": return await ladysCmdUpdateNow();
@@ -214,7 +216,7 @@ async function ladysHandle(ev: any, settings: any) {
 
     if (uid) await ladysEnsureMember(gid, uid);
     if (LADYS_COMMANDS.includes(text)) {
-      await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat(), text.startsWith("記憶") ? gid : "");
+      await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat(), text.startsWith("記憶") || text === "確認時間" ? gid : "");
       return;
     }
     await ladysInsert("ladys_messages?on_conflict=ladys_line_msg_id", {
