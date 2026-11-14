@@ -46,7 +46,7 @@ async function ladysVerify(idToken: string): Promise<string> {
 
 async function ladysLoad(uid: string) {
   const today = ladysTodayTaipei();
-  const [settings, members, events, yearly, expenses, notes, life, receivables] = await Promise.all([
+  const [settings, members, events, yearly, expenses, notes, life, receivables, shoots] = await Promise.all([
     ladysSettings(),
     ladysSelect("ladys_members", "select=ladys_line_uid,ladys_name,ladys_emoji,ladys_role&order=ladys_created_at.asc"),
     ladysSelect("ladys_events", `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, -62)))}` +
@@ -61,6 +61,8 @@ async function ladysLoad(uid: string) {
       "&select=id,ladys_date,ladys_kind,ladys_content,ladys_owner"),
     ladysSelect("ladys_receivables", "ladys_deleted=eq.false&order=ladys_status.asc,ladys_created_at.desc&limit=300" +
       "&select=id,ladys_party,ladys_amount,ladys_owner,ladys_status,ladys_received_at,ladys_created_at"),
+    ladysSelect("ladys_shoots", `ladys_deleted=eq.false&or=(ladys_date.is.null,ladys_date.gte.${ladysAddDays(today, -60)})&order=ladys_date.asc.nullsfirst,ladys_time.asc&limit=300` +
+      "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_content_ai,ladys_prep,ladys_created_at"),
   ]);
   delete settings.ladys_group_id;
   const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
@@ -70,7 +72,7 @@ async function ladysLoad(uid: string) {
     catch { return { id, name: "工作群(名稱讀取失敗)" }; }
   }));
   const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
-  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, receivables, notes, life, period: ladysPeriodStats(life) };
+  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, receivables, shoots, notes, life, period: ladysPeriodStats(life) };
 }
 
 function ladysEventRow(b: any) {
@@ -123,6 +125,16 @@ async function ladysReceive(id: unknown) {
   return r;
 }
 
+function ladysShootRow(b: any) {
+  if (b.date && !isYmd(b.date)) bad("BAD_DATE");
+  const content = str(b.content, 1000);
+  return {
+    ladys_date: b.date || null, ladys_time: isHm(b.time) ? b.time : "", ladys_owner: owner(b.owner),
+    ladys_topic: str(b.topic, 40) || bad("BAD_TOPIC"), ladys_content: content, ladys_prep: str(b.prep, 300),
+    ...(b.content_edited === true || !content ? { ladys_content_ai: false } : {}),
+  };
+}
+
 const LIFE_KINDS = ["period_start", "period_end", "health", "other"];
 function ladysLifeRow(b: any) {
   if (!isYmd(b.date)) bad("BAD_DATE");
@@ -137,6 +149,7 @@ const TABLES: Record<string, [string, (b: any) => Record<string, unknown>]> = {
   note: ["ladys_notes", ladysNoteRow],
   life: ["ladys_life", ladysLifeRow],
   receivable: ["ladys_receivables", ladysReceivableRow],
+  shoot: ["ladys_shoots", ladysShootRow],
 };
 
 async function ladysSave(kind: string, b: any) {
@@ -164,6 +177,9 @@ async function ladysSaveSettings(b: any) {
   if (isHm(b.morning_time)) patch.ladys_morning_time = b.morning_time;
   if (isHm(b.nightly_time)) patch.ladys_nightly_time = b.nightly_time;
   if (isHm(b.workout_time)) patch.ladys_workout_time = b.workout_time;
+  if (isHm(b.shoot_time)) patch.ladys_shoot_time = b.shoot_time;
+  if (b.shoot_dir_husband !== undefined) patch.ladys_shoot_dir_husband = str(b.shoot_dir_husband, 60) || "LINE 個人 AI 秘書設定與教學";
+  if (b.shoot_dir_wife !== undefined) patch.ladys_shoot_dir_wife = str(b.shoot_dir_wife, 60) || "銅鑼浴";
   if (b.gcal_calendar_id !== undefined) {
     const id = str(b.gcal_calendar_id, 200);
     if (id && !/^[\w.+-]+@[\w.-]+$/.test(id)) bad("BAD_CALENDAR_ID");
@@ -178,7 +194,7 @@ async function ladysSaveSettings(b: any) {
     if (Number.isInteger(n) && n >= 0 && n <= 14) patch.ladys_period_remind_days = n;
   }
   if (["wife", "both", "off"].includes(b.period_remind_to)) patch.ladys_period_remind_to = b.period_remind_to;
-  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled", "workout_enabled"]) {
+  for (const k of ["push_empty", "extract_events", "extract_expenses", "extract_notes", "gcal_enabled", "workout_enabled", "shoot_enabled"]) {
     if (typeof b[k] === "boolean") patch[`ladys_${k}`] = b[k];
   }
   await ladysUpdate("ladys_settings", "id=eq.1", patch);
