@@ -40,8 +40,8 @@ h1,h2,h3{text-wrap:balance;margin:0}
 
 .aisec-sec{padding-block:26px}
 .aisec-sec h2{font-size:24px;font-weight:900;margin-bottom:14px}
-.aisec-three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.aisec-three div{background:var(--aisec-paper);border:1px solid var(--aisec-line);border-radius:16px;padding:16px}
+.aisec-three{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.aisec-three div{background:var(--aisec-paper);border:1px solid var(--aisec-line);border-radius:16px;padding:16px;min-width:0}
 .aisec-three b{display:block;font-size:18px;margin-bottom:4px}
 .aisec-three p{margin:0;color:var(--aisec-muted);font-size:15px}
 .aisec-three .aisec-step{font-family:var(--aisec-f-num);font-weight:800;color:var(--aisec-leaf);font-size:15px}
@@ -118,7 +118,10 @@ h1,h2,h3{text-wrap:balance;margin:0}
 
 @media (max-width:640px){
   .aisec-ticket{grid-template-columns:repeat(2,1fr)}
-  .aisec-three{grid-template-columns:1fr}
+  .aisec-three{grid-template-columns:repeat(2,1fr);gap:10px}
+  .aisec-three div{padding:12px}
+  .aisec-three b{font-size:16px}
+  .aisec-three p{font-size:13px}
   .aisec-flow{grid-template-columns:1fr}
   .aisec-plan{grid-template-columns:1fr}
   .aisec-animals{grid-template-columns:repeat(4,1fr);gap:6px}
@@ -150,11 +153,16 @@ fbq('track','PageView');
 </header>
 
 <section class="aisec-wrap aisec-sec">
-  <h2>秘書幫你做 3 件事</h2>
+  <h2>AI 秘書能幫你做的事</h2>
   <div class="aisec-three">
-    <div><span class="aisec-step">實作 1</span><b>語音記客戶</b><p>見完客戶講 30 秒語音，自動整理成客戶紀錄。</p></div>
-    <div><span class="aisec-step">實作 2</span><b>每日跟進提醒</b><p>每天早上 8 點推播今天該聯絡誰、上次聊到哪。</p></div>
-    <div><span class="aisec-step">實作 3</span><b>訊息秒產生</b><p>一句話寫好生日祝福、跟進訊息、貼文草稿。</p></div>
+    <div><b>轉傳就抓重點</b><p>轉傳客戶對話，自動抓出時間、邀約、要辦的事。</p></div>
+    <div><b>自動排行事曆</b><p>直接排進 Google 日曆和手機行事曆。</p></div>
+    <div><b>時間到就提醒</b><p>提醒時附上「上次聊到什麼」，見面不卡詞。</p></div>
+    <div><b>每日帳務整理</b><p>講一句話，自動記好收支。</p></div>
+    <div><b>早上告訴你聯絡誰</b><p>每天早上推播今天該聯絡的客戶。</p></div>
+    <div><b>訊息秒產生</b><p>一句話寫好生日祝福、跟進訊息。</p></div>
+    <div><b>貼文草稿</b><p>一句話產生社群貼文草稿。</p></div>
+    <div><b>語音記客戶</b><p>講 30 秒語音，自動整理成客戶紀錄。</p></div>
   </div>
 </section>
 
