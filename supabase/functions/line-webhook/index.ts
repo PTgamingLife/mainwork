@@ -18,6 +18,7 @@ const ANALYSIS_KEYWORDS = ["分析", "analyze", "analysis"];
 // 驗證 LINE 簽章(x-line-signature = base64(HMAC-SHA256(channel secret, raw body)))
 async function lwVerifySignature(rawBody: string, signature: string | null): Promise<boolean> {
   const secret = Deno.env.get("LINE_CHANNEL_SECRET");
+  if (!secret) console.error("LINE_CHANNEL_SECRET 未設定,所有請求都會被拒絕");
   if (!secret || !signature) return false;
   const key = await crypto.subtle.importKey(
     "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],

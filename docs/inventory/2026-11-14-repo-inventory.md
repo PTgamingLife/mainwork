@@ -79,15 +79,17 @@
 | `amway-protein/` + `amp-*` functions + 4 個 amp workflow | 4.4 MB | 比賽已結束 |
 | `.github/workflows/debug-calendar.yml` + `scripts/debug_calendar.py` | — | 一次性除錯用,會把私人行程印進 Actions log |
 
-## 4. 資安風險
-| 等級 | 問題 | 處理方式 |
+## 4. 資安風險(2026-11-14 處理結果)
+| 等級 | 問題 | 結果 |
 |---|---|---|
-| 🔴 高 | `line-webhook` 沒有驗 LINE 簽章,又是 `--no-verify-jwt`,任何人都能 POST 假的「確認」,觸發每日推圖 | 加上 `x-line-signature` HMAC 驗證(需重新部署) |
-| 🔴 高 | Supabase `wcemkmwrlvijxxwybrgs`:`rpc_my_prizes(p_user_id)` 未登入也能呼叫;約 20 支 `rpc_*(p_user_id)` 登入者可帶別人的 id(可能是 IDOR);`curve_ranking` 是 SECURITY DEFINER view(ERROR 等級) | 要先讀函式內容確認(這些函式的程式碼不在這個 repo) |
-| 🟠 中 | `facialmonitor_mcp_set_secret` 任何登入者都能呼叫 | 確認函式內有檢查擁有者 |
-| 🟠 中 | PR #55 線上已生效,但 repo 缺 migration → 重建資料庫時漏洞會回來 | 合併 #55 |
-| 🟠 中 | debug-calendar workflow 會把行程印進 log | 刪除 |
-| 🟡 低 | 兩個專案共 10 支函式 search_path 可變;pg_net / pg_trgm 裝在 public;Auth 外洩密碼保護關閉 | migration 補 `set search_path`;Dashboard 開啟保護 |
-| 🟡 低 | repo 有個人財務資料(`household-finance/data.json`、PR #48) | repo 若改成公開就會外洩,保持私有,或移到 Supabase |
-| ✅ | git 全歷史掃描:沒有 OpenAI / Anthropic / GitHub / service_role / 私鑰外洩,只有 anon key(本來就是公開的) | — |
-| ✅ | 其他 Edge Functions 都有驗證(cron key / LINE 簽章 / JWT);RLS 全部開啟(「沒有 policy」= 擋掉 anon,安全) | — |
+| 🔴 高 | mainwork 有開 GitHub Pages(`ptgaminglife.github.io/mainwork/...` 被 LINE 卡片引用),main 上非 dot 開頭的檔案可能都公開,包括 `household-finance/data.json`、`cofounder/data.json` | ⏳ 待使用者確認 Pages 設定 |
+| 🔴 高 | `line-webhook` 沒有驗 LINE 簽章 | ✅ 已加 HMAC 驗證並部署 v68;沒簽章/假簽章都回 401 |
+| 🟠 中 | wcem `curve_ranking`:SECURITY DEFINER view,anon 能讀全部會員的 name / membership_level,anon 還有 INSERT/UPDATE/DELETE grant | ⏳ 待決定 |
+| ✅ | wcem `rpc_*(p_user_id)`:`resolve_user_id` 會強制登入者只能操作自己、未登入直接 unauthorized → 沒有 IDOR | 已確認 |
+| ✅ | `facialmonitor_mcp_set_secret` 有檢查 project 擁有者 | 已確認 |
+| ✅ | PR #55 線上已生效 → migration 檔已帶進 repo | 已同步 |
+| ✅ | 10 支函式的 search_path 已固定(兩個專案都套用,實測函式正常) | 已修 |
+| ✅ | debug-calendar workflow 已刪除 | 已修 |
+| ✅ | `health-quest-rpg/node_modules` 已移出 git,並加進 .gitignore | 已修 |
+| 🟡 低 | pg_net / pg_trgm 裝在 public、Auth 外洩密碼保護關閉 | 需要到 Dashboard 手動處理 |
+| ✅ | git 全歷史:沒有私鑰或 service_role 外洩,只有公開的 anon key | — |
