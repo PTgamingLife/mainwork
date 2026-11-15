@@ -13,6 +13,16 @@ import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
+
+// 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(誰傳的就算誰的);內文留白,每日拍片提醒前由 AI 寫
+async function ladysCmdShootTopic(text: string, uid: string) {
+  const topic = text.replace(/^拍片主題\s*[::]?\s*/, "").trim().slice(0, 40);
+  if (!topic) return { type: "text", text: "請在後面加上主題,例如:拍片主題 LINE 秘書三分鐘設定 🎬" };
+  const [m] = uid ? await ladysSelect("ladys_members", `ladys_line_uid=eq.${encodeURIComponent(uid)}&select=ladys_role`) : [];
+  const owner = m?.ladys_role === "wife" || m?.ladys_role === "husband" ? m.ladys_role : "both";
+  await ladysInsert("ladys_shoots", { ladys_date: null, ladys_owner: owner, ladys_topic: ladysMask(topic), ladys_source: "manual" }, "return=minimal");
+  return { type: "text", text: `🎬 已加入拍片主題:${topic}\n(${LADYS_OWNER_LABEL[owner as "both"]} 還沒排日期;內文會在拍片提醒前由 AI 幫忙寫,也可以到 LIFF「🎬 拍片」頁排日期、修改)` };
+}
 import { ladysHandleNotePostback } from "../_shared/ladys-eventnote.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
@@ -215,6 +225,10 @@ async function ladysHandle(ev: any, settings: any) {
     }
 
     if (uid) await ladysEnsureMember(gid, uid);
+    if (/^拍片主題/.test(text)) {
+      await ladysReply(ev.replyToken, [await ladysCmdShootTopic(text, uid)]);
+      return;
+    }
     if (LADYS_COMMANDS.includes(text)) {
       await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, gid)].flat(), text.startsWith("記憶") || text === "確認時間" ? gid : "");
       return;
@@ -230,6 +244,10 @@ async function ladysHandle(ev: any, settings: any) {
   }
 
   // 一對一聊天室:只回應帳號擁有者與成員(你、老婆)的指令,其他人一律不理
+  if (src.type === "user" && uid && /^拍片主題/.test(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
+    await ladysReply(ev.replyToken, [await ladysCmdShootTopic(text, uid)]);
+    return;
+  }
   if (src.type === "user" && uid && LADYS_COMMANDS.includes(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
     await ladysReplySafe(ev.replyToken, [await ladysRunCommand(text, ev, boundGroup ?? "direct")].flat());
   }
