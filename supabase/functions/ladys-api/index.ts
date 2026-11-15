@@ -125,13 +125,17 @@ async function ladysReceive(id: unknown) {
   return r;
 }
 
+// 拍片進度表(行銷 / 剪片 / LadyS 共用,見 .claude/skills/video-sync):LIFF 的修改一律記為 user;
+// 排了日期且狀態是「腳本完成」→ 自動推到「待拍攝」
+const SHOOT_STATUS = ["構想", "待寫腳本", "腳本完成", "待拍攝", "已拍攝", "剪輯中", "剪完待審", "已上片", "暫停"];
 function ladysShootRow(b: any) {
   if (b.date && !isYmd(b.date)) bad("BAD_DATE");
-  const content = str(b.content, 1000);
+  const status = SHOOT_STATUS.includes(b.status) ? b.status : "構想";
   return {
     ladys_date: b.date || null, ladys_time: isHm(b.time) ? b.time : "", ladys_owner: owner(b.owner),
-    ladys_topic: str(b.topic, 40) || bad("BAD_TOPIC"), ladys_content: content, ladys_prep: str(b.prep, 300),
-    ...(b.content_edited === true || !content ? { ladys_content_ai: false } : {}),
+    ladys_topic: str(b.topic, 40) || bad("BAD_TOPIC"), ladys_content: str(b.content, 1000), ladys_prep: str(b.prep, 300),
+    ladys_status: b.date && status === "腳本完成" ? "待拍攝" : status, ladys_next_step: str(b.next_step, 100),
+    ladys_content_ai: false, ladys_updated_by: "user",
   };
 }
 

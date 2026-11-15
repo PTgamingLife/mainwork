@@ -267,6 +267,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
     .map((x: any) => ({
       ladys_date: isYmd(x.date) ? x.date : null, ladys_time: isHm(x.time) ? x.time : "", ladys_owner: ownerOk(x.owner),
       ladys_topic: clip(x.topic, 40), ladys_content: clip(x.content, 1000), ladys_prep: clip(x.prep, 300), ladys_source_msg_ids: ids(x.source_ids),
+      ladys_status: isYmd(x.date) ? "待拍攝" : "構想", ladys_updated_by: "secretary",
     }));
 
   const savedEvents = events.length ? await ladysInsert("ladys_events", events) : [];
