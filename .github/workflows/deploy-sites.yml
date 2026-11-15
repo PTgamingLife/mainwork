@@ -7,6 +7,9 @@ on:
     branches: [main]
     paths:
       - "aisec-seat/**"
+      - "ladys/**"
+      - "life-journey/**"
+      - "shishen-quest/**"
       - ".github/workflows/deploy-sites.yml"
   workflow_dispatch:
     inputs:
@@ -42,6 +45,9 @@ jobs:
           # 清單格式：mainwork 資料夾|目標 repo|目標 repo 內的路徑（. = 根目錄）
           SITES=(
             "aisec-seat|PTgamingLife/aisec-seat|."
+            "ladys|PTgamingLife/oa-pages|ladys"
+            "life-journey|PTgamingLife/oa-pages|life-journey"
+            "shishen-quest|PTgamingLife/oa-pages|shishen-quest"
           )
 
           if [ -z "${DEPLOY_TOKEN}" ]; then echo "::error::DEPLOY_TOKEN 沒有設定"; exit 1; fi
@@ -69,6 +75,8 @@ jobs:
             echo "::group::上線 ${SRC} → ${REPO}/${DEST}"
             WORK="$(mktemp -d)"
             git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/${REPO}.git" "${WORK}"
+            # 空 repo(還沒有任何 commit)時固定用 main 分支,Pages 才找得到
+            git -C "${WORK}" rev-parse -q --verify HEAD >/dev/null || git -C "${WORK}" checkout -q -B main
             mkdir -p "${WORK}/${DEST}"
             rsync -a --delete --exclude '.git' --exclude '.deployed-from' "${SRC}/" "${WORK}/${DEST}/"
             echo "${GITHUB_REPOSITORY}@${GITHUB_SHA}" > "${WORK}/${DEST}/.deployed-from"
