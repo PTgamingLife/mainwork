@@ -65,6 +65,7 @@
 | 確認改動真的能動 | `/verify` |
 | 把做好的工具/資料交給 agent session | `/handoff` |
 | agent 收取新交付的工具 | `/inbox`(交付區 `docs/agent-inbox/`) |
+| 秘書 ↔ 剪片 agent 同步拍片進度 | `/video-sync`(共用表 `ladys_shoots`) |
 
 ## 平台注意(Windows PowerShell)
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`
