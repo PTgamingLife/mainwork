@@ -26,7 +26,7 @@ const OWNER = { type: "string", enum: ["husband", "wife", "both"] };
 const IDS = { type: "array", items: { type: "integer" } };
 const LADYS_SCHEMA = {
   type: "object", additionalProperties: false,
-  required: ["events", "expenses", "incomes", "receivables", "notes", "life", "obsolete", "event_notes", "summary"],
+  required: ["events", "shoots", "expenses", "incomes", "receivables", "notes", "life", "obsolete", "event_notes", "summary"],
   properties: {
     events: {
       type: "array",
@@ -101,6 +101,17 @@ const LADYS_SCHEMA = {
         properties: { ref: { type: "string" }, note: { type: "string" } },
       },
     },
+    shoots: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["date", "time", "owner", "topic", "content", "prep", "source_ids"],
+        properties: {
+          date: { type: "string" }, time: { type: "string" }, owner: OWNER, topic: { type: "string" },
+          content: { type: "string" }, prep: { type: "string" }, source_ids: IDS,
+        },
+      },
+    },
     receivables: {
       type: "array",
       items: {
@@ -148,6 +159,7 @@ function ladysSystemPrompt(settings: any, memberDesc: string) {
 - events:約會、看診、聚餐、繳費日、接送、要在某天做或說的事。title 要具體(例如「跟媽媽分享:請款30、誰先找到工作誰上班、家裡場地借用」)。time 用 HH:MM,沒講時間就給空字串(視為全天);end_time 沒講給空字串;location 沒講給空字串。title 保持精簡,額外資訊(要帶的東西、穿著、聯絡人、訂位/訂房細節、注意事項)放 note(150 字內),沒有就給空字串。
 - obsolete:對話明確說「已存在的行程」中某筆改期、取消、不去了、改地點時間 → 填那筆的編號(例如 E3)與 20 字內原因(例如「改到 11/12」);改期的新日期照常放 events。只填清單裡有的編號,不確定就不要填。
 - event_notes:對話明確是在「補充」下方「已存在的行程」中某一筆(例如補上要帶的東西、聯絡人、地址、注意事項),而不是新的事 → 填那筆編號 ref(例如 E3)與要補的文字 note(60 字內、完整一句)。這種補充不要再放進 events。只填清單裡有的編號,不確定是哪一筆就不要填;已經在該筆備註裡的內容不要重複。
+- shoots(拍片行程):要拍影片 / 錄 Reels / 拍短影音的安排 → topic 影片主題(40 字內)、date(YYYY-MM-DD,沒講日期給空字串)、time(HH:MM 或空字串)、owner 誰拍、content 對話裡已經講好的內文或腳本(沒有給空字串,不要自己編)、prep 需準備的東西(用、分隔,沒有給空字串)。拍片放 shoots 就不要再放 events。
 - receivables(應收帳款):別人欠兩人錢、借錢給別人等對方還、或確定對方應付但還沒收到的款項(例如「小明欠我們 3000」「借阿姨 2 萬」)→ party 填對象名稱(10 字內)、amount 新台幣整數、owner 填「誰要收」。已經實際收到的是 incomes,不要放這裡;兩人欠別人的是 expenses,不是應收;對方還錢了不用記。
 - 同一件事被多次提到只記一次;下方「已存在的行程」已經記過的不要重複輸出。只是閒聊、假設、已取消的不要記。
 - expenses:只記實際花掉或確定要付的金額(新台幣整數)。date 為消費日。note 簡短寫買了什麼。
@@ -250,12 +262,20 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
     .map((x: any) => ({ ladys_party: clip(x.party, 10), ladys_amount: Math.round(Number(x.amount)), ladys_owner: ownerOk(x.owner), ladys_source_msg_ids: ids(x.source_ids) }))
     .filter((x: any) => !recvSeen.has(`${x.ladys_party}|${x.ladys_amount}`) && recvSeen.add(`${x.ladys_party}|${x.ladys_amount}`));
 
+  const shoots = (settings.ladys_extract_events ? out.shoots ?? [] : [])
+    .filter((x: any) => clip(x.topic, 40))
+    .map((x: any) => ({
+      ladys_date: isYmd(x.date) ? x.date : null, ladys_time: isHm(x.time) ? x.time : "", ladys_owner: ownerOk(x.owner),
+      ladys_topic: clip(x.topic, 40), ladys_content: clip(x.content, 1000), ladys_prep: clip(x.prep, 300), ladys_source_msg_ids: ids(x.source_ids),
+    }));
+
   const savedEvents = events.length ? await ladysInsert("ladys_events", events) : [];
   if (life.length) await ladysInsert("ladys_life", life, "return=minimal");
   if (expenses.length) await ladysInsert("ladys_expenses", expenses, "return=minimal");
   if (incomes.length) await ladysInsert("ladys_expenses", incomes, "return=minimal");
   if (notes.length) await ladysInsert("ladys_notes", notes, "return=minimal");
   if (receivables.length) await ladysInsert("ladys_receivables", receivables, "return=minimal");
+  if (shoots.length) await ladysInsert("ladys_shoots", shoots, "return=minimal");
 
   // 整理完立刻刪除原文,只留整理結果(AI 失敗時不會走到這裡,原文保留到下次重試)
   await ladysDeleteWhere("ladys_messages", `id=in.(${msgs.map((m) => Number(m.id)).join(",")})`);
@@ -269,7 +289,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
     .map((o: any) => ({ event: existing[Number(String(o.ref ?? "").replace(/^E/i, "")) - 1], reason: clip(o.reason, 40) }))
     .filter((o: any) => o.event?.id && o.event.ladys_recur !== "yearly" && !seen.has(o.event.id) && seen.add(o.event.id));
 
-  const total = events.length + expenses.length + incomes.length + receivables.length + notes.length + life.length;
+  const total = events.length + shoots.length + expenses.length + incomes.length + receivables.length + notes.length + life.length;
   const privateLife = life.filter((l: any) => l.ladys_kind.startsWith("period"));
   const publicLife = life.filter((l: any) => !l.ladys_kind.startsWith("period"));
   const cards: unknown[] = [];
@@ -279,6 +299,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
       `記了 ${events.length} 個行程、${expenses.length} 筆支出、${incomes.length ? `${incomes.length} 筆收入、` : ""}${notes.filter((n: any) => n.ladys_kind === "goal").length} 個目標、${notes.filter((n: any) => n.ladys_kind !== "goal").length} 件待辦、${life.length} 筆生活紀錄`,
       ...(events.length ? ["【行程】", ...savedEvents.map((e: any) =>
         `${LADYS_OWNER_LABEL[e.ladys_owner as "both"]} ${ladysDayLabel(ladysTodayTaipei(new Date(e.ladys_start_at)))} ${e.ladys_all_day ? "全天" : ladysHm(e.ladys_start_at)} ${e.ladys_title}${e.ladys_recur === "yearly" ? "(每年)" : ""}`)] : []),
+      ...(shoots.length ? ["【拍片】", ...shoots.map((x: any) => `🎬 ${LADYS_OWNER_LABEL[x.ladys_owner as "both"]} ${x.ladys_date ? ladysDayLabel(x.ladys_date) + " " : ""}${x.ladys_topic}`)] : []),
       ...(expenses.length ? ["【支出】", ...expenses.map((x: any) => `${LADYS_OWNER_LABEL[x.ladys_payer as "both"]} ${x.ladys_category} $${x.ladys_amount.toLocaleString("en-US")} ${x.ladys_note}`.trim())] : []),
       ...(incomes.length ? ["【收入】", ...incomes.map((x: any) => `${LADYS_OWNER_LABEL[x.ladys_payer as "both"]} ${x.ladys_category} $${x.ladys_amount.toLocaleString("en-US")} ${x.ladys_note}`.trim())] : []),
       ...(receivables.length ? ["【應收帳款】", ...receivables.map((x: any) => `${LADYS_OWNER_LABEL[x.ladys_owner as "both"]} ${x.ladys_party} $${x.ladys_amount.toLocaleString("en-US")}`)] : []),
@@ -294,5 +315,5 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
   let noteItems: any[] = [];
   try { noteItems = await ladysQueueEventNotes(out.event_notes, existing, settings.ladys_group_id); } catch (e) { console.error("ladys event_notes", e instanceof Error ? e.message : e); }
   if (noteItems.length) cards.push(ladysNoteConfirmCard(noteItems));
-  return { status: "done", detail: { messages: msgs.length, events: events.length, expenses: expenses.length, incomes: incomes.length, receivables: receivables.length, notes: notes.length, life: life.length, obsolete: obsolete.length, event_notes: noteItems.length, gcal }, cards };
+  return { status: "done", detail: { messages: msgs.length, events: events.length, shoots: shoots.length, expenses: expenses.length, incomes: incomes.length, receivables: receivables.length, notes: notes.length, life: life.length, obsolete: obsolete.length, event_notes: noteItems.length, gcal }, cards };
 }
