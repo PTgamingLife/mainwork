@@ -14,14 +14,14 @@ import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
 
-// 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(誰傳的就算誰的);內文留白,每日拍片提醒前由 AI 寫
+// 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(狀態「構想」,誰傳的就算誰的);內文由剪片 agent 與使用者討論,LadyS 不寫
 async function ladysCmdShootTopic(text: string, uid: string) {
   const topic = text.replace(/^拍片主題\s*[::]?\s*/, "").trim().slice(0, 40);
   if (!topic) return { type: "text", text: "請在後面加上主題,例如:拍片主題 LINE 秘書三分鐘設定 🎬" };
   const [m] = uid ? await ladysSelect("ladys_members", `ladys_line_uid=eq.${encodeURIComponent(uid)}&select=ladys_role`) : [];
   const owner = m?.ladys_role === "wife" || m?.ladys_role === "husband" ? m.ladys_role : "both";
-  await ladysInsert("ladys_shoots", { ladys_date: null, ladys_owner: owner, ladys_topic: ladysMask(topic), ladys_source: "manual" }, "return=minimal");
-  return { type: "text", text: `🎬 已加入拍片主題:${topic}\n(${LADYS_OWNER_LABEL[owner as "both"]} 還沒排日期;內文會在拍片提醒前由 AI 幫忙寫,也可以到 LIFF「🎬 拍片」頁排日期、修改)` };
+  await ladysInsert("ladys_shoots", { ladys_date: null, ladys_owner: owner, ladys_topic: ladysMask(topic), ladys_source: "manual", ladys_status: "構想", ladys_updated_by: "user" }, "return=minimal");
+  return { type: "text", text: `🎬 已加入拍片主題:${topic}\n(${LADYS_OWNER_LABEL[owner as "both"]} 還沒排日期;內容請跟剪片 agent 討論;排日期可到 LIFF「🎬 拍片」頁)` };
 }
 import { ladysHandleNotePostback } from "../_shared/ladys-eventnote.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
