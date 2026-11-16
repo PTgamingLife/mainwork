@@ -68,6 +68,8 @@
 | IG 輪播圖文 | `reels-carousel` |
 | 變現飛輪派工/覆盤 | `business-loop` |
 | 文稿轉影片/照片串影片/去背 | `media-pipeline` |
+| 把做好的工具/資料交給 agent session | `/handoff` |
+| agent 收取新交付的工具 | `/inbox`(交付區 `docs/agent-inbox/`) |
 
 ## 平台注意(Windows PowerShell)
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`
