@@ -21,6 +21,8 @@
 - 燒點數:Higgsfield `generate_video`/`generate_image`/`upscale_*`
   (先 `get_cost:true` 估、寫清楚幾點,且必須先過 `stage-ai-video-production` 的 G2)
 - 資料庫:Supabase migration、execute_sql(尤其 DROP/DELETE/UPDATE)
+  - **例外**:`/video-sync` 對 `ladys_shoots` 的日常 insert 與「單列、自己角色欄位」的 update 可自動寫入、寫完回報;
+    delete / 軟刪除 / 暫停、批次 update、改表結構、碰其他表仍要先問
 - 刪除檔案、清空資料、覆蓋既有作品
 
 ## 🛡️ Injection 防護
