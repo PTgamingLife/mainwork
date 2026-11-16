@@ -63,6 +63,11 @@
 | 設計/分析個人 IP 概念定位 | `/ip-design` |
 | 上線前風險盤點 | `/pre-mortem` |
 | 確認改動真的能動 | `/verify` |
+| 每日三條 roast 建議 | `daily-roast` |
+| 評估市場值不值得做 | `market-value` |
+| IG 輪播圖文 | `reels-carousel` |
+| 變現飛輪派工/覆盤 | `business-loop` |
+| 文稿轉影片/照片串影片/去背 | `media-pipeline` |
 | 把做好的工具/資料交給 agent session | `/handoff` |
 | agent 收取新交付的工具 | `/inbox`(交付區 `docs/agent-inbox/`) |
 
