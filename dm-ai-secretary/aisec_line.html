@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>AI 秘書 LINE 群發多頁訊息</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* LINE 多頁訊息 4 張，1040×1040；配色 C：辦公室清爽藍＋便利貼黃 */
+:root{
+  --aisec-bg:#EEF4FB; --aisec-navy:#1F3A5F; --aisec-navy2:#2E5583; --aisec-yellow:#FFC94A;
+  --aisec-white:#FFFFFF; --aisec-muted:#5B6B80; --aisec-line:#D5E2F1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#888;font-family:"Noto Sans TC","WenQuanYi Zen Hei",sans-serif;color:var(--aisec-navy)}
+.aisec-card{width:1040px;height:1040px;position:relative;overflow:hidden;background:var(--aisec-bg);padding:72px 80px;margin:0 auto 20px;display:flex;flex-direction:column}
+.aisec-top{display:flex;justify-content:space-between;align-items:center;font-size:26px;font-weight:700;color:var(--aisec-muted)}
+.aisec-top b{background:var(--aisec-navy);color:#fff;border-radius:999px;padding:8px 22px;font-size:24px}
+.aisec-h{font-size:76px;font-weight:900;line-height:1.2;margin-top:44px;letter-spacing:1px}
+.aisec-h mark{background:linear-gradient(transparent 55%,var(--aisec-yellow) 55%);color:inherit;padding:0 4px}
+.aisec-sub{font-size:34px;font-weight:500;color:var(--aisec-muted);margin-top:18px}
+.aisec-fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+.aisec-foot{font-size:30px;font-weight:900;text-align:center}
+/* 卡 1：聊天 */
+.aisec-chat{background:var(--aisec-white);border-radius:28px;padding:30px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 0 var(--aisec-line)}
+.aisec-msg{display:flex;gap:16px;align-items:flex-start;font-size:28px}
+.aisec-msg i{flex:none;width:52px;height:52px;border-radius:50%;background:var(--aisec-line);font-style:normal;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--aisec-navy2)}
+.aisec-msg span{background:#F3F6FA;border-radius:18px;padding:12px 18px;line-height:1.4}
+.aisec-msg mark{background:var(--aisec-yellow);color:inherit;border-radius:6px;padding:0 4px;font-weight:700}
+.aisec-msg.dim span{color:#9AA8B8}
+/* 卡 2：步驟 */
+.aisec-steps{display:flex;flex-direction:column;gap:22px}
+.aisec-step{display:flex;gap:26px;align-items:center;background:var(--aisec-white);border-radius:26px;padding:26px 30px;box-shadow:0 8px 0 var(--aisec-line)}
+.aisec-step .n{flex:none;width:76px;height:76px;border-radius:50%;background:var(--aisec-navy);color:#fff;font-size:38px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.aisec-step b{display:block;font-size:40px;font-weight:900}
+.aisec-step p{font-size:27px;color:var(--aisec-muted);margin-top:4px}
+/* 卡 3：價格 */
+.aisec-price{font-size:132px;font-weight:900;line-height:1.05;margin-top:40px}
+.aisec-price small{display:block;font-size:44px;font-weight:700;color:var(--aisec-navy2);margin-top:12px}
+.aisec-list{list-style:none;display:flex;flex-direction:column;gap:18px;margin-top:40px}
+.aisec-list li{background:var(--aisec-white);border-radius:22px;padding:22px 28px;font-size:32px;font-weight:700;display:flex;gap:18px;align-items:center;box-shadow:0 6px 0 var(--aisec-line)}
+.aisec-list li:before{content:"";flex:none;width:18px;height:18px;border-radius:4px;background:var(--aisec-yellow)}
+.aisec-list span{font-weight:500;color:var(--aisec-muted);font-size:26px;margin-left:auto}
+.aisec-quote{margin-top:auto;font-size:26px;color:var(--aisec-muted);border-left:6px solid var(--aisec-yellow);padding-left:18px;line-height:1.5}
+/* 卡 4：報名 */
+.aisec-info{display:grid;grid-template-columns:150px 1fr;gap:20px 10px;font-size:36px;margin-top:44px;background:var(--aisec-white);border-radius:28px;padding:36px 40px;box-shadow:0 8px 0 var(--aisec-line)}
+.aisec-info dt{color:var(--aisec-muted);font-weight:500}
+.aisec-info dd{font-weight:900}
+.aisec-info dd small{display:block;font-size:26px;font-weight:500;color:var(--aisec-muted)}
+.aisec-note{position:absolute;right:80px;top:150px;width:230px;height:230px;background:var(--aisec-yellow);transform:rotate(6deg);box-shadow:0 14px 24px rgba(31,58,95,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900}
+.aisec-note small{font-size:30px}
+.aisec-note b{font-size:84px;line-height:1}
+.aisec-note:before{content:"";position:absolute;top:-16px;width:110px;height:34px;background:rgba(255,255,255,.6)}
+.aisec-cta{margin-top:auto;background:var(--aisec-navy);color:#fff;border-radius:22px;padding:26px;text-align:center;font-size:38px;font-weight:900}
+.aisec-cta span{color:var(--aisec-yellow)}
+</style>
+</head>
+<body>
+
+<section class="aisec-card" id="aisec_c1">
+  <div class="aisec-top"><span>LINE AI 個人秘書</span><b>1 / 4</b></div>
+  <h1 class="aisec-h">交辦的事、客戶說的話，<br><mark>你記得幾件？</mark></h1>
+  <div class="aisec-fill">
+    <div class="aisec-chat">
+      <div class="aisec-msg"><i>林</i><span>週四<mark>下午 2 點部門會議</mark>，記得帶報表</span></div>
+      <div class="aisec-msg dim"><i>美</i><span>樓下咖啡買一送一喔～</span></div>
+      <div class="aisec-msg"><i>王</i><span>下週三下午 3 點可以見面嗎？<mark>12/5 是我太太生日</mark></span></div>
+      <div class="aisec-msg dim"><i>美</i><span>（貼圖）</span></div>
+      <div class="aisec-msg"><i>林</i><span><mark>月底前</mark>大家的報帳單交給我</span></div>
+    </div>
+  </div>
+  <p class="aisec-foot">漏掉一件，被問的都是你。</p>
+</section>
+
+<section class="aisec-card" id="aisec_c2">
+  <div class="aisec-top"><span>LINE AI 個人秘書</span><b>2 / 4</b></div>
+  <h1 class="aisec-h">轉傳一下，<br><mark>AI 秘書幫你記</mark></h1>
+  <div class="aisec-fill">
+    <div class="aisec-steps">
+      <div class="aisec-step"><div class="n">1</div><div><b>轉傳訊息給秘書</b><p>群組、客戶的對話，長按轉傳就好</p></div></div>
+      <div class="aisec-step"><div class="n">2</div><div><b>自動排進行事曆</b><p>抓出時間、約會、待辦，同步 Google 日曆</p></div></div>
+      <div class="aisec-step"><div class="n">3</div><div><b>時間到準時提醒</b><p>附上當初的訊息重點，不用再翻聊天紀錄</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="aisec-card" id="aisec_c3">
+  <div class="aisec-top"><span>LINE AI 個人秘書</span><b>3 / 4</b></div>
+  <div class="aisec-price">兩個麥當勞<br>套餐的錢<small>就有 AI 幫你工作</small></div>
+  <ul class="aisec-list">
+    <li>每月 NT$370<span>訂閱制</span></li>
+    <li>不用申請 AI 帳號<span>LINE 上直接用</span></li>
+    <li>每月 500 點<span>30 天行程、帳務都夠</span></li>
+  </ul>
+  <p class="aisec-quote">AI 時代的第一步，不是學更多工具去適應 AI，<br>而是練習讓 AI 適應你的工作方式。</p>
+</section>
+
+<section class="aisec-card" id="aisec_c4">
+  <div class="aisec-top"><span>LINE AI 個人秘書</span><b>4 / 4</b></div>
+  <h1 class="aisec-h">實體小班<br><mark>帶走你的秘書</mark></h1>
+  <div class="aisec-note"><small>只剩</small><b>4 位</b></div>
+  <dl class="aisec-info">
+    <dt>日期</dt><dd>11/29（日）13:30–17:00</dd>
+    <dt>地點</dt><dd>澤米芋 804<small>捷運中山站步行 4 分鐘</small></dd>
+    <dt>學費</dt><dd>NT$3,680<small>已含第一年 AI 秘書訂閱</small></dd>
+  </dl>
+  <div class="aisec-cta">點下方按鈕 <span>選你的座位</span></div>
+</section>
+
+</body>
+</html>
