@@ -62,7 +62,8 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_receivables", "ladys_deleted=eq.false&order=ladys_status.asc,ladys_created_at.desc&limit=300" +
       "&select=id,ladys_party,ladys_amount,ladys_owner,ladys_status,ladys_received_at,ladys_created_at"),
     ladysSelect("ladys_shoots", `ladys_deleted=eq.false&or=(ladys_date.is.null,ladys_date.gte.${ladysAddDays(today, -60)})&order=ladys_date.asc.nullsfirst,ladys_time.asc&limit=300` +
-      "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_content_ai,ladys_prep,ladys_created_at"),
+      "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_prep,ladys_status,ladys_next_step,ladys_blocker," +
+      "ladys_brief,ladys_script,ladys_assets_url,ladys_final_url,ladys_updated_by,ladys_created_at"),
   ]);
   delete settings.ladys_group_id;
   const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
