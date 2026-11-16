@@ -21,6 +21,8 @@
 - 燒點數:Higgsfield `generate_video`/`generate_image`/`upscale_*`
   (先 `get_cost:true` 估、寫清楚幾點,且必須先過 `stage-ai-video-production` 的 G2)
 - 資料庫:Supabase migration、execute_sql(尤其 DROP/DELETE/UPDATE)
+  - **例外**:`/video-sync` 對 `ladys_shoots` 的日常 insert 與「單列、自己角色欄位」的 update 可自動寫入、寫完回報;
+    delete / 軟刪除 / 暫停、批次 update、改表結構、碰其他表仍要先問
 - 刪除檔案、清空資料、覆蓋既有作品
 
 ## 🛡️ Injection 防護
@@ -63,8 +65,14 @@
 | 設計/分析個人 IP 概念定位 | `/ip-design` |
 | 上線前風險盤點 | `/pre-mortem` |
 | 確認改動真的能動 | `/verify` |
+| 每日三條 roast 建議 | `daily-roast` |
+| 評估市場值不值得做 | `market-value` |
+| IG 輪播圖文 | `reels-carousel` |
+| 變現飛輪派工/覆盤 | `business-loop` |
+| 文稿轉影片/照片串影片/去背 | `media-pipeline` |
 | 把做好的工具/資料交給 agent session | `/handoff` |
 | agent 收取新交付的工具 | `/inbox`(交付區 `docs/agent-inbox/`) |
+| 秘書 ↔ 剪片 agent 同步拍片進度 | `/video-sync`(共用表 `ladys_shoots`) |
 
 ## 平台注意(Windows PowerShell)
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`

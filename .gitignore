@@ -20,3 +20,8 @@ scripts/credentials.json
 .playwright-mcp/
 .claude-flow/
 supabase/.temp/
+
+# dependencies
+node_modules/
+output/
+out/
