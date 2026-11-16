@@ -52,6 +52,24 @@ body{background:#888;font-family:"Noto Sans TC","WenQuanYi Zen Hei",sans-serif;c
 .aisec-note:before{content:"";position:absolute;top:-16px;width:110px;height:34px;background:rgba(255,255,255,.6)}
 .aisec-cta{margin-top:auto;background:var(--aisec-navy);color:#fff;border-radius:22px;padding:26px;text-align:center;font-size:38px;font-weight:900}
 .aisec-cta span{color:var(--aisec-yellow)}
+/* 單張：無價格 */
+.aisec-solo .aisec-h{font-size:64px;margin-top:30px}
+.aisec-row{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;margin-top:34px}
+.aisec-row .aisec-chat{padding:22px;gap:12px}
+.aisec-row .aisec-msg{font-size:22px;gap:10px}
+.aisec-row .aisec-msg i{width:40px;height:40px;font-size:18px}
+.aisec-row .aisec-msg span{padding:9px 13px}
+.aisec-mini{display:flex;flex-direction:column;gap:14px}
+.aisec-mini div{background:var(--aisec-white);border-radius:20px;padding:16px 20px;display:flex;gap:14px;align-items:center;font-size:28px;font-weight:900;box-shadow:0 6px 0 var(--aisec-line)}
+.aisec-mini span{flex:none;width:50px;height:50px;border-radius:50%;background:var(--aisec-navy);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center}
+.aisec-solo-foot{margin-top:auto;display:flex;gap:28px;align-items:center}
+.aisec-solo-foot .aisec-note{position:static;transform:rotate(-4deg);width:190px;height:190px;flex:none}
+.aisec-solo-foot .aisec-note b{font-size:68px}
+.aisec-solo-foot .aisec-note small{font-size:26px}
+.aisec-solo-info{flex:1;display:flex;flex-direction:column;gap:16px}
+.aisec-solo-info p{font-size:32px;font-weight:900}
+.aisec-solo-info p small{display:block;font-size:24px;font-weight:500;color:var(--aisec-muted)}
+.aisec-solo-info .aisec-cta{margin:0;font-size:32px;padding:20px}
 </style>
 </head>
 <body>
@@ -104,6 +122,31 @@ body{background:#888;font-family:"Noto Sans TC","WenQuanYi Zen Hei",sans-serif;c
     <dt>學費</dt><dd>NT$3,680<small>已含第一年 AI 秘書訂閱</small></dd>
   </dl>
   <div class="aisec-cta">點下方按鈕 <span>選你的座位</span></div>
+</section>
+
+<section class="aisec-card aisec-solo" id="aisec_c5">
+  <div class="aisec-top"><span>LINE AI 個人秘書｜實體小班</span><b>11/29</b></div>
+  <h1 class="aisec-h">交辦的事、客戶說的話，<br><mark>你記得幾件？</mark></h1>
+  <div class="aisec-row">
+    <div class="aisec-chat">
+      <div class="aisec-msg"><i>林</i><span>週四<mark>下午 2 點部門會議</mark></span></div>
+      <div class="aisec-msg dim"><i>美</i><span>樓下咖啡買一送一～</span></div>
+      <div class="aisec-msg"><i>王</i><span><mark>12/5 是我太太生日</mark></span></div>
+      <div class="aisec-msg"><i>林</i><span><mark>月底前</mark>交報帳單</span></div>
+    </div>
+    <div class="aisec-mini">
+      <div><span>1</span>轉傳訊息</div>
+      <div><span>2</span>自動排行事曆</div>
+      <div><span>3</span>時間到提醒</div>
+    </div>
+  </div>
+  <div class="aisec-solo-foot">
+    <div class="aisec-note"><small>只剩</small><b>4 位</b></div>
+    <div class="aisec-solo-info">
+      <p>11/29（日）13:30–17:00<small>澤米芋 804｜捷運中山站步行 4 分鐘</small></p>
+      <div class="aisec-cta">點圖 <span>選你的座位</span></div>
+    </div>
+  </div>
 </section>
 
 </body>
