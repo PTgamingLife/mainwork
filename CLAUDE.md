@@ -27,6 +27,8 @@
 - 資料庫:Supabase migration、execute_sql(尤其 DROP/DELETE/UPDATE)
   - **例外**:`/video-sync` 對 `ladys_shoots` 的日常 insert 與「單列、自己角色欄位」的 update 可自動寫入、寫完回報;
     delete / 軟刪除 / 暫停、批次 update、改表結構、碰其他表仍要先問
+  - **例外**:`/workout-sync` 教練對 `ladys_workout_moves` insert 新動作(圖片網址已回 200)與單列修正可自動寫入;
+    停用、delete、批次、改結構仍要先問
 - 刪除檔案、清空資料、覆蓋既有作品
 
 ## 🛡️ Injection 防護
@@ -77,6 +79,7 @@
 | 把做好的工具/資料交給 agent session | `/handoff` |
 | agent 收取新交付的工具 | `/inbox`(交付區 `docs/agent-inbox/`) |
 | 秘書 ↔ 剪片 agent 同步拍片進度 | `/video-sync`(共用表 `ladys_shoots`) |
+| 運動教練新動畫交給 LadyS 每日推播 | `/workout-sync`(動作表 `ladys_workout_moves`) |
 
 ## 平台注意(Windows PowerShell)
 - 指令用 PowerShell 語法:`&&`/`||` 不能用,改 `;` 或 `if ($?)`
