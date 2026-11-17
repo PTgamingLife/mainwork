@@ -206,7 +206,7 @@ async function saveSheet() {
   let data;
   if (kind === "event") data = { id, title: v("fTitle"), date: v("fDate"), time: v("fTime"), end_time: v("fEnd"), location: v("fLoc"), note: v("fNote"), owner: segVal("owner"), yearly: $("fYearly").checked };
   else if (kind === "life") data = { id, date: v("fDate"), kind: segVal("lkind"), content: v("fContent"), owner: segVal("owner") };
-  else if (kind === "shoot") data = { id, topic: v("fTopic"), date: v("fDate"), time: v("fTime"), owner: segVal("owner"), content: v("fContent"), prep: v("fPrep"), content_edited: v("fContent") !== v("fOrigContent") };
+  else if (kind === "shoot") data = { id, topic: v("fTopic"), date: v("fDate"), time: v("fTime"), owner: segVal("owner"), content: v("fContent"), prep: v("fPrep"), status: v("fStatus"), next_step: v("fNext") };
   else if (kind === "receivable") data = { id, party: v("fParty"), amount: v("fAmount"), owner: segVal("owner") };
   else if (kind === "expense") data = { id, amount: v("fAmount"), date: v("fDate"), category: v("fCat"), note: v("fNote"), payer: segVal("owner"), flow: v("fFlow") };
   else { const old = ladysS.data.notes.find((n) => n.id === id); data = { id, content: v("fContent"), kind: segVal("kind"), owner: segVal("owner"), done: old?.ladys_done === true }; }
@@ -303,8 +303,8 @@ function ladysMockApi(action, extra) {
         { id: id(), ladys_date: today.slice(0, 8) + "05", ladys_amount: 52000, ladys_category: "薪資", ladys_payer: "husband", ladys_note: "公司薪水", ladys_flow: "in" },
         { id: id(), ladys_date: today.slice(0, 5) + "03-10", ladys_amount: 30000, ladys_category: "獎金", ladys_payer: "wife", ladys_note: "年終", ladys_flow: "in" },
         { id: id(), ladys_date: today.slice(0, 5) + "03-12", ladys_amount: 4200, ladys_category: "交通", ladys_payer: "both", ladys_note: "加油", ladys_flow: "out" }],
-      shoots: [{ id: id(), ladys_date: addDaysYmd(today, 2), ladys_time: "14:00", ladys_owner: "husband", ladys_topic: "3 分鐘設定 LINE AI 秘書", ladys_content: "", ladys_content_ai: false, ladys_prep: "手機架、補光燈" },
-        { id: id(), ladys_date: null, ladys_time: "", ladys_owner: "wife", ladys_topic: "銅鑼浴入門:第一次體驗", ladys_content: "🎬 開場 hook:你聽過會震動全身的聲音嗎?", ladys_content_ai: true, ladys_prep: "" }],
+      shoots: [{ id: id(), ladys_date: addDaysYmd(today, 2), ladys_time: "14:00", ladys_owner: "husband", ladys_topic: "3 分鐘設定 LINE AI 秘書", ladys_content: "", ladys_prep: "手機架、補光燈", ladys_status: "待拍攝", ladys_next_step: "跟剪片 agent 確認腳本" },
+        { id: id(), ladys_date: null, ladys_time: "", ladys_owner: "wife", ladys_topic: "銅鑼浴入門:第一次體驗", ladys_content: "🎬 開場 hook:你聽過會震動全身的聲音嗎?", ladys_prep: "", ladys_status: "腳本完成", ladys_next_step: "", ladys_brief: "新手受眾,CTA 私訊預約", ladys_final_url: "" }],
       receivables: [{ id: id(), ladys_party: "小明", ladys_amount: 3000, ladys_owner: "husband", ladys_status: "open", ladys_created_at: at(-2) },
         { id: id(), ladys_party: "阿姨", ladys_amount: 20000, ladys_owner: "both", ladys_status: "open", ladys_created_at: at(-9) },
         { id: id(), ladys_party: "同事小華", ladys_amount: 1500, ladys_owner: "wife", ladys_status: "received", ladys_received_at: at(-1), ladys_created_at: at(-20) }],
@@ -326,7 +326,7 @@ function ladysMockApi(action, extra) {
     if (extra.kind === "event") { const all = !b.time; row = { ladys_title: b.title, ladys_start_at: new Date(`${b.date}T${all ? "00:00" : b.time}:00+08:00`).toISOString(), ladys_end_at: !all && b.end_time ? new Date(`${b.date}T${b.end_time}:00+08:00`).toISOString() : null, ladys_all_day: all, ladys_location: b.location, ladys_note: b.note, ladys_owner: b.owner, ladys_recur: b.yearly ? "yearly" : "none" }; }
     else if (extra.kind === "life") row = { ladys_date: b.date, ladys_kind: b.kind, ladys_content: b.content || (b.kind === "period_start" ? "經期開始" : "經期結束"), ladys_owner: b.kind.startsWith("period") ? "wife" : b.owner };
     else if (extra.kind === "expense") row = { ladys_date: b.date, ladys_amount: Math.round(+b.amount), ladys_category: b.category, ladys_payer: b.payer, ladys_note: b.note, ladys_flow: b.flow };
-    else if (extra.kind === "shoot") row = { ladys_date: b.date || null, ladys_time: b.time, ladys_owner: b.owner, ladys_topic: b.topic, ladys_content: b.content, ladys_content_ai: b.content_edited || !b.content ? false : (db.shoots.find((x) => x.id === b.id)?.ladys_content_ai ?? false), ladys_prep: b.prep };
+    else if (extra.kind === "shoot") row = { ladys_date: b.date || null, ladys_time: b.time, ladys_owner: b.owner, ladys_topic: b.topic, ladys_content: b.content, ladys_prep: b.prep, ladys_status: b.date && b.status === "腳本完成" ? "待拍攝" : b.status, ladys_next_step: b.next_step };
     else if (extra.kind === "receivable") row = { ladys_party: b.party, ladys_amount: Math.round(+b.amount), ladys_owner: b.owner, ladys_status: "open", ladys_created_at: new Date().toISOString() };
     else row = { ladys_content: b.content, ladys_kind: b.kind, ladys_owner: b.owner, ladys_done: b.done };
     if (extra.kind === "event") { db.events = db.events.filter((x) => x.id !== b.id || !b.yearly); db.yearly = db.yearly.filter((x) => x.id !== b.id || b.yearly); }

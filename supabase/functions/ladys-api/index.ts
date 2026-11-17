@@ -62,7 +62,8 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_receivables", "ladys_deleted=eq.false&order=ladys_status.asc,ladys_created_at.desc&limit=300" +
       "&select=id,ladys_party,ladys_amount,ladys_owner,ladys_status,ladys_received_at,ladys_created_at"),
     ladysSelect("ladys_shoots", `ladys_deleted=eq.false&or=(ladys_date.is.null,ladys_date.gte.${ladysAddDays(today, -60)})&order=ladys_date.asc.nullsfirst,ladys_time.asc&limit=300` +
-      "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_content_ai,ladys_prep,ladys_created_at"),
+      "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_prep,ladys_status,ladys_next_step,ladys_blocker," +
+      "ladys_brief,ladys_script,ladys_assets_url,ladys_final_url,ladys_updated_by,ladys_created_at"),
   ]);
   delete settings.ladys_group_id;
   const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
@@ -125,13 +126,17 @@ async function ladysReceive(id: unknown) {
   return r;
 }
 
+// 拍片進度表(行銷 / 剪片 / LadyS 共用,見 .claude/skills/video-sync):LIFF 的修改一律記為 user;
+// 排了日期且狀態是「腳本完成」→ 自動推到「待拍攝」
+const SHOOT_STATUS = ["構想", "待寫腳本", "腳本完成", "待拍攝", "已拍攝", "剪輯中", "剪完待審", "已上片", "暫停"];
 function ladysShootRow(b: any) {
   if (b.date && !isYmd(b.date)) bad("BAD_DATE");
-  const content = str(b.content, 1000);
+  const status = SHOOT_STATUS.includes(b.status) ? b.status : "構想";
   return {
     ladys_date: b.date || null, ladys_time: isHm(b.time) ? b.time : "", ladys_owner: owner(b.owner),
-    ladys_topic: str(b.topic, 40) || bad("BAD_TOPIC"), ladys_content: content, ladys_prep: str(b.prep, 300),
-    ...(b.content_edited === true || !content ? { ladys_content_ai: false } : {}),
+    ladys_topic: str(b.topic, 40) || bad("BAD_TOPIC"), ladys_content: str(b.content, 1000), ladys_prep: str(b.prep, 300),
+    ladys_status: b.date && status === "腳本完成" ? "待拍攝" : status, ladys_next_step: str(b.next_step, 100),
+    ladys_content_ai: false, ladys_updated_by: "user",
   };
 }
 

@@ -13,6 +13,10 @@
 - 絕不 commit secrets、金鑰、.env
 - 檔案控制在 500 行內,系統邊界驗證輸入
 - 不加 `Co-Authored-By` trailer(除非 settings.json 有 attribution.commit)
+- **共用狀態先查再報**:其他 session 也會改的東西(Supabase 表結構/資料、Edge Function 線上版本、
+  pg_cron 排程、GitHub main、其他 agent 的進度),回報或畫圖前先實際查一次
+  (`information_schema` / `get_edge_function` / `git fetch`)。不拿對話記憶或待辦清單當事實;
+  查不了就明講「這是上次確認的狀態,尚未重新驗證」,不用肯定語氣
 
 ## 🔒 權限安全閘(做這些前一定先問我)
 以下屬對外/不可逆動作,**先說明要做什麼、等我明確同意再執行**:

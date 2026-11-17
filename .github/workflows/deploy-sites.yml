@@ -57,7 +57,7 @@ jobs:
             CHANGED="$(git diff --name-only "${BEFORE_SHA}" "${GITHUB_SHA}")"
           fi
           WF_CHANGED=0
-          echo "${CHANGED}" | grep -q '^.github/workflows/deploy-sites.yml$' && WF_CHANGED=1
+          grep -q '^.github/workflows/deploy-sites.yml$' <<< "${CHANGED}" && WF_CHANGED=1
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -69,7 +69,7 @@ jobs:
             if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
               if [ -n "${INPUT_SITE}" ] && [ "${INPUT_SITE}" != "${SRC}" ]; then continue; fi
             elif [ -n "${CHANGED}" ] && [ "${WF_CHANGED}" = "0" ]; then
-              echo "${CHANGED}" | grep -q "^${SRC}/" || { echo "略過 ${SRC}（沒有改動）"; continue; }
+              grep -q "^${SRC}/" <<< "${CHANGED}" || { echo "略過 ${SRC}（沒有改動）"; continue; }
             fi
 
             echo "::group::上線 ${SRC} → ${REPO}/${DEST}"
