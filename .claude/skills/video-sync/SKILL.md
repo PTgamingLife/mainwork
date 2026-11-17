@@ -47,6 +47,8 @@ description: 拍片進度同步。行銷 agent、剪片 agent、秘書(LadyS LIN
 - 不確定就問我。
 
 ### 2. 讀目前進度
+每次都重新查,不要沿用之前對話裡的結果——另外兩個 agent 隨時可能改過表、欄位或 `ladys-shoot`。
+要說「某欄位/功能還沒有」之前,先查 `information_schema.columns` 或 `get_edge_function` 確認。
 ```sql
 select id, ladys_topic, ladys_status, ladys_date, ladys_time, ladys_owner,
        ladys_next_step, ladys_blocker, ladys_updated_by, ladys_updated_at
