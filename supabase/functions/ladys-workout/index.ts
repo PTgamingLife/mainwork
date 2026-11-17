@@ -7,7 +7,7 @@ import {
   LADYS_C, ladysCheckCronKey, ladysClaimRun, ladysFinishRun, ladysJson, ladysPush, ladysSettings, ladysTodayTaipei,
 } from "../_shared/ladys.ts";
 
-const ANIM_BASE = "https://ptgaminglife.github.io/mainwork/ladys/anim/";
+const ANIM_BASE = "https://ptgaminglife.github.io/oa-pages/ladys/anim/";
 const CREAM = "#FFF8F0"; // 與動畫底色一致
 const HER = "#FF6B6B", HIM = "#2E9E97";
 

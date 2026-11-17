@@ -174,7 +174,7 @@ const LADYS_VIEWS: Record<LadysView, [string, string]> = {
 const LADYS_SHORTCUTS: LadysView[] = ["calendar", "money", "goals", "todos", "settings"];
 
 // 動畫(APNG,scripts/ladys_anim.py 產生,放在 GitHub Pages)
-const LADYS_ANIM_BASE = "https://ptgaminglife.github.io/mainwork/ladys/anim/";
+const LADYS_ANIM_BASE = "https://ptgaminglife.github.io/oa-pages/ladys/anim/";
 export type LadysHero = "morning" | "night" | "update" | "menu";
 export type LadysCardOpts = { hero?: LadysHero; anim?: boolean }; // anim 預設開(大圓動畫),傳 false 關閉
 
