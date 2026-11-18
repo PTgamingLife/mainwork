@@ -32,18 +32,18 @@ export const siPointOfElem = (dm, el) => (el - siDayElem(dm) + 5) % 5;
 export const siElemOfPoint = (dm, i) => (siDayElem(dm) + i) % 5;
 export const siPointOfEnergy = (e) => SI_POINT_ENERGIES.indexOf(e);
 
-// 心魔:反卡巴拉之樹十種負面特質;si_drop = 擊倒後掉落的十神靈氣
+// 心魔:反卡巴拉之樹十種負面特質 = 十種分心型態(si_distract);si_drop = 擊倒後掉落的十神靈氣
 export const SI_DEMONS = [
-  { si_trait: "對立", si_boss: "撒密爾", si_drop: "jie_cai" },
-  { si_trait: "愚鈍", si_boss: "加基爾", si_drop: "zheng_yin" },
-  { si_trait: "拒絕", si_boss: "撒他利爾", si_drop: "pian_cai" },
-  { si_trait: "無感", si_boss: "加姆奇可斯", si_drop: "shang_guan" },
-  { si_trait: "殘酷", si_boss: "高拉布", si_drop: "zheng_guan" },
-  { si_trait: "醜陋", si_boss: "塔吉利昂", si_drop: "shi_shen" },
-  { si_trait: "色慾", si_boss: "阿拉布扎拉克", si_drop: "qi_sha" },
-  { si_trait: "貪婪", si_boss: "薩麥爾", si_drop: "zheng_cai" },
-  { si_trait: "不安", si_boss: "迦瑪列", si_drop: "pian_yin" },
-  { si_trait: "物慾", si_boss: "莉莉絲", si_drop: "bi_jian" },
+  { si_trait: "對立", si_distract: "內在拉扯、猶豫不決", si_boss: "撒密爾", si_drop: "jie_cai" },
+  { si_trait: "愚鈍", si_distract: "昏沉、疲勞", si_boss: "加基爾", si_drop: "zheng_yin" },
+  { si_trait: "拒絕", si_distract: "逃避、拖延", si_boss: "撒他利爾", si_drop: "pian_cai" },
+  { si_trait: "無感", si_distract: "提不起勁、無意義感", si_boss: "加姆奇可斯", si_drop: "shang_guan" },
+  { si_trait: "殘酷", si_distract: "逼太緊、過勞", si_boss: "高拉布", si_drop: "zheng_guan" },
+  { si_trait: "醜陋", si_distract: "自我批評、怕做不好", si_boss: "塔吉利昂", si_drop: "shi_shen" },
+  { si_trait: "色慾", si_distract: "即時快感、短影音", si_boss: "阿拉布扎拉克", si_drop: "qi_sha" },
+  { si_trait: "貪婪", si_distract: "想同時做太多", si_boss: "薩麥爾", si_drop: "zheng_cai" },
+  { si_trait: "不安", si_distract: "焦慮、反覆檢查", si_boss: "迦瑪列", si_drop: "pian_yin" },
+  { si_trait: "物慾", si_distract: "購物、滑手機", si_boss: "莉莉絲", si_drop: "bi_jian" },
 ];
 
 // 技能:等級 = 該項累計打卡次數達到的門檻數

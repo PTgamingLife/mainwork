@@ -1,12 +1,13 @@
 // 十神修行錄 — 畫面
-import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261031a";
-import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261031a";
+import { SG_GOD_KEYS, sgPercent } from "./sg-bazi.js?v=20261118a";
+import { SG_GODS, SG_ENERGIES, SG_WEEKLY_QUESTIONS, SG_INK_WORDS } from "./sg-data.js?v=20261118a";
 import {
   sgBaseEnergies, sgEnergies, sgInsight, sgStrongWeak, sgUp, sgTotalDelta,
   sgAngel, sgStreak, sgRealm, sgWeekProgress, sgDateStr, sgAddDays, sgWishPool, SG_WEEK_DAYS, SG_PASS_DAYS, SG_WISH_COST,
-} from "./sg-store.js?v=20261031a";
-import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261031a";
-import { sgDivineCard } from "./sg-divine-view.js?v=20261031a";
+  sgRole, sgFocusSummary, sgFocusStreak,
+} from "./sg-store.js?v=20261118a";
+import { SG_TRANSFORMS, SG_ELEMENTS, sgElemOf } from "./sg-wuxing.js?v=20261118a";
+import { sgDivineCard } from "./sg-divine-view.js?v=20261118a";
 
 // 轉化型態標籤:「木剋土・掌握吸收」+ 行動方向
 function sgTransformTag(key, withDir = false) {
@@ -94,6 +95,27 @@ function sgAngelCard(state, compact) {
       ${compact ? "" : `<button class="sg-btn sg-ghost sg-small" data-sg-go="angel">認識我的天使</button>`}</div></div>`;
 }
 
+// 八字角色卡:最強能量 = 角色,日主五行 = 屬性
+function sgRoleCard(state) {
+  const r = sgRole(state);
+  return `<div class="sg-card sg-role"><span class="sg-tag">你的角色</span>
+    <h3 class="sg-role-name">${r.sg_element}屬・${r.sg_name}</h3>
+    <p><b>天賦</b>:${r.sg_talent}(最強能量:${SG_ENERGIES[r.sg_energy].sg_name})</p>
+    <p><b>主要分心</b>:${r.sg_distract}——${r.sg_distract_desc}</p>
+    <p class="sg-muted">修行課題:補強${SG_ENERGIES[r.sg_weak].sg_name}。每天在試煉場專注 20 分鐘,把注意力練回來。</p></div>`;
+}
+
+// 專注摘要(資料來自十神試煉場)
+function sgFocusCard(state) {
+  const today = sgDateStr();
+  const d = sgFocusSummary(state, today, today), w = sgFocusSummary(state, sgAddDays(today, -6), today);
+  return `<div class="sg-card"><h3>專注力</h3><div class="sg-stats">
+      <div class="sg-stat"><b>${d.sg_min}</b><small>今日分鐘</small></div>
+      <div class="sg-stat"><b>${w.sg_min}</b><small>近 7 天分鐘</small></div>
+      <div class="sg-stat"><b>${sgFocusStreak(state)}</b><small>連續專注天數</small></div></div>
+    <p class="sg-muted" style="text-align:center">近 7 天 ${w.sg_runs} 場・中斷 ${w.sg_interrupts} 次${w.sg_done_rate !== null ? `・完成率 ${w.sg_done_rate}%` : ""}</p></div>`;
+}
+
 export function sgViewChart(state, ui) {
   const c = state.sg_chart, p = c.sg_pillars;
   const cols = [["時", p.hour], ["日", p.day], ["月", p.month], ["年", p.year]];
@@ -102,6 +124,7 @@ export function sgViewChart(state, ui) {
   const evolved = now.some((v, i) => v !== base[i]);
   return `
   <h2 class="sg-h">命盤</h2>
+  ${sgRoleCard(state)}
   <div class="sg-card">
     <div class="sg-pillars">${cols.map(([n, x], i) => `<div class="sg-pillar ${i === 1 ? "sg-me" : ""}"><small>${n}</small><b>${x ? `${x.text[0]}<br>${x.text[1]}` : "?<br>?"}</b></div>`).join("")}</div>
     ${c.sg_near_jie ? `<p class="sg-muted">出生時間接近節氣交界(1 小時內),月份可能有誤差。</p>` : ""}
@@ -179,7 +202,7 @@ function sgWeekSummary(state) {
 }
 
 // 十神試煉場(放置遊戲)入口
-const sgIdleEntry = () => `<div class="sg-card"><p>打卡後進入試煉場,讓十神修行、擊退心魔。</p>
+const sgIdleEntry = () => `<div class="sg-card"><p>進入試煉場專注 20 分鐘,十神會替你擊退分心的心魔。</p>
   <button class="sg-btn sg-ghost sg-small" data-sg-act="idle">進入試煉場</button></div>`;
 
 export function sgViewToday(state, ui = {}) {
@@ -241,12 +264,25 @@ function sgWishCard(state, a, ui) {
     <p class="sg-muted">${sgEsc(w.sg_action)}</p></div>`).join("")}</div>` : ""}`;
 }
 
+// 一週專注報告
+function sgFocusReport(state) {
+  const wk = state.sg_week;
+  if (!wk) return "";
+  const f = sgFocusSummary(state, wk.sg_start, wk.sg_end), r = sgRole(state);
+  const h = Math.floor(f.sg_min / 60), m = f.sg_min % 60;
+  return `<div class="sg-card"><h3>本週專注報告</h3>
+    <p>專注 ${h ? `${h} 小時 ` : ""}${m} 分鐘・${f.sg_runs} 場・${f.sg_days} 天有專注</p>
+    <p>中斷 ${f.sg_interrupts} 次${f.sg_runs ? `(平均每場 ${(f.sg_interrupts / f.sg_runs).toFixed(1)} 次)` : ""}${f.sg_done_rate !== null ? `・自評完成率 ${f.sg_done_rate}%` : ""}</p>
+    <p class="sg-muted">你的主要分心是「${r.sg_distract}」:${r.sg_distract_desc}。下週試著在專注前先排除它。</p></div>`;
+}
+
 export function sgViewReview(state) {
   const pr = sgWeekProgress(state);
   return `
   <h2 class="sg-h">一週修行回顧</h2>
   <div class="sg-card"><p>戒律 ${pr.sg_precept} 天・約束 ${pr.sg_bond} 天・誓言 ${pr.sg_oath} 天・平均自評 ${pr.sg_avg ?? "—"} 分</p>
     <p class="sg-muted">能量已在每天打卡時加上;這份回顧用來記錄你這週的狀態。</p></div>
+  ${sgFocusReport(state)}
   <form id="sg-form-review">
     ${SG_WEEKLY_QUESTIONS.map((q, i) => `<div class="sg-card"><p><b>${i + 1}.</b> ${q}</p>
       <div class="sg-scale" role="radiogroup" aria-label="第 ${i + 1} 題">${[1, 2, 3, 4, 5].map((v) =>
@@ -265,6 +301,7 @@ export function sgViewGrowth(state) {
   return `
   <h2 class="sg-h">修行</h2>
   ${sgIdleEntry()}
+  ${sgFocusCard(state)}
   <div class="sg-card sg-ink-card"><div class="sg-stats">
       <div class="sg-stat"><b>${streak}</b><small>連續天數</small></div>
       <div class="sg-stat"><b>${cur.sg_name}</b><small>境界</small></div>

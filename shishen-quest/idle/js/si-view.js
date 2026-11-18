@@ -10,6 +10,8 @@ import { siCost, siCostMult } from "./si-store.js";
 import { SI_DEMON_TIERS, SI_DEMON_STEPS, siDemonTierOf } from "./si-demons.js";
 import { SI_DEMONS } from "./si-data.js";
 
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
 const siColorOf = (dm, key) => SI_ELEM_COLORS[siElemOfPoint(dm, siPointOfEnergy(SI_GOD_BY_KEY[key].si_energy))];
 
 export function siMmss(ms) {
@@ -85,10 +87,14 @@ function siThiefBox(t) {
     : `<div class="si-thief si-safe">戒律守住心神,小偷沒有出現</div>`;
 }
 
-export function siViewSettle(res, demon, dm) {
+// 結算:收下靈氣時順便自評這段專注(完成 / 部分 / 沒有)
+export function siViewSettle(res, demon, dm, focus) {
   const thief = siThiefBox(res.si_thief);
-  return `<h3>擊退 ${demon.si_boss}</h3><p>${demon.si_trait}之心魔已退散${res.si_units > 1 ? `・本場領取 ${res.si_units} 場收益` : ""}</p>
-    ${thief}${siGainsGrid(res.si_gains, dm)}<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
+  const ask = focus ? `<p style="margin-top:12px"><b>這 ${focus.si_min} 分鐘的專注</b>${focus.si_target ? `:${esc(focus.si_target)}` : ""}</p>
+    <div class="si-frate">${["完成了", "部分完成", "沒做到"].map((t, k) => `<button class="si-btn ${k ? "si-ghost" : "si-plum"}" data-si-focus="${k}" data-si-close>${t}</button>`).join("")}</div>`
+    : `<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
+  return `<h3>擊退 ${demon.si_boss}</h3><p>${demon.si_trait}之心魔已退散・分心型態「${demon.si_distract}」${res.si_units > 1 ? `・本場領取 ${res.si_units} 場收益` : ""}</p>
+    ${thief}${siGainsGrid(res.si_gains, dm)}${ask}`;
 }
 
 // 前一天沒跑完的試煉:過午夜自動結算(無頭目獎勵、無小偷)
@@ -119,6 +125,6 @@ export function siViewBestiary(kills, dm) {
       <span>${SI_DEMON_TIERS[tier]}・已打倒 ${siFmt(n)}${next ? ` / ${siFmt(next)}` : "(已達真身)"}</span></div>
       <canvas data-si-demon="${i}" style="width:100%;aspect-ratio:330/78"></canvas>
       <div class="si-demon-tiers">${SI_DEMON_TIERS.map((t, k) => `<span class="${k <= tier ? "on" : ""}">${t}</span>`).join("")}</div>
-      <div class="si-demon-drop">屬${SI_ELEMENTS[siGodElem(dm, d.si_drop)]}(代表${SI_GOD_BY_KEY[d.si_drop].si_name})・掉落${SI_GOD_BY_KEY[d.si_drop].si_name}靈氣・被剋傷害 +15%</div></div>`;
+      <div class="si-demon-drop">分心型態:${d.si_distract}<br>屬${SI_ELEMENTS[siGodElem(dm, d.si_drop)]}(代表${SI_GOD_BY_KEY[d.si_drop].si_name})・掉落${SI_GOD_BY_KEY[d.si_drop].si_name}靈氣・被剋傷害 +15%</div></div>`;
   }).join("");
 }
