@@ -127,3 +127,49 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .si-fbar i { width: 70%; background: var(--si-plum); border-radius: 3px 3px 0 0; min-height: 2px; order: 2; }
 .si-fbar small { order: 1; font-size: 10px; color: var(--si-ink-2); }
 .si-fbar span { order: 3; margin-top: 2px; }
+
+/* 結算寶箱 */
+.si-chest { position: relative; width: 84px; height: 66px; margin: 0 auto 6px; }
+.si-chest-box { position: absolute; left: 8px; right: 8px; bottom: 0; height: 36px; background: #6B4A2B; border: 2px solid var(--si-ink); border-radius: 4px; }
+.si-chest-box::after { content: ""; position: absolute; left: 50%; top: -2px; width: 12px; height: 14px; margin-left: -6px; background: var(--si-plum); border: 2px solid var(--si-ink); border-radius: 2px; }
+.si-chest-lid { position: absolute; left: 6px; right: 6px; bottom: 34px; height: 18px; background: #7E5833; border: 2px solid var(--si-ink); border-radius: 10px 10px 2px 2px;
+  transform-origin: 0 100%; animation: si-lid .6s .15s cubic-bezier(.3,1.6,.5,1) forwards; }
+.si-chest-glow { position: absolute; left: 50%; bottom: 30px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%;
+  background: radial-gradient(circle, #FFF6C8, rgba(227,190,43,.8) 40%, transparent 70%); animation: si-glow .8s .3s ease-out forwards; }
+@keyframes si-lid { to { transform: rotate(-38deg) translate(-4px, -6px); } }
+@keyframes si-glow { to { width: 130px; height: 130px; margin-left: -65px; bottom: -20px; opacity: .85; } }
+
+/* 結算升級進度 */
+.si-prog { margin-top: 10px; display: grid; gap: 6px; }
+.si-prog-row { display: grid; grid-template-columns: 44px 1fr 52px; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.si-prog-bar { height: 8px; background: var(--si-gray-2); border-radius: 4px; overflow: hidden; }
+.si-prog-bar i { display: block; height: 100%; border-radius: 4px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.si-prog-row em { font-style: normal; color: var(--si-plum-deep); animation: si-pulse 1s ease-in-out infinite; }
+.si-prog-row small { color: var(--si-gray); text-align: right; }
+@keyframes si-pulse { 50% { transform: scale(1.12); } }
+
+/* 升階大演出 */
+.si-reveal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(20,20,20,.82); overflow: hidden; }
+.si-reveal.on { display: flex; animation: si-fade .3s; }
+.si-reveal-rays { position: absolute; left: 50%; top: 45%; width: 160vmax; height: 160vmax; margin: -80vmax 0 0 -80vmax;
+  background: repeating-conic-gradient(rgba(227,190,43,.22) 0 8deg, transparent 8deg 20deg); animation: si-spin 14s linear infinite; }
+.si-reveal-body { position: relative; text-align: center; color: #FBF6F0; padding: 0 24px; }
+.si-reveal-body img { width: 220px; max-width: 70vw; filter: drop-shadow(0 0 24px rgba(227,190,43,.7)); animation: si-pop .7s cubic-bezier(.3,1.5,.5,1); }
+.si-reveal-body h3 { font-family: var(--si-font-brush); font-size: 26px; color: var(--si-plum); margin: 8px 0 4px; }
+.si-reveal-body p { font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+.si-reveal-body small { opacity: .6; font-size: 12px; }
+@keyframes si-spin { to { transform: rotate(360deg); } }
+@keyframes si-pop { from { transform: scale(.2) rotate(-8deg); opacity: 0; } }
+@keyframes si-fade { from { opacity: 0; } }
+
+/* 修行路線圖 */
+.si-nodes { display: flex; justify-content: space-between; margin: 12px 0 8px; position: relative; }
+.si-nodes::before { content: ""; position: absolute; left: 12px; right: 12px; top: 13px; height: 2px; background: var(--si-gray-2); }
+.si-node { position: relative; display: flex; flex-direction: column; align-items: center; width: 28px; font-size: 10px; color: var(--si-gray); }
+.si-node i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700;
+  background: var(--si-paper); border: 2px solid var(--si-gray-2); color: var(--si-gray); }
+.si-node.done i { background: var(--si-ink); border-color: var(--si-ink); color: #FBF6F0; }
+.si-node.now i { background: var(--si-plum); border-color: var(--si-ink); color: var(--si-ink); box-shadow: 0 0 0 4px rgba(227,190,43,.35); }
+.si-node.boss i { border-radius: 6px; border-color: #B23A2E; color: #B23A2E; font-family: var(--si-font-brush); }
+.si-node.boss.done i, .si-node.boss.now i { background: #B23A2E; color: #FBF6F0; }
+.si-node small { margin-top: 3px; white-space: nowrap; }

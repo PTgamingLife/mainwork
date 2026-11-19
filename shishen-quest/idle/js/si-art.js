@@ -34,6 +34,12 @@ export const siArtBg = () => siLoad(SI_ART_LIST.si_bg);
 export const siArtWheel = () => siLoad(SI_ART_LIST.si_wheel);
 export const siArtGod = (key, tier) => siPick("si-god", key, SI_ART_LIST.si_gods[key], tier);
 export const siArtDemon = (idx, tier) => siPick("si-demon", idx, SI_ART_LIST.si_demons[idx], tier);
+// 圖片網址(升階大演出用):≤ 指定階的最高一張
+export function siArtSrc(kind, id, tier) {
+  const tiers = (kind === "god" ? SI_ART_LIST.si_gods[id] : SI_ART_LIST.si_demons[id]) || [];
+  const have = tiers.filter((t) => t <= tier);
+  return have.length ? `img/si-${kind}-${id}-t${Math.max(...have)}.webp` : "";
+}
 // 這一階有沒有獨立圖(有就不再用程式疊光暈、冠飾)
 export const siArtGodExact = (key, tier) => (SI_ART_LIST.si_gods[key] || []).includes(tier);
 const siArtDemonExact = (idx, tier) => (SI_ART_LIST.si_demons[idx] || []).includes(tier);

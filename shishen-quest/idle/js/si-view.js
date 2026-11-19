@@ -63,8 +63,9 @@ export function siViewSkills(levels) {
   }).join("");
 }
 
-export function siViewGods(si, sg, powers, dm) {
-  return SI_POINT_ENERGIES.map((e, i) => {
+export function siViewGods(si, sg, powers, dm, canUp = 0) {
+  return `<button class="si-btn ${canUp ? "si-plum" : ""}" data-si-upall style="width:100%;margin-bottom:10px" ${canUp ? "" : "disabled"}>
+    ${canUp ? `全部升級(${canUp} 位十神可升級)` : "目前靈氣不足以升級"}</button>` + SI_POINT_ENERGIES.map((e, i) => {
     const color = SI_ELEM_COLORS[siElemOfPoint(dm, i)];
     const rows = SI_GODS.filter((g) => g.si_energy === e).map((g) => {
       const lv = si.si_levels[g.si_key], cost = siCost(si, sg, g.si_key), have = Math.floor(si.si_aura[g.si_key]);
@@ -78,7 +79,7 @@ export function siViewGods(si, sg, powers, dm) {
 
 function siGainsGrid(gains, dm) {
   return `<div class="si-gains">${SI_GODS.map((g) =>
-    `<div style="color:${siColorOf(dm, g.si_key)}">${g.si_name}<b>+${siFmt(gains[g.si_key] || 0)}</b></div>`).join("")}</div>`;
+    `<div style="color:${siColorOf(dm, g.si_key)}">${g.si_name}<b data-si-count="${Math.round(gains[g.si_key] || 0)}">+${siFmt(gains[g.si_key] || 0)}</b></div>`).join("")}</div>`;
 }
 
 function siThiefBox(t) {
@@ -88,13 +89,21 @@ function siThiefBox(t) {
 }
 
 // 結算:收下靈氣時順便自評這段專注(完成 / 部分 / 沒有)
-export function siViewSettle(res, demon, dm, focus) {
+// 結算後的升級進度:靈氣 / 升級成本,舊進度 → 新進度
+function siProgressRows(rows) {
+  if (!rows?.length) return "";
+  return `<div class="si-prog">${rows.map((r) => `<div class="si-prog-row"><span style="color:${r.color}">${r.name}</span>
+    <div class="si-prog-bar"><i style="width:${r.before}%;background:${r.color}" data-si-bar="${r.after}"></i></div>
+    ${r.can ? `<em>可升級!</em>` : `<small>${r.after}%</small>`}</div>`).join("")}</div>`;
+}
+
+export function siViewSettle(res, demon, dm, focus, progress, chest = "") {
   const thief = siThiefBox(res.si_thief);
   const ask = focus ? `<p style="margin-top:12px"><b>這 ${focus.si_min} 分鐘的專注</b>${focus.si_target ? `:${esc(focus.si_target)}` : ""}</p>
     <div class="si-frate">${["完成了", "部分完成", "沒做到"].map((t, k) => `<button class="si-btn ${k ? "si-ghost" : "si-plum"}" data-si-focus="${k}" data-si-close>${t}</button>`).join("")}</div>`
     : `<button class="si-btn si-plum" data-si-close>收下靈氣</button>`;
-  return `<h3>擊退 ${demon.si_boss}</h3><p>${demon.si_trait}之心魔已退散・分心型態「${demon.si_distract}」${res.si_units > 1 ? `・本場領取 ${res.si_units} 場收益` : ""}</p>
-    ${thief}${siGainsGrid(res.si_gains, dm)}${ask}`;
+  return `${chest}<h3>擊退 ${demon.si_boss}</h3><p>${demon.si_trait}之心魔已退散・分心型態「${demon.si_distract}」${res.si_units > 1 ? `・本場領取 ${res.si_units} 場收益` : ""}</p>
+    ${siGainsGrid(res.si_gains, dm)}${thief}${siProgressRows(progress)}${ask}`;
 }
 
 // 前一天沒跑完的試煉:過午夜自動結算(無頭目獎勵、無小偷)
