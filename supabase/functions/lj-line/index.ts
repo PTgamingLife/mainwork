@@ -6,7 +6,8 @@
 // 部署(LINE 不會帶 Supabase JWT):verify_jwt = false
 // 共用 secrets:AMP_LINE_CHANNEL_SECRET / AMP_LINE_CHANNEL_ACCESS_TOKEN(同一個 OA)
 
-import { ensureMember, lineProfile, lineReply, verifySignature } from "../_shared/lj.ts";
+import { ensureMember, findMember, lineProfile, lineReply, verifySignature } from "../_shared/lj.ts";
+import { ljRiddleReply } from "../_shared/lj-riddle.ts";
 
 const LJ_LIFF = "https://liff.line.me/2011511140-5AixRgyd";
 const LJ_C = { ivory: "#F4F1DE", dusk: "#E07A5F", night: "#2E4057", ink: "#1D2B3A", muted: "#6B7A8C" };
@@ -100,6 +101,18 @@ Deno.serve(async (req: Request) => {
       if (ev.type !== "message" || ev.message?.type !== "text") continue;
       const text = String(ev.message.text ?? "").trim().slice(0, 200);
       const hit = LJ_KEYWORDS.find(([k]) => text.includes(k));
+
+      // 今天的腦筋急轉彎優先;出錯就退回一般回覆,不讓題目把整個 OA 卡住
+      if (userId) {
+        try {
+          const m = await findMember(userId);
+          const msgs = m ? await ljRiddleReply(m.id, text, !!hit) : null;
+          if (msgs) { await lineReply(ev.replyToken, msgs); continue; }
+        } catch (e) {
+          console.error("riddle", (e as Error).message);
+        }
+      }
+
       await lineReply(ev.replyToken, [hit ? ljCard(LJ_ENTRY[hit[1]]) : ljText(LJ_HELP)]);
     } catch (e) {
       console.error("event", (e as Error).message);
