@@ -1,6 +1,6 @@
 // 十神試煉場 — 專注紀錄與「專注」頁
 // si.si_focus:日期 → { m 專注分鐘, r 完成場數, i 中斷次數, f [完成, 部分, 沒有] };只保留最近 60 天
-import { siAddDays } from "./si-store.js";
+import { siAddDays, siDemonOf } from "./si-store.js";
 
 const SI_FOCUS_KEEP_DAYS = 60;
 export const SI_FOCUS_RESULTS = ["完成", "部分", "沒有"];
@@ -55,4 +55,20 @@ export function siViewFocus(st, role) {
     ${role ? `<div class="si-skill-card"><b>${role.sg_element}屬・${role.sg_name}</b>
       <div>主要分心:${role.sg_distract}——${role.sg_distract_desc}</div>
       <div style="color:var(--si-gray)">開始試煉前,先把會讓你「${role.sg_distract}」的東西移開。</div></div>` : ""}`;
+}
+
+// 修行路線圖:每 10 天一章,節點 = 第幾天(打卡日),顯示當天專注分鐘;第 10 天是章節頭目
+export function siViewRoute(si, sg, dayNo) {
+  const dates = Object.keys(sg?.sg_checkins || {}).sort();
+  const ch = Math.floor((dayNo - 1) / 10), base = ch * 10;
+  const nodes = Array.from({ length: 10 }, (_, k) => {
+    const n = base + k + 1, d = dates[n - 1], m = d ? Math.round(si.si_focus?.[d]?.m || 0) : 0;
+    const cls = n < dayNo ? "done" : n === dayNo ? "now" : "";
+    return `<div class="si-node ${cls} ${k === 9 ? "boss" : ""}"><i>${k === 9 ? "魔" : n}</i><small>${n <= dayNo ? (m ? `${m}分` : "—") : ""}</small></div>`;
+  }).join("");
+  const boss = siDemonOf(base + 10);
+  return `<div class="si-skill-card si-route"><b style="font-size:15px">修行路線・第 ${ch + 1} 章</b>
+    <span style="float:right;font-size:12px;color:var(--si-gray)">Day-${dayNo} / ${base + 10}</span>
+    <div class="si-nodes">${nodes}</div>
+    <div style="font-size:12px;color:var(--si-ink-2)">章末頭目:${boss.si_boss}(${boss.si_distract})・還有 ${base + 10 - dayNo} 天</div></div>`;
 }

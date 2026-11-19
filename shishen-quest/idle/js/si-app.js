@@ -1,19 +1,20 @@
 // 十神試煉場 — 主控:載入狀態、試煉計時、中斷懲罰、結算、離線收益、頁籤
 import {
   siLoad, siSave, siLoadSg, siFromObj, siDateStr, siDayNo, siDemonOf, siSkillLevels, siTickets, siWeekEffects, siPowers,
-  siRunStart, siRunPenalty, siRunLeftMs, siRunNeedMs, siRunDrop, siBossDrop, siSettle, siOffline, siApplyGains, siUpgrade, siDayMs,
+  siRunStart, siRunPenalty, siRunLeftMs, siRunNeedMs, siUpgradeAll, siCanUpgradeCount, siCost, siRunDrop, siBossDrop, siSettle, siOffline, siApplyGains, siUpgrade, siDayMs,
 } from "./si-store.js";
 import { siCreateField } from "./si-field.js";
-import { SI_KILL_DROP } from "./si-data.js";
-import { siDemonTierOf } from "./si-demons.js";
-import { siDrawDemonAny } from "./si-art.js";
+import { SI_KILL_DROP, SI_GODS, SI_GOD_BY_KEY, SI_TIERS, SI_DEMONS, SI_ELEM_COLORS, siTierOf, siElemOfPoint, siPointOfEnergy } from "./si-data.js";
+import { siDemonTierOf, SI_DEMON_TIERS } from "./si-demons.js";
+import { siDrawDemonAny, siArtSrc } from "./si-art.js";
+import { siCountUp, siChest, siRevealQueue, siRevealFlush } from "./si-fx.js";
 import {
   siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer, siViewExpired,
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
 import { siCloudInit, siCloudSave } from "./si-sync.js";
 import { siAwakeOn, siAwakeOff, siAwakeResume } from "./si-awake.js";
-import { siFocusInterrupt, siFocusAddRun, siFocusRate, siFocusStats, siViewFocus } from "./si-focus.js";
+import { siFocusInterrupt, siFocusAddRun, siFocusRate, siFocusStats, siViewFocus, siViewRoute } from "./si-focus.js";
 import { sgRole } from "../../js/sg-store.js?v=20261118a";
 
 // ?mock=1 = 假資料測試;?solo=1 = 用本機十神修行錄資料、不登入 LINE;否則登入 LINE 並同步雲端
@@ -61,7 +62,15 @@ function siModal(html) {
 $("si-modal").addEventListener("click", (ev) => {
   const rate = ev.target.closest("[data-si-focus]");
   if (rate) { siFocusRate(si, rate.dataset.siDate, Number(rate.dataset.siFocus)); siSaveAll(); }
-  if (ev.target.closest("[data-si-close]")) { $("si-modal").classList.remove("on"); siRender(); }
+  if (ev.target.closest("[data-si-close]")) {
+    $("si-modal").classList.remove("on");
+    siRender();
+    if (!si.si_run) {
+      const n = siCanUpgradeCount(si, si_sg);
+      if (n) siToast(`${n} 位十神可以升級,到「十神」頁按「全部升級」`);
+      siRevealFlush();
+    }
+  }
 });
 
 // ---- 模型 → 戰場 ----
@@ -131,9 +140,9 @@ function siRender() {
   $("si-week").innerHTML = siViewWeek(m.si_fx, m.si_dm);
   $("si-skills").innerHTML = siViewSkillRow(lv);
   $("si-skill-list").innerHTML = siViewSkills(lv);
-  $("si-gods").innerHTML = siViewGods(si, si_sg, m.si_powers, m.si_dm);
+  $("si-gods").innerHTML = siViewGods(si, si_sg, m.si_powers, m.si_dm, siCanUpgradeCount(si, si_sg));
   $("si-bestiary").innerHTML = siViewBestiary(si.si_demon_kills, m.si_dm);
-  $("si-focus").innerHTML = siViewFocus(siFocusStats(si, siToday()), siSafeRole());
+  $("si-focus").innerHTML = siViewRoute(si, si_sg, siDayNo(si_sg)) + siViewFocus(siFocusStats(si, siToday()), siSafeRole());
   siDrawBestiary();
   if (si_mock) siRenderMock();
 }
@@ -142,7 +151,29 @@ function siRender() {
 function siCountKill(idx) {
   const before = siDemonTierOf(si.si_demon_kills[idx]);
   si.si_demon_kills[idx] += 1;
-  if (siDemonTierOf(si.si_demon_kills[idx]) !== before) si_field.si_setModel(siModel());
+  const after = siDemonTierOf(si.si_demon_kills[idx]);
+  if (after === before) return;
+  si_field.si_setModel(siModel());
+  const d = SI_DEMONS[idx];
+  siRevealQueue({ si_img: siArtSrc("demon", idx, after), si_title: `心魔進化:${d.si_trait}・${SI_DEMON_TIERS[after]}`,
+    si_sub: `已被擊倒 ${si.si_demon_kills[idx]} 次・分心型態「${d.si_distract}」變得更難纏了` });
+}
+
+// 十神跨過每 10 級:升階大演出
+function siGodTierUp(key, fromLv, toLv) {
+  const t = siTierOf(toLv);
+  if (t <= siTierOf(fromLv)) return;
+  siRevealQueue({ si_img: siArtSrc("god", key, t), si_title: `${SI_GOD_BY_KEY[key].si_name}・${SI_TIERS[t]}`, si_sub: `升到 Lv${toLv},換上新的形象` });
+}
+
+// 結算後的升級進度(靈氣最多的前 4 位)
+function siProgress(before, gains) {
+  const dm = si_sg.sg_chart.sg_day_master;
+  return SI_GODS.filter((g) => (gains[g.si_key] || 0) > 0).sort((a, b) => gains[b.si_key] - gains[a.si_key]).slice(0, 4).map((g) => {
+    const cost = siCost(si, si_sg, g.si_key), pct = (v) => Math.min(100, Math.round((v / cost) * 100));
+    return { name: g.si_name, color: SI_ELEM_COLORS[siElemOfPoint(dm, siPointOfEnergy(g.si_energy))],
+      before: pct(before[g.si_key]), after: pct(si.si_aura[g.si_key]), can: si.si_aura[g.si_key] >= cost };
+  });
 }
 
 // 圖鑑:每種心魔畫 5 階;還沒解鎖的階只畫剪影
@@ -202,11 +233,14 @@ const si_hooks = {
     const run = si.si_run;
     siFocusAddRun(si, run.si_date, run.si_elapsed_ms);
     const focus = { si_min: Math.round(run.si_elapsed_ms / 60000), si_target: run.si_target, si_date: run.si_date };
+    const before = { ...si.si_aura };
     const res = siSettle(si, si_sg);
     si_field.si_setRunning(false);
     siAwakeOff();
     siSaveAll();
-    siModal(siViewSettle(res, demon, si_sg.sg_chart.sg_day_master, focus).replaceAll("data-si-focus=", `data-si-date="${focus.si_date}" data-si-focus=`));
+    siModal(siViewSettle(res, demon, si_sg.sg_chart.sg_day_master, focus, siProgress(before, res.si_gains), siChest())
+      .replaceAll("data-si-focus=", `data-si-date="${focus.si_date}" data-si-focus=`));
+    siCountUp($("si-modal-box"));
     siRender();
   },
 };
@@ -218,6 +252,7 @@ function siCheckOffline() {
   siApplyGains(si, res.si_gains);
   siSaveAll();
   siModal(siViewOffline(res, si_sg.sg_chart.sg_day_master));
+  siCountUp($("si-modal-box"));
 }
 
 // ---- 主迴圈 ----
@@ -255,8 +290,18 @@ $("si-tabs").addEventListener("click", (ev) => {
   document.querySelectorAll("[data-si-panel]").forEach((p) => p.classList.toggle("on", p.dataset.siPanel === b.dataset.siTab));
 });
 $("si-gods").addEventListener("click", (ev) => {
+  if (ev.target.closest("[data-si-upall]")) {
+    const ups = siUpgradeAll(si, si_sg);
+    const n = Object.values(ups).reduce((a, [f, t]) => a + t - f, 0);
+    Object.entries(ups).forEach(([k, [f, t]]) => siGodTierUp(k, f, t));
+    if (n) siToast(`升級 ${n} 次!`);
+    siSaveAll(); siRender(); siRevealFlush();
+    return;
+  }
   const b = ev.target.closest("[data-si-up]");
-  if (b && siUpgrade(si, si_sg, b.dataset.siUp)) { siSaveAll(); siRender(); }
+  if (!b) return;
+  const k = b.dataset.siUp, from = si.si_levels[k];
+  if (siUpgrade(si, si_sg, k)) { siGodTierUp(k, from, si.si_levels[k]); siSaveAll(); siRender(); siRevealFlush(); }
 });
 
 // ---- ?mock=1 測試面板 ----
