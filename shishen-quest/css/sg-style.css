@@ -204,3 +204,8 @@ body {
 .sg-hex { text-align: left; border-top: 1px dashed var(--sg-line); padding-top: 10px; margin-top: 10px; }
 .sg-hex-judg { font-family: var(--sg-font-brush); font-size: 18px; }
 @media (prefers-reduced-motion: reduce) { .sg-turtle.sg-shaking { animation-duration: .5s; } }
+
+/* 八字角色卡 */
+.sg-role .sg-role-name { font-family: var(--sg-font-brush); font-size: 26px; margin: 6px 0 4px; letter-spacing: .08em; }
+.sg-role p { margin: 4px 0; }
+.sg-card:not(.sg-ink-card) .sg-stat small { color: var(--sg-ink-2); }
