@@ -1,17 +1,18 @@
 // LadyS — 傍晚運動提醒(pg_cron → ladys_tick() → 這裡)
 //   supabase functions deploy ladys-workout --no-verify-jwt
 // 每天固定時間推「兩招雙人運動」動畫卡片到家庭群組(兩張卡同一次 push,只算 1 次額度)。不呼叫 AI。
+// 動作清單讀 ladys_workout_moves(運動教練 agent 用 /workout-sync 上架);表空或讀取失敗 → 退回下面內建的 MOVES。
 // 動畫:ladys/anim/workout-*.png(APNG,≤300KB,放在 GitHub Pages)。secrets:見 _shared/ladys.ts
 
 import {
-  LADYS_C, ladysCheckCronKey, ladysClaimRun, ladysFinishRun, ladysJson, ladysPush, ladysSettings, ladysTodayTaipei,
+  LADYS_C, ladysCheckCronKey, ladysClaimRun, ladysFinishRun, ladysJson, ladysPush, ladysSelect, ladysSettings, ladysTodayTaipei,
 } from "../_shared/ladys.ts";
 
 const ANIM_BASE = "https://ptgaminglife.github.io/oa-pages/ladys/anim/";
 const CREAM = "#FFF8F0"; // 與動畫底色一致
 const HER = "#FF6B6B", HIM = "#2E9E97";
 
-// 每天依序輪 2 招(15 招約 8 天一輪);ratio / bg 依動畫尺寸與底色
+// 內建備援:表空或讀取失敗時用。每天依序輪 2 招;ratio / bg 依動畫尺寸與底色
 type Move = { img: string; title: string; tip: string; reps: string; ratio: string; bg: string };
 const MOVES: Move[] = [
   { img: "workout-situp.png", title: "愛的親親", tip: "腳互相固定做仰臥起坐,坐起來親一下。練核心與默契。", reps: "10 下", ratio: "1:1", bg: CREAM },
@@ -37,6 +38,23 @@ const REMIND: Record<string, string[]> = {
   buddy: ["喂喂~運動時間到啦,不准偷懶 😎", "沙發先放下!今天兩招練起來 🔥", "一起流汗才叫夫妻檔 💦"],
   custom: ["運動時間到了,一起動一動吧 💪"],
 };
+
+// 從動作表讀(只取啟用的,依 ladys_sort, id);失敗或空 → 內建 MOVES
+async function ladysLoadMoves(): Promise<{ moves: Move[]; source: string }> {
+  try {
+    const rows = await ladysSelect("ladys_workout_moves",
+      "ladys_enabled=eq.true&order=ladys_sort.asc,id.asc&select=ladys_img,ladys_title,ladys_tip,ladys_reps,ladys_ratio,ladys_bg");
+    const moves = rows
+      .filter((r: any) => /^[\w.-]+\.png$/.test(r.ladys_img ?? "") && r.ladys_title)
+      .map((r: any) => ({
+        img: r.ladys_img, title: String(r.ladys_title).slice(0, 20), tip: String(r.ladys_tip ?? "").slice(0, 200),
+        reps: String(r.ladys_reps ?? "").slice(0, 30), ratio: /^\d+:\d+$/.test(r.ladys_ratio) ? r.ladys_ratio : "1:1",
+        bg: /^#[0-9A-Fa-f]{6}$/.test(r.ladys_bg) ? r.ladys_bg : CREAM,
+      }));
+    if (moves.length) return { moves, source: "table" };
+  } catch (e) { console.error("ladys workout moves", e instanceof Error ? e.message : e); }
+  return { moves: MOVES, source: "builtin" };
+}
 
 function dayIndex(ymd: string, n: number) {
   return Math.floor(new Date(`${ymd}T00:00:00+08:00`).getTime() / 864e5) % n;
@@ -85,10 +103,11 @@ Deno.serve(async (req) => {
     }
     const lines = REMIND[settings.ladys_persona] ?? REMIND.butler;
     const headline = lines[dayIndex(runDate, lines.length)];
+    const { moves, source } = await ladysLoadMoves();
     const d = dayIndex(runDate, 1e9);
-    const today = [MOVES[(d * 2) % MOVES.length], MOVES[(d * 2 + 1) % MOVES.length]];
+    const today = moves.length === 1 ? [moves[0]] : [moves[(d * 2) % moves.length], moves[(d * 2 + 1) % moves.length]];
     await ladysPush(settings.ladys_group_id, today.map((m, i) => ladysWorkoutCard(m, i === 0 ? headline : "再來一招!", `${i + 1} / ${today.length}`)));
-    await ladysFinishRun(runId, "done", { moves: today.map((m) => m.img) });
+    await ladysFinishRun(runId, "done", { moves: today.map((m) => m.img), source, pool: moves.length });
     return ladysJson({ ok: true, moves: today.map((m) => m.title) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -117,12 +117,12 @@ export function siRunNeedMs(sg) {
   return (SI_RUN_MIN - SI_OATH_CUT_MIN[siSkillLevels(sg).si_oath.si_level]) * SI_MIN;
 }
 
-export function siRunStart(si, sg, today) {
+export function siRunStart(si, sg, today, target = "") {
   const units = siTickets(si, sg, today);
   if (!units || si.si_run) return false;
   si.si_run = {
     si_date: today, si_units: units, si_need_ms: siRunNeedMs(sg), si_penalty_ms: 0,
-    si_elapsed_ms: 0, si_pending: {}, si_boss: false, si_kills: 0,
+    si_elapsed_ms: 0, si_pending: {}, si_boss: false, si_kills: 0, si_target: String(target).slice(0, 60),
   };
   return true;
 }
