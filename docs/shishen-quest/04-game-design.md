@@ -60,7 +60,7 @@
 ## 6. 上線還需要
 
 1. Supabase secret `SG_LIFF_URL` = `https://liff.line.me/2011684838-Jdzxtrxn`
-2. LIFF `focus_mission_daily` 的 Endpoint URL 改成 `https://ptgaminglife.github.io/mainwork/shishen-quest/`
+2. LIFF `focus_mission_daily` 的 Endpoint URL 改成 `https://ptgaminglife.github.io/oa-pages/shishen-quest/`
 3. 執行 `sg-setup-richmenu` 換上十神圖文選單(會刪除 OA 現有選單)
 
 本機試玩:網址加 `?mock=1` 可跳過 LINE 登入。
