@@ -81,6 +81,15 @@ export async function sbUpdate(table: string, query: string, patch: unknown): Pr
   return await res.json();
 }
 
+// 呼叫資料庫函式(只開給 service role)
+export async function sbRpc(fn: string, args: unknown): Promise<any> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST", headers: sbHeaders(), body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(`SB_RPC_${res.status}:${(await res.text()).slice(0, 200)}`);
+  return await res.json();
+}
+
 export async function sbDelete(table: string, query: string): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
     method: "DELETE", headers: sbHeaders(),
@@ -228,6 +237,17 @@ export async function lineReply(replyToken: string, messages: unknown[]): Promis
     body: JSON.stringify({ replyToken, messages }),
   });
   if (!res.ok) console.error("lineReply", res.status, (await res.text()).slice(0, 300));
+}
+
+// 一次最多 500 人;回傳是否成功,失敗原因寫 log
+export async function lineMulticast(to: string[], messages: unknown[]): Promise<boolean> {
+  const res = await fetch("https://api.line.me/v2/bot/message/multicast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${LINE_TOKEN}` },
+    body: JSON.stringify({ to, messages }),
+  });
+  if (!res.ok) console.error("lineMulticast", res.status, (await res.text()).slice(0, 300));
+  return res.ok;
 }
 
 export async function lineProfile(userId: string): Promise<{ name: string; picture: string }> {

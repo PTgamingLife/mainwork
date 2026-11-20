@@ -1,18 +1,21 @@
 // 十神試煉場 — 主控:載入狀態、試煉計時、中斷懲罰、結算、離線收益、頁籤
 import {
   siLoad, siSave, siLoadSg, siFromObj, siDateStr, siDayNo, siDemonOf, siSkillLevels, siTickets, siWeekEffects, siPowers,
-  siRunStart, siRunPenalty, siRunLeftMs, siRunDrop, siBossDrop, siSettle, siOffline, siApplyGains, siUpgrade, siDayMs,
+  siRunStart, siRunPenalty, siRunLeftMs, siRunNeedMs, siUpgradeAll, siCanUpgradeCount, siCost, siRunDrop, siBossDrop, siSettle, siOffline, siApplyGains, siUpgrade, siDayMs,
 } from "./si-store.js";
 import { siCreateField } from "./si-field.js";
-import { SI_KILL_DROP } from "./si-data.js";
-import { siDemonTierOf } from "./si-demons.js";
-import { siDrawDemonAny } from "./si-art.js";
+import { SI_KILL_DROP, SI_GODS, SI_GOD_BY_KEY, SI_TIERS, SI_DEMONS, SI_ELEM_COLORS, siTierOf, siElemOfPoint, siPointOfEnergy } from "./si-data.js";
+import { siDemonTierOf, SI_DEMON_TIERS } from "./si-demons.js";
+import { siDrawDemonAny, siArtSrc } from "./si-art.js";
+import { siCountUp, siChest, siRevealQueue, siRevealFlush } from "./si-fx.js";
 import {
   siViewBestiary, siViewPending, siViewWeek, siViewSkillRow, siViewSkills, siViewGods, siViewSettle, siViewOffline, siViewTimer, siViewExpired,
 } from "./si-view.js";
 import { siMockSg, siMockCheckin, SI_MOCK_SG_KEY, SI_MOCK_STATE_KEY, SI_MOCK_OFFSET_KEY } from "./si-mock.js";
 import { siCloudInit, siCloudSave } from "./si-sync.js";
 import { siAwakeOn, siAwakeOff, siAwakeResume } from "./si-awake.js";
+import { siFocusInterrupt, siFocusAddRun, siFocusRate, siFocusStats, siViewFocus, siViewRoute } from "./si-focus.js";
+import { sgRole } from "../../js/sg-store.js?v=20261118a";
 
 // ?mock=1 = 假資料測試;?solo=1 = 用本機十神修行錄資料、不登入 LINE;否則登入 LINE 並同步雲端
 const si_mock = new URLSearchParams(location.search).has("mock");
@@ -57,7 +60,17 @@ function siModal(html) {
   $("si-modal").classList.add("on");
 }
 $("si-modal").addEventListener("click", (ev) => {
-  if (ev.target.closest("[data-si-close]")) { $("si-modal").classList.remove("on"); siRender(); }
+  const rate = ev.target.closest("[data-si-focus]");
+  if (rate) { siFocusRate(si, rate.dataset.siDate, Number(rate.dataset.siFocus)); siSaveAll(); }
+  if (ev.target.closest("[data-si-close]")) {
+    $("si-modal").classList.remove("on");
+    siRender();
+    if (!si.si_run) {
+      const n = siCanUpgradeCount(si, si_sg);
+      if (n) siToast(`${n} 位十神可以升級,到「十神」頁按「全部升級」`);
+      siRevealFlush();
+    }
+  }
 });
 
 // ---- 模型 → 戰場 ----
@@ -92,14 +105,31 @@ function siRenderStart() {
   const run = si.si_run;
   if (run) {
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) ? "<br>iPhone 若仍會黑屏:設定 → 螢幕顯示與亮度 → 自動鎖定 → 永不" : "";
-    $("si-start").innerHTML = `<span class="si-hint" style="font-size:10.5px;padding:3px 10px;opacity:.85;line-height:1.5">試煉中・螢幕保持常亮,切換 App 或鎖螢幕會中斷${ios}</span>`;
+    $("si-start").innerHTML = `${run.si_target ? `<div class="si-focusing">正在專注:${siEsc(run.si_target)}</div>` : ""}
+      <span class="si-hint" style="font-size:10.5px;padding:3px 10px;opacity:.85;line-height:1.5">螢幕保持常亮,切換 App 或鎖螢幕會讓注意力被帶走${ios}</span>`;
     return;
   }
   const n = siTickets(si, si_sg, siToday());
-  $("si-start").innerHTML = n
-    ? `<button class="si-btn" id="si-go">開始試煉${n > 1 ? `(領 ${n} 場收益)` : ""}</button>`
-    : `<span class="si-hint">${si.si_days[siToday()]?.si_used ? "今日已完成的打卡都已試煉" : "完成今日打卡(戒律/約束/誓言)即可開始試煉"}</span>`;
-  $("si-go")?.addEventListener("click", siStart);
+  if (!n) {
+    $("si-start").innerHTML = `<span class="si-hint">${si.si_days[siToday()]?.si_used ? "今日已完成的打卡都已試煉" : "完成今日打卡(戒律/約束/誓言)即可開始試煉"}</span>`;
+    return;
+  }
+  // 專注目標:今日誓言 / 戒律 / 約束 / 自訂
+  const wk = si_sg.sg_week;
+  const opts = [["oath", "誓言", wk?.sg_oath?.sg_text], ["precept", "戒律", wk?.sg_precept?.sg_text], ["bond", "約束", wk?.sg_bond?.sg_text]]
+    .filter(([, , t]) => t);
+  if (si_target_pick !== "custom" && !opts.some(([k]) => k === si_target_pick)) si_target_pick = opts[0]?.[0] || "custom";
+  $("si-start").innerHTML = `<div class="si-target"><b>這 ${Math.round(siRunNeedMs(si_sg) / 60000)} 分鐘要專注做什麼?</b>
+    <div class="si-chips">${[...opts, ["custom", "自訂"]].map(([k, l]) => `<button class="${k === si_target_pick ? "on" : ""}" data-si-pick="${k}">${l}</button>`).join("")}</div>
+    ${si_target_pick === "custom" ? `<input id="si-target-in" maxlength="60" placeholder="例如:寫完企劃第一段" value="${siEsc(si_target_custom)}">`
+      : `<p>${siEsc(opts.find(([k]) => k === si_target_pick)[2])}</p>`}
+    <button class="si-btn" id="si-go">開始專注${n > 1 ? `(領 ${n} 場收益)` : ""}</button></div>`;
+  $("si-target-in")?.addEventListener("input", (ev) => { si_target_custom = ev.target.value; });
+  $("si-start").querySelectorAll("[data-si-pick]").forEach((b) => b.addEventListener("click", () => { si_target_pick = b.dataset.siPick; siRenderStart(); }));
+  $("si-go").addEventListener("click", () => {
+    const t = si_target_pick === "custom" ? si_target_custom.trim() : opts.find(([k]) => k === si_target_pick)[2];
+    siStart(t);
+  });
 }
 
 function siRender() {
@@ -110,8 +140,9 @@ function siRender() {
   $("si-week").innerHTML = siViewWeek(m.si_fx, m.si_dm);
   $("si-skills").innerHTML = siViewSkillRow(lv);
   $("si-skill-list").innerHTML = siViewSkills(lv);
-  $("si-gods").innerHTML = siViewGods(si, si_sg, m.si_powers, m.si_dm);
+  $("si-gods").innerHTML = siViewGods(si, si_sg, m.si_powers, m.si_dm, siCanUpgradeCount(si, si_sg));
   $("si-bestiary").innerHTML = siViewBestiary(si.si_demon_kills, m.si_dm);
+  $("si-focus").innerHTML = siViewRoute(si, si_sg, siDayNo(si_sg)) + siViewFocus(siFocusStats(si, siToday()), siSafeRole());
   siDrawBestiary();
   if (si_mock) siRenderMock();
 }
@@ -120,7 +151,29 @@ function siRender() {
 function siCountKill(idx) {
   const before = siDemonTierOf(si.si_demon_kills[idx]);
   si.si_demon_kills[idx] += 1;
-  if (siDemonTierOf(si.si_demon_kills[idx]) !== before) si_field.si_setModel(siModel());
+  const after = siDemonTierOf(si.si_demon_kills[idx]);
+  if (after === before) return;
+  si_field.si_setModel(siModel());
+  const d = SI_DEMONS[idx];
+  siRevealQueue({ si_img: siArtSrc("demon", idx, after), si_title: `心魔進化:${d.si_trait}・${SI_DEMON_TIERS[after]}`,
+    si_sub: `已被擊倒 ${si.si_demon_kills[idx]} 次・分心型態「${d.si_distract}」變得更難纏了` });
+}
+
+// 十神跨過每 10 級:升階大演出
+function siGodTierUp(key, fromLv, toLv) {
+  const t = siTierOf(toLv);
+  if (t <= siTierOf(fromLv)) return;
+  siRevealQueue({ si_img: siArtSrc("god", key, t), si_title: `${SI_GOD_BY_KEY[key].si_name}・${SI_TIERS[t]}`, si_sub: `升到 Lv${toLv},換上新的形象` });
+}
+
+// 結算後的升級進度(靈氣最多的前 4 位)
+function siProgress(before, gains) {
+  const dm = si_sg.sg_chart.sg_day_master;
+  return SI_GODS.filter((g) => (gains[g.si_key] || 0) > 0).sort((a, b) => gains[b.si_key] - gains[a.si_key]).slice(0, 4).map((g) => {
+    const cost = siCost(si, si_sg, g.si_key), pct = (v) => Math.min(100, Math.round((v / cost) * 100));
+    return { name: g.si_name, color: SI_ELEM_COLORS[siElemOfPoint(dm, siPointOfEnergy(g.si_energy))],
+      before: pct(before[g.si_key]), after: pct(si.si_aura[g.si_key]), can: si.si_aura[g.si_key] >= cost };
+  });
 }
 
 // 圖鑑:每種心魔畫 5 階;還沒解鎖的階只畫剪影
@@ -148,9 +201,13 @@ function siDrawBestiary() {
 
 window.addEventListener("si-art-loaded", () => siDrawBestiary());
 
+const siEsc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const siSafeRole = () => { try { return sgRole(si_sg); } catch { return null; } };
+let si_target_pick = "oath", si_target_custom = "";
+
 // ---- 試煉 ----
-function siStart() {
-  if (!siRunStart(si, si_sg, siToday())) return;
+function siStart(target = "") {
+  if (!siRunStart(si, si_sg, siToday(), target)) return;
   siAwakeOn(); // 試煉中保持螢幕常亮(在點擊當下啟動)
   si_field.si_setRunning(true);
   siSaveAll(); siRender();
@@ -159,7 +216,8 @@ function siStart() {
 function siInterrupt() {
   if (!si.si_run || si.si_run.si_boss) return;
   const add = siRunPenalty(si, siToday());
-  siToast(add ? `試煉中斷,時間 +${add} 分鐘` : "試煉中斷(今日加時已達上限)");
+  siFocusInterrupt(si, siToday());
+  siToast(add ? `注意力被帶走了,時間 +${add} 分鐘` : "注意力被帶走了(今日加時已達上限)");
   siSaveAll(); siRenderHeader();
 }
 
@@ -172,11 +230,17 @@ const si_hooks = {
     siCountKill(idx);
     siBossDrop(si, si_sg, siDayNo(si_sg));
     const demon = siDemonOf(siDayNo(si_sg));
+    const run = si.si_run;
+    siFocusAddRun(si, run.si_date, run.si_elapsed_ms);
+    const focus = { si_min: Math.round(run.si_elapsed_ms / 60000), si_target: run.si_target, si_date: run.si_date };
+    const before = { ...si.si_aura };
     const res = siSettle(si, si_sg);
     si_field.si_setRunning(false);
     siAwakeOff();
     siSaveAll();
-    siModal(siViewSettle(res, demon, si_sg.sg_chart.sg_day_master));
+    siModal(siViewSettle(res, demon, si_sg.sg_chart.sg_day_master, focus, siProgress(before, res.si_gains), siChest())
+      .replaceAll("data-si-focus=", `data-si-date="${focus.si_date}" data-si-focus=`));
+    siCountUp($("si-modal-box"));
     siRender();
   },
 };
@@ -188,6 +252,7 @@ function siCheckOffline() {
   siApplyGains(si, res.si_gains);
   siSaveAll();
   siModal(siViewOffline(res, si_sg.sg_chart.sg_day_master));
+  siCountUp($("si-modal-box"));
 }
 
 // ---- 主迴圈 ----
@@ -225,8 +290,18 @@ $("si-tabs").addEventListener("click", (ev) => {
   document.querySelectorAll("[data-si-panel]").forEach((p) => p.classList.toggle("on", p.dataset.siPanel === b.dataset.siTab));
 });
 $("si-gods").addEventListener("click", (ev) => {
+  if (ev.target.closest("[data-si-upall]")) {
+    const ups = siUpgradeAll(si, si_sg);
+    const n = Object.values(ups).reduce((a, [f, t]) => a + t - f, 0);
+    Object.entries(ups).forEach(([k, [f, t]]) => siGodTierUp(k, f, t));
+    if (n) siToast(`升級 ${n} 次!`);
+    siSaveAll(); siRender(); siRevealFlush();
+    return;
+  }
   const b = ev.target.closest("[data-si-up]");
-  if (b && siUpgrade(si, si_sg, b.dataset.siUp)) { siSaveAll(); siRender(); }
+  if (!b) return;
+  const k = b.dataset.siUp, from = si.si_levels[k];
+  if (siUpgrade(si, si_sg, k)) { siGodTierUp(k, from, si.si_levels[k]); siSaveAll(); siRender(); siRevealFlush(); }
 });
 
 // ---- ?mock=1 測試面板 ----
@@ -274,6 +349,7 @@ function siBoot() {
   siRender();
   if (si.si_run && si.si_run.si_date < siToday()) {
     // 前一天沒跑完:自動結算已擊倒心魔的靈氣,今天重新開始、不加罰時
+    siFocusAddRun(si, si.si_run.si_date, si.si_run.si_elapsed_ms);
     const res = siSettle(si, si_sg, () => 1);
     si.si_last_seen = siNow();
     siModal(siViewExpired(res, si_sg.sg_chart.sg_day_master));

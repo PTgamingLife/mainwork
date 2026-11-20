@@ -22,6 +22,7 @@ export function siCreateField(canvas, hooks) {
   const f = {
     si_model: null, si_running: false, si_boss_phase: false, si_t: 0, si_scroll: 0, si_roll: 0,
     si_enemies: [], si_fx: [], si_auras: [], si_spawn_cd: 0.5, si_hit_cd: 0,
+    si_finale: null, si_parts: [], si_shake: 0, si_slow: 0,
   };
 
   // 十神位置:各點內側 / 外側
@@ -49,14 +50,40 @@ export function siCreateField(canvas, hooks) {
   }
 
   function kill(e) {
-    if (e.boss) { hooks.si_onBossDead(e.idx); f.si_boss_phase = false; return; }
+    if (e.boss) { siStartFinale(e); return; }
     const key = SI_DEMONS[e.idx].si_drop;
     hooks.si_onKill(key, e.idx);
     const g = SI_GODS.find((x) => x.si_key === key);
     f.si_auras.push({ x0: e.x, y0: SI_GROUND - 22, t: 0, g, pt: siPointOfEnergy(g.si_energy) });
   }
 
+  // 擊敗頭目:慢動作、震動、墨色爆散與金光,1.6 秒後才結算
+  function siStartFinale(e) {
+    const y = SI_GROUND - 40;
+    f.si_finale = { t: 0, idx: e.idx, x: e.x, y };
+    f.si_shake = 0.6; f.si_slow = 0.7;
+    for (let k = 0; k < 70; k++) {
+      const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 190, gold = k % 3 === 0;
+      f.si_parts.push({ x: e.x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, t: 0, life: 0.9 + Math.random() * 0.9,
+        r: gold ? 1.5 + Math.random() * 2 : 2 + Math.random() * 5, c: gold ? "#E3BE2B" : "#1E1E1E" });
+    }
+    // 靈氣大量飛向十神
+    for (let k = 0; k < 12; k++) {
+      const g = SI_GODS[k % SI_GODS.length];
+      f.si_auras.push({ x0: e.x + (Math.random() - 0.5) * 30, y0: y + (Math.random() - 0.5) * 30, t: -k * 0.06, g, pt: siPointOfEnergy(g.si_energy) });
+    }
+    if (navigator.vibrate) navigator.vibrate([60, 40, 140]);
+  }
+
   function step(dt) {
+    if (f.si_finale) {
+      f.si_finale.t += dt;
+      if (f.si_finale.t >= 1.6) { const idx = f.si_finale.idx; f.si_finale = null; f.si_boss_phase = false; hooks.si_onBossDead(idx); }
+    }
+    f.si_shake = Math.max(0, f.si_shake - dt);
+    if (f.si_slow > 0) { f.si_slow -= dt; dt *= 0.3; }
+    f.si_parts.forEach((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.vx *= 0.98; });
+    f.si_parts = f.si_parts.filter((p) => p.t < p.life);
     f.si_t += dt;
     const moving = f.si_running && !f.si_enemies.some((e) => e.x < frontX(0) + 2);
     f.si_scroll += (moving ? 60 : f.si_running ? 6 : 14) * dt;
@@ -261,6 +288,7 @@ export function siCreateField(canvas, hooks) {
     });
     // 靈氣:心魔 → 核心 → 沿相生流到該點
     f.si_auras.forEach((a) => {
+      if (a.t < 0) return; // 延遲出發的靈氣
       let px, py;
       if (a.t < 0.7) {
         const u = a.t / 0.7;
@@ -285,14 +313,38 @@ export function siCreateField(canvas, hooks) {
       ctx.strokeStyle = "rgba(122,122,120,.6)"; ctx.lineWidth = 2; ctx.lineCap = "round";
       [SI_GROUND - 40, SI_GROUND - 24, SI_GROUND - 8].forEach((y, i) => { ctx.beginPath(); ctx.moveTo(4, y); ctx.lineTo(18 + i * 6, y); ctx.stroke(); });
     }
+    ctx.save();
+    if (f.si_shake > 0) ctx.translate((Math.random() - 0.5) * 12 * f.si_shake, (Math.random() - 0.5) * 12 * f.si_shake);
     drawWheel();
     f.si_enemies.slice().reverse().forEach(drawEnemy);
     drawFx();
+    drawFinale();
+    ctx.restore();
+  }
+
+  function drawFinale() {
+    f.si_parts.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, 1 - p.t / p.life); ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    const fin = f.si_finale;
+    if (!fin) return;
+    if (fin.t < 0.35) { // 金色閃光
+      ctx.fillStyle = `rgba(255,236,170,${0.55 * (1 - fin.t / 0.35)})`; ctx.fillRect(-20, -20, SI_W + 40, SI_H + 40);
+    }
+    const s = Math.min(1, fin.t / 0.25), a = fin.t > 1.2 ? Math.max(0, 1 - (fin.t - 1.2) / 0.4) : 1;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(SI_W * 0.62, SI_H * 0.32); ctx.scale(0.6 + 0.4 * s, 0.6 + 0.4 * s);
+    ctx.font = "bold 44px 'LXGW WenKai TC', serif"; ctx.textAlign = "center"; ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(250,250,248,.9)"; ctx.strokeText("擊退", 0, 0);
+    ctx.fillStyle = "#1E1E1E"; ctx.fillText("擊退", 0, 0);
+    ctx.font = "bold 14px serif"; ctx.fillStyle = "#B8951A"; ctx.fillText(SI_DEMONS[fin.idx].si_boss, 0, 24);
+    ctx.restore();
   }
 
   return {
     si_setModel(m) { f.si_model = m; },
-    si_setRunning(on) { f.si_running = on; if (!on) { f.si_enemies = []; f.si_boss_phase = false; } },
+    si_setRunning(on) { f.si_running = on; if (!on) { f.si_enemies = []; f.si_boss_phase = false; f.si_finale = null; } },
     si_startBoss() {
       if (f.si_boss_phase) return;
       f.si_boss_phase = true; spawn(true);

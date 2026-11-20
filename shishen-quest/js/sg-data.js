@@ -128,3 +128,12 @@ export const SG_INK_WORDS = [
   "誓言寫下的那刻,你已經不是昨天的你。", "剋,不是壓制,是讓力量有形狀。",
   "生,是把今天的你,交給明天的你。", "慢慢來,比較快。", "筆鋒藏得住,才放得出。",
 ];
+
+// 八字角色:最強的能量決定角色職業(索引同五能量),也決定最容易被哪種分心拖走
+export const SG_ROLES = [
+  { sg_name: "匠師", sg_talent: "靈感、表達", sg_distract: "點子跳躍", sg_distract_desc: "新點子一直冒出來,舊的還沒做完就想做新的" },
+  { sg_name: "行商", sg_talent: "抓機會、變現", sg_distract: "機會追逐", sg_distract_desc: "被新機會、數字和訊息牽著走,手上的事一再中斷" },
+  { sg_name: "將帥", sg_talent: "紀律、掌控", sg_distract: "完美控制", sg_distract_desc: "想把每個細節都掌控好,反而遲遲不動手" },
+  { sg_name: "謀士", sg_talent: "研究、判斷", sg_distract: "過度研究", sg_distract_desc: "一直查資料、做準備,遲遲不開始真正去做" },
+  { sg_name: "俠客", sg_talent: "人脈、合作", sg_distract: "社交分心", sg_distract_desc: "訊息、邀約、別人的事一來,就放下手邊的工作" },
+];

@@ -1,9 +1,9 @@
 // 十神修行錄 — 狀態與規則(本機 localStorage;登入 LINE 時由 sg-app 同步到雲端)
-import { sgEnergyTotals } from "./sg-bazi.js?v=20261031a";
+import { sgEnergyTotals } from "./sg-bazi.js?v=20261118a";
 import {
-  SG_ENERGIES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
-} from "./sg-data.js?v=20261031a";
-import { sgVowPlan, sgOathDefaultKey } from "./sg-wuxing.js?v=20261031a";
+  SG_ENERGIES, SG_ROLES, SG_OVERUSE_SCENE, SG_WEAK_METHODS, SG_BONDS, SG_OATH_KEYWORDS, SG_ANGELS, SG_REALMS,
+} from "./sg-data.js?v=20261118a";
+import { sgVowPlan, sgOathDefaultKey, SG_ELEMENTS } from "./sg-wuxing.js?v=20261118a";
 
 const SG_KEY = "sg_state_v2";
 export const SG_STEP = 0.1;        // 每天每完成一項任務,對應能量 +0.1(只加不扣)
@@ -267,4 +267,35 @@ export function sgRealm(state) {
   let next = null;
   for (const r of SG_REALMS) { if (days >= r.sg_min) cur = r; else { next = r; break; } }
   return { cur, next, days };
+}
+
+// ---- 八字角色(依出生時的能量,不隨修行改變) ----
+export function sgRole(state) {
+  const { s, w } = sgStrongWeak(sgBaseEnergies(state));
+  return { ...SG_ROLES[s], sg_energy: s, sg_weak: w, sg_element: SG_ELEMENTS[Math.floor(state.sg_chart.sg_day_master / 2)] };
+}
+
+// ---- 專注紀錄(由十神試煉場寫入 sg_idle.si_focus:日期 → { m 分鐘, r 場數, i 中斷, f [完成, 部分, 沒有] }) ----
+export function sgFocusSummary(state, from, to) {
+  const log = state.sg_idle?.si_focus || {};
+  const out = { sg_min: 0, sg_runs: 0, sg_interrupts: 0, sg_done: [0, 0, 0], sg_days: 0 };
+  Object.entries(log).forEach(([d, v]) => {
+    if (d < from || d > to) return;
+    out.sg_min += v.m || 0; out.sg_runs += v.r || 0; out.sg_interrupts += v.i || 0;
+    (v.f || []).forEach((n, k) => { out.sg_done[k] += n || 0; });
+    if ((v.m || 0) > 0) out.sg_days += 1;
+  });
+  out.sg_min = Math.round(out.sg_min);
+  const rated = out.sg_done.reduce((a, b) => a + b, 0);
+  out.sg_done_rate = rated ? Math.round(((out.sg_done[0] + out.sg_done[1] * 0.5) / rated) * 100) : null;
+  return out;
+}
+
+export function sgFocusStreak(state, today = sgDateStr()) {
+  const log = state.sg_idle?.si_focus || {};
+  const on = (d) => (log[d]?.m || 0) > 0;
+  let day = on(today) ? today : sgAddDays(today, -1);
+  let n = 0;
+  while (on(day)) { n += 1; day = sgAddDays(day, -1); }
+  return n;
 }

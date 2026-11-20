@@ -13,6 +13,7 @@ import { ladysProcessPending } from "../_shared/ladys-extract.ts";
 import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
+import { ladysHandleAgentAssign, ladysIsWorkCmd, ladysWorkCommand } from "../_shared/ladys-agenttask.ts";
 
 // 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(狀態「構想」,誰傳的就算誰的);內文由剪片 agent 與使用者討論,LadyS 不寫
 async function ladysCmdShootTopic(text: string, uid: string) {
@@ -182,6 +183,13 @@ async function ladysHandle(ev: any, settings: any) {
     const okSrc = src.type === "group" ? src.groupId === boundGroup : src.type === "user";
     if (!okSrc || !puid || !(puid === LADYS_OWNER_UID || await ladysIsMember(puid))) return;
     const data = String(ev.postback?.data ?? "");
+    // 派工按鈕只認帳號擁有者
+    if (data.startsWith("work:assign:")) {
+      if (puid !== LADYS_OWNER_UID) return;
+      const r = await ladysHandleAgentAssign(data);
+      if (r) await ladysReply(ev.replyToken, [{ type: "text", text: r }]);
+      return;
+    }
     const msg = (await ladysHandleDeletePostback(data)) ?? (await ladysHandleNotePostback(data)) ?? (await ladysHandleWorkPostback(data));
     if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
     return;
@@ -243,6 +251,16 @@ async function ladysHandle(ev: any, settings: any) {
     return;
   }
 
+  // 一對一聊天室:「work + 內容」派工給 agent,只認帳號擁有者
+  if (src.type === "user" && uid === LADYS_OWNER_UID && ladysIsWorkCmd(text)) {
+    let msgs: unknown[];
+    try { msgs = await ladysWorkCommand(text, String(ev.message.id)); } catch (e) {
+      console.error("ladys work cmd", e instanceof Error ? e.message : e);
+      msgs = [{ type: "text", text: "派工時出了點問題,請稍後再傳一次 🙏" }];
+    }
+    await ladysReply(ev.replyToken, msgs);
+    return;
+  }
   // 一對一聊天室:只回應帳號擁有者與成員(你、老婆)的指令,其他人一律不理
   if (src.type === "user" && uid && /^拍片主題/.test(text) && (uid === LADYS_OWNER_UID || await ladysIsMember(uid))) {
     await ladysReply(ev.replyToken, [await ladysCmdShootTopic(text, uid)]);

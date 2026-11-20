@@ -117,12 +117,12 @@ export function siRunNeedMs(sg) {
   return (SI_RUN_MIN - SI_OATH_CUT_MIN[siSkillLevels(sg).si_oath.si_level]) * SI_MIN;
 }
 
-export function siRunStart(si, sg, today) {
+export function siRunStart(si, sg, today, target = "") {
   const units = siTickets(si, sg, today);
   if (!units || si.si_run) return false;
   si.si_run = {
     si_date: today, si_units: units, si_need_ms: siRunNeedMs(sg), si_penalty_ms: 0,
-    si_elapsed_ms: 0, si_pending: {}, si_boss: false, si_kills: 0,
+    si_elapsed_ms: 0, si_pending: {}, si_boss: false, si_kills: 0, si_target: String(target).slice(0, 60),
   };
   return true;
 }
@@ -224,5 +224,18 @@ export function siUpgrade(si, sg, key) {
   si.si_levels[key] += 1;
   return true;
 }
+
+// 全部升級:每次升最便宜的一個,直到靈氣都不夠;回傳 { 十神: [原等級, 新等級] }
+export function siUpgradeAll(si, sg) {
+  const from = { ...si.si_levels };
+  for (let guard = 0; guard < 2000; guard++) {
+    const ok = SI_GODS.map((g) => g.si_key).filter((k) => si.si_aura[k] >= siCost(si, sg, k))
+      .sort((a, b) => siCost(si, sg, a) - siCost(si, sg, b));
+    if (!ok.length || !siUpgrade(si, sg, ok[0])) break;
+  }
+  return Object.fromEntries(Object.keys(from).filter((k) => si.si_levels[k] !== from[k]).map((k) => [k, [from[k], si.si_levels[k]]]));
+}
+
+export const siCanUpgradeCount = (si, sg) => SI_GODS.filter((g) => si.si_aura[g.si_key] >= siCost(si, sg, g.si_key)).length;
 
 export const siDayMs = SI_DAY;

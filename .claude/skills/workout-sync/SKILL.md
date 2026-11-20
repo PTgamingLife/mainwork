@@ -7,7 +7,7 @@ description: 運動動畫交付給 LadyS。運動教練 agent 做好新的運動
 
 **資料來源:** Supabase 專案 `hhcubvixldieuwdeqnwc` 的 `public.ladys_workout_moves`(一列 = 一招)。
 **動畫檔:** repo 的 `ladys/anim/workout-<短名>.png`,合併進 main 後由 GitHub Pages 提供:
-`https://ptgaminglife.github.io/mainwork/ladys/anim/workout-<短名>.png`
+`https://ptgaminglife.github.io/oa-pages/ladys/anim/workout-<短名>.png`
 
 ## 角色
 - 這個 session 是運動教練 / 運動動畫 agent → **教練模式**
@@ -43,7 +43,7 @@ from public.ladys_workout_moves order by ladys_sort, id;
 2. **放檔案**:存到 `ladys/anim/`,只 `git add` 這些 png(不要 `git add .`)。
 3. **合併進 main ⚠️ 先問我**:push、開 PR、合併都要我同意(CLAUDE.md 權限閘)。
 4. **確認上線**:合併後等 Pages 更新,確認網址回 200 且大小 ≤ 300KB:
-   `curl -sI https://ptgaminglife.github.io/mainwork/ladys/anim/<檔名>`
+   `curl -sI https://ptgaminglife.github.io/oa-pages/ladys/anim/<檔名>`
    還沒 200 → 不要寫表(否則群組會收到破圖)。
 5. **寫入動作表(自動寫入,寫完回報)**:
 ```sql
