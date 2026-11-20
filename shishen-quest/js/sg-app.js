@@ -2,7 +2,7 @@
 import { sgCalcChart } from "./sg-bazi.js?v=20261118a";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
-  sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel, sgRole,
+  sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel, sgRole, sgDateStr,
 } from "./sg-store.js?v=20261118a";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
@@ -387,5 +387,8 @@ async function sgInitLiff() {
 
 sgView = sgDefaultView();
 sgRender();
-// 「專注」:已立下本週修行就直接進試煉場
-sgInitLiff().then(() => { if ((sgLiff || new URLSearchParams(location.search).has("mock")) && sgRequestedView() === "focus" && sgState.sg_week && sgState.sg_chart) sgGoIdle(); });
+// 「專注」:今天已打卡才直接進試煉場;還沒打卡就停在「今日」先打卡(打卡後會自動進試煉場)
+sgInitLiff().then(() => {
+  if (!(sgLiff || new URLSearchParams(location.search).has("mock")) || sgRequestedView() !== "focus") return;
+  if (sgState.sg_week && sgState.sg_chart && sgState.sg_checkins?.[sgDateStr()]) sgGoIdle();
+});
