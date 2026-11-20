@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>商業版 AI 秘書提案 DM</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 商業版（店家）提案 DM，1080×1350，不放價格；配色 A 專業商務藍金 */
+:root{
+  --aisec-navy:#0F1E3D; --aisec-navy2:#1E3360; --aisec-gray:#F3F5F8; --aisec-gold:#F5B700;
+  --aisec-white:#FFFFFF; --aisec-muted:#5B6578; --aisec-line:#DCE1EA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#888;font-family:"Noto Sans TC","WenQuanYi Zen Hei",sans-serif;color:var(--aisec-navy)}
+.aisec-dm{width:1080px;height:1350px;margin:0 auto;position:relative;overflow:hidden;background:var(--aisec-gray)}
+.aisec-head{background:var(--aisec-navy);color:#fff;padding:52px 72px 46px;position:relative}
+.aisec-head:after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;border:56px solid rgba(245,183,0,.14)}
+.aisec-chip{display:inline-flex;gap:10px;align-items:center;font-size:24px;font-weight:700;color:var(--aisec-gold);border:2px solid var(--aisec-gold);border-radius:40px;padding:8px 22px}
+.aisec-chip i{width:10px;height:10px;border-radius:50%;background:var(--aisec-gold);display:block}
+.aisec-title{font-size:74px;font-weight:900;line-height:1.2;margin-top:28px;position:relative;z-index:1}
+.aisec-title em{font-style:normal;color:var(--aisec-gold)}
+.aisec-sub{font-size:30px;font-weight:500;color:#C9D2E3;margin-top:18px}
+.aisec-body{padding:34px 72px 0}
+.aisec-pain{background:var(--aisec-white);border-radius:24px;padding:28px 34px;border-left:8px solid var(--aisec-gold)}
+.aisec-pain h3{font-size:28px;margin-bottom:10px}
+.aisec-pain p{font-size:26px;line-height:1.75;color:var(--aisec-muted)}
+.aisec-pain p span{color:#C0392B;font-weight:900;margin-right:12px}
+.aisec-h{font-size:32px;font-weight:900;margin:28px 0 14px;display:flex;align-items:center;gap:14px}
+.aisec-h:before{content:"";width:10px;height:32px;border-radius:5px;background:var(--aisec-gold)}
+.aisec-mods{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.aisec-mod{background:var(--aisec-white);border-radius:24px;padding:28px 28px 26px;border:1px solid var(--aisec-line)}
+.aisec-mod .tag{display:inline-block;background:var(--aisec-navy);color:var(--aisec-gold);font-size:22px;font-weight:900;border-radius:10px;padding:4px 14px}
+.aisec-mod h4{font-size:36px;font-weight:900;margin:14px 0 14px}
+.aisec-mod ol{list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:s}
+.aisec-mod li{font-size:23px;line-height:1.45;color:var(--aisec-muted);display:flex;gap:10px;counter-increment:s}
+.aisec-mod li:before{content:counter(s);flex:none;width:32px;height:32px;border-radius:50%;background:var(--aisec-gray);color:var(--aisec-navy);font-weight:900;font-size:18px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.aisec-foot{position:absolute;left:0;right:0;bottom:0;height:230px;background:var(--aisec-navy);color:#fff;padding:0 72px;display:flex;align-items:center;gap:36px}
+.aisec-foot .txt{flex:1}
+.aisec-foot b{display:block;font-size:44px;font-weight:900;color:var(--aisec-gold)}
+.aisec-foot p{font-size:26px;color:#C9D2E3;margin-top:8px;line-height:1.5}
+.aisec-qr{width:170px;height:170px;background:#fff;border-radius:18px;padding:12px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--aisec-navy);font-size:20px;font-weight:700;text-align:center}
+.aisec-qr img{width:100%;height:100%;display:block}
+</style>
+</head>
+<body>
+<div class="aisec-dm" id="aisec_dm_biz">
+  <div class="aisec-head">
+    <div class="aisec-chip"><i></i>商業版 LINE AI 秘書｜店家專用</div>
+    <h1 class="aisec-title">一句話發推播，<br>每位員工都有<em> AI 小助理</em></h1>
+    <p class="aisec-sub">老闆不用再當全店的提醒鬧鐘。</p>
+  </div>
+  <div class="aisec-body">
+    <div class="aisec-pain">
+      <h3>店長的日常是不是這樣？</h3>
+      <p><span>✗</span>想發活動訊息，卡在不會寫、不知道發給誰</p>
+      <p><span>✗</span>交辦全靠嘴，員工忘了、做了沒也不知道</p>
+      <p><span>✗</span>新人一直問同樣的流程，資深員工被打斷</p>
+    </div>
+    <div class="aisec-h">兩大功能</div>
+    <div class="aisec-mods">
+      <div class="aisec-mod"><span class="tag">模組 ①</span><h4>推播助手</h4>
+        <ol><li>一句話寫好活動文案</li><li>選對象：老客、沉睡客、生日月</li><li>排程發送，自動回報開啟數</li></ol></div>
+      <div class="aisec-mod"><span class="tag">模組 ②</span><h4>員工管理</h4>
+        <ol><li>依職務分派任務給員工</li><li>員工完成後在 LINE 回報</li><li>每天自動彙整日報給老闆</li></ol></div>
+    </div>
+  </div>
+  <div class="aisec-foot">
+    <div class="txt"><b>預約免費諮詢</b><p>掃描 QR code 加入 LINE 官方帳號<br>依你的店家規模，量身規劃導入方案</p></div>
+    <div class="aisec-qr" id="aisec_qr">QR code<br>待補</div>
+  </div>
+</div>
+</body>
+</html>
