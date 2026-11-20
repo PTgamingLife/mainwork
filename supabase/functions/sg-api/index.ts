@@ -138,6 +138,15 @@ async function takeAiQuota(uid: string): Promise<boolean> {
   return true;
 }
 
+// 八字角色(與前端 SG_ROLES 相同,依最旺能量):名稱、分心型態、說明
+const SG_ROLES = [
+  ["匠師", "點子跳躍", "新點子一直冒出來,舊的還沒做完就想做新的"],
+  ["行商", "機會追逐", "被新機會、數字和訊息牽著走,手上的事一再中斷"],
+  ["將帥", "完美控制", "想把每個細節都掌控好,反而遲遲不動手"],
+  ["謀士", "過度研究", "一直查資料、做準備,遲遲不開始真正去做"],
+  ["俠客", "社交分心", "訊息、邀約、別人的事一來,就放下手邊的工作"],
+];
+
 async function suggestVows(body: any) {
   const E = Array.isArray(body.energies) && body.energies.length === 5 ? body.energies.map((v: unknown) => Number(v) || 0) : null;
   if (!E) throw new Error("BAD_INPUT");
@@ -149,14 +158,17 @@ async function suggestVows(body: any) {
   const c = (s + 3) % 5, m = (w2 + 4) % 5; // 剋最強者、生第二弱者
   const pKey = transformKey(dm, c, s), bKey = transformKey(dm, m, w2);
   const en = (e: number) => `${ENERGY_NAMES[e]}(${ELEMENTS[elemOf(dm, e)]})`;
-  const system = `你是「十神修行錄」的修行教練。使用者的五種能量(括號為五行):${ENERGY_NAMES.map((n, i) => `${en(i)} ${E[i].toFixed(2)}`).join("、")}。
+  const ri = Number(body.role);
+  const role = SG_ROLES[Number.isInteger(ri) && ri >= 0 && ri < 5 ? ri : s]; // 角色依命盤原始能量(前端傳入),沒有就用目前最旺
+  const system = `你是「十神修行錄」的專注教練,目標是幫使用者提升專注力。使用者的角色是「${role[0]}」,最容易的分心型態是「${role[1]}」(${role[2]})。
+使用者的五種能量(括號為五行):${ENERGY_NAMES.map((n, i) => `${en(i)} ${E[i].toFixed(2)}`).join("、")}。
 最旺:${en(s)};最弱:${en(w)};第二弱:${en(w2)}。
 每個選項都要用「五行轉化型態」決定行動的形式。十種型態:
 ${TRANSFORM_KEYS.map((k) => `- ${k}・${TRANSFORMS[k]}`).join("\n")}
-請產生三類選項,各剛好 3 個,使用繁體中文,每個 15–60 字,具體、可在日常執行、可被檢核:
+請產生三類選項,各剛好 3 個,使用繁體中文,每個 15–60 字,具體、可在日常執行、可被檢核;每個選項都要寫成一段可以專心執行的行為(例如「每天 20 分鐘只做 X,期間不碰 Y」):
 1. oaths(誓言):保留使用者誓言的原意,改寫成 30 天內可衡量的目標;energy 填這個誓言主要需要的能量;transform 從十種型態中選最符合誓言內容的一種,並讓行動形式符合該型態。
-2. precepts(戒律,每日):型態固定為「${pKey}」——以${en(c)}剋制過旺的${en(s)}。${preceptWish ? "使用者已寫下想遵守的戒律,三個選項都必須以它為主體改寫,保留其中的關鍵行為、對象與數字,再依此型態寫出行動形式。" : "寫出在最旺能量容易用過頭的情境,依此型態約束自己的做法。"}
-3. bonds(約束,7 天挑戰):型態固定為「${bKey}」——以${en(m)}生${en(w2)},寫成 7 天內每天或累計可完成的具體挑戰。
+2. precepts(戒律,每日):型態固定為「${pKey}」——以${en(c)}剋制過旺的${en(s)}。${preceptWish ? "使用者已寫下想遵守的戒律,三個選項都必須以它為主體改寫,保留其中的關鍵行為、對象與數字,再依此型態寫出行動形式。" : "寫出在最旺能量容易用過頭的情境,依此型態約束自己的做法。"}三個戒律都要專門擋住「${role[1]}」這種分心,寫清楚專注時段內不做什麼。
+3. bonds(約束,7 天挑戰):型態固定為「${bKey}」——以${en(m)}生${en(w2)},寫成 7 天專注挑戰(每天或累計的專注分鐘、專注次數或完成的成果)。
 不要提八字、十神術語,不要醫療、投資或保證性承諾。`;
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
