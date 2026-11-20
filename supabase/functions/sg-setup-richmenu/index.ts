@@ -1,7 +1,7 @@
 // 十神修行錄 — 一次性設定 OA 圖文選單(會刪除該 OA 現有的所有圖文選單)
 //   supabase functions deploy sg-setup-richmenu --no-verify-jwt
 //   POST { image_b64 } + header x-sg-key(= sg_push_auth.token)
-// 圖片:2500x843 PNG,四格按鈕 → SG_LIFF_URL?view=chart|today|angel|growth(各開對應頁面)
+// 圖片:2500x843 PNG,四格按鈕 → SG_LIFF_URL?view=chart|focus|angel|growth(角色/專注/天使/修行)
 
 const LINE_TOKEN = Deno.env.get("SG_LINE_CHANNEL_ACCESS_TOKEN") ?? "";
 const LIFF_URL = Deno.env.get("SG_LIFF_URL") ?? "";
@@ -9,7 +9,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 // 四格:左到右
-const SG_MENU: [string, string][] = [["chart", "命盤"], ["today", "今日"], ["angel", "天使"], ["growth", "修行"]];
+const SG_MENU: [string, string][] = [["chart", "角色"], ["focus", "專注"], ["angel", "天使"], ["growth", "修行"]];
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

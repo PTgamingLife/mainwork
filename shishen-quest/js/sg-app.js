@@ -2,7 +2,7 @@
 import { sgCalcChart } from "./sg-bazi.js?v=20261118a";
 import {
   sgLoad, sgSave, sgEmptyState, sgStartWeek, sgResetWeek, sgCheckin, sgRealm, sgSubmitReview, sgWeekProgress,
-  sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel,
+  sgFallbackOptions, sgEnergies, sgWishPool, sgMakeWish, sgFallbackWish, sgAngel, sgRole,
 } from "./sg-store.js?v=20261118a";
 import {
   sgViewOnboard, sgViewChart, sgViewToday, sgViewAngel, sgViewReview, sgViewGrowth,
@@ -109,7 +109,7 @@ async function sgHandleWish(form) {
     if (!sgLiff) throw new Error("離線模式");
     clearTimeout(sgSyncTimer);
     await sgApi("save", { state: sgState }); // 確保雲端已有資料列(AI 次數記在上面)
-    const r = await sgApi("suggest", { oath_wish: sgUi.oathWish, precept_wish: sgUi.preceptWish, energies: sgEnergies(sgState), day_master: sgState.sg_chart.sg_day_master });
+    const r = await sgApi("suggest", { oath_wish: sgUi.oathWish, precept_wish: sgUi.preceptWish, energies: sgEnergies(sgState), day_master: sgState.sg_chart.sg_day_master, role: sgRole(sgState).sg_energy });
     const o = r.options;
     if (!(o?.oaths?.length && o?.precepts?.length && o?.bonds?.length)) throw new Error("AI 回傳不完整");
     sgUi.options = sgWithPlan(o);
@@ -340,9 +340,9 @@ $main.addEventListener("click", (e) => {
   }
 });
 
-// LINE 圖文選單四格各自開 LIFF:…?view=chart|today|angel|growth
+// LINE 圖文選單四格各自開 LIFF:…?view=chart(角色)|focus(專注→試煉場)|angel|growth
 // (LIFF 首次開啟時參數會包在 liff.state 裡,init 後才還原到網址)
-const SG_VIEWS = ["chart", "today", "angel", "growth"];
+const SG_VIEWS = ["chart", "today", "angel", "growth", "focus"];
 function sgRequestedView() {
   const q = new URLSearchParams(location.search);
   let v = q.get("view");
@@ -352,6 +352,7 @@ function sgRequestedView() {
 
 function sgDefaultView() {
   const asked = sgRequestedView();
+  if (asked === "focus") return sgState.sg_week ? "today" : "chart"; // 等雲端載入後再進試煉場
   if (asked) return asked === "growth" && sgState.sg_week && sgWeekProgress(sgState).sg_ended ? "review" : asked;
   if (!sgState.sg_week) return "chart";
   return sgWeekProgress(sgState).sg_ended ? "review" : "today";
@@ -386,4 +387,5 @@ async function sgInitLiff() {
 
 sgView = sgDefaultView();
 sgRender();
-sgInitLiff();
+// 「專注」:已立下本週修行就直接進試煉場
+sgInitLiff().then(() => { if ((sgLiff || new URLSearchParams(location.search).has("mock")) && sgRequestedView() === "focus" && sgState.sg_week && sgState.sg_chart) sgGoIdle(); });

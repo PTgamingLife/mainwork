@@ -1,7 +1,7 @@
 // 十神修行錄 — 每日推播(由 pg_cron → public.sg_push_call(mode) 呼叫)
 //   supabase functions deploy sg-push --no-verify-jwt
-//   morning(台北 07:30):今日戒律、約束、誓言
-//   evening(台北 21:00):今天還沒打卡的人才推;一週結束後改推「填寫回顧」
+//   morning(台北 07:30):角色與今天最容易的分心、專注目標(誓言)、要守住的戒律
+//   evening(台北 21:00):今天還沒打卡的人才推,附今日專注分鐘;一週結束後改推「一週專注結算」
 //
 // secrets:
 //   SG_LINE_CHANNEL_ACCESS_TOKEN  Messaging API channel access token
@@ -30,6 +30,21 @@ async function sbSelect(table: string, query: string, tries = 3): Promise<any[]>
     await new Promise((r) => setTimeout(r, 800 * (i + 1)));
   }
   throw new Error(`SB_SELECT_${last}`);
+}
+
+// 八字角色(與前端 SG_ROLES / sgRole 相同):命盤十神分數加總成五種能量,最強者決定角色
+const SG_ENERGY_OF: Record<string, number> = {
+  shi_shen: 0, shang_guan: 0, zheng_cai: 1, pian_cai: 1, zheng_guan: 2, qi_sha: 2, zheng_yin: 3, pian_yin: 3, bi_jian: 4, jie_cai: 4,
+};
+const SG_ROLES = [["匠師", "點子跳躍"], ["行商", "機會追逐"], ["將帥", "完美控制"], ["謀士", "過度研究"], ["俠客", "社交分心"]];
+
+function sgRoleOf(state: any): { name: string; distract: string } | null {
+  const scores = state?.sg_chart?.sg_scores;
+  if (!scores) return null;
+  const e = [0, 0, 0, 0, 0];
+  for (const [k, v] of Object.entries(scores)) if (k in SG_ENERGY_OF) e[SG_ENERGY_OF[k]] += Number(v) || 0;
+  const s = [0, 1, 2, 3, 4].sort((a, b) => e[a] - e[b])[4];
+  return { name: SG_ROLES[s][0], distract: SG_ROLES[s][1] };
 }
 
 function todayTaipei(): string {
@@ -103,16 +118,20 @@ Deno.serve(async (req) => {
     let msg;
     if (ended) {
       // 一週到了:兩個時段都只提醒填回顧(結算能量)
-      msg = card(`${u.sg_nickname},一週修行結束`, [{ tag: "結算", text: "填寫一週回顧,完成的任務會讓你的能量進化。" }], "填寫修行回顧");
+      msg = card(`${u.sg_nickname},一週專注結算`, [{ tag: "結算", text: "看這週專注了幾分鐘、完成率多少,填回顧讓能量進化。" }], "填寫修行回顧");
+    } else if (mode === "morning") {
+      const role = sgRoleOf(u.sg_state);
+      msg = card(`${u.sg_nickname},今天的專注目標`, [
+        ...(role ? [{ tag: "你的角色", text: `${role.name}・今天最容易「${role.distract}」` }] : []),
+        { tag: "專注目標", text: wk.sg_oath.sg_text },
+        { tag: "守住", text: wk.sg_precept.sg_text },
+      ], "開始專注");
     } else {
-      const lines = [
-        { tag: "戒律", text: wk.sg_precept.sg_text },
-        { tag: "約束", text: wk.sg_bond?.sg_text ?? "" },
-        { tag: "誓言", text: wk.sg_oath.sg_text },
-      ].filter((l) => l.text);
-      msg = mode === "morning"
-        ? card(`${u.sg_nickname},今日的修行`, lines, "開始今日修行")
-        : card(`${u.sg_nickname},今天還沒落印`, [{ tag: "提醒", text: "花 30 秒回報今天的戒律、約束、誓言,再給自己打個分數。" }, lines[0]], "落印打卡");
+      const min = Math.round(Number(u.sg_state?.sg_idle?.si_focus?.[today]?.m) || 0);
+      msg = card(`${u.sg_nickname},今天專注了嗎?`, [
+        { tag: "提醒", text: "花 30 秒回報今天的專注,再進試煉場專注 20 分鐘。" },
+        { tag: "今日專注", text: min ? `${min} 分鐘` : "還沒開始,現在專注 20 分鐘也來得及" },
+      ], "回報今天的專注");
     }
     (await push(u.sg_line_uid, [msg])) ? sent++ : failed++;
   }
