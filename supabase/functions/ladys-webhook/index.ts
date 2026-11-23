@@ -14,6 +14,7 @@ import { ladysExpandYearly, ladysYearlyEvents } from "../_shared/ladys-life.ts";
 import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.ts";
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
 import { ladysHandleAgentAssign, ladysIsWorkCmd, ladysWorkCommand } from "../_shared/ladys-agenttask.ts";
+import { ladysAskCommand, ladysIsAskCmd } from "../_shared/ladys-advice.ts";
 
 // 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(狀態「構想」,誰傳的就算誰的);內文由剪片 agent 與使用者討論,LadyS 不寫
 async function ladysCmdShootTopic(text: string, uid: string) {
@@ -251,6 +252,16 @@ async function ladysHandle(ev: any, settings: any) {
     return;
   }
 
+  // 一對一聊天室:「問 + 問題」用資料庫與 GitHub 紀錄給建議,只認帳號擁有者
+  if (src.type === "user" && uid === LADYS_OWNER_UID && ladysIsAskCmd(text)) {
+    let msgs: unknown[];
+    try { msgs = await ladysAskCommand(text, String(ev.message.id)); } catch (e) {
+      console.error("ladys ask", e instanceof Error ? e.message : e);
+      msgs = [{ type: "text", text: "想建議時出了點問題,請稍後再問一次 🙏" }];
+    }
+    await ladysReply(ev.replyToken, msgs);
+    return;
+  }
   // 一對一聊天室:「work + 內容」派工給 agent,只認帳號擁有者
   if (src.type === "user" && uid === LADYS_OWNER_UID && ladysIsWorkCmd(text)) {
     let msgs: unknown[];
