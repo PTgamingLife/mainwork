@@ -46,6 +46,10 @@
   .ladys-chip.ladys-chip-kid.on { background: var(--ladys-kid); border-color: var(--ladys-kid); color: #3a2c12; }
   .ladys-kid-card { border-top: 4px solid var(--ladys-kid); }
   .ladys-kid-head { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-top: 6px; color: #8a6420; }
+  .ladys-kid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .ladys-kid-col { min-width: 0; }
+  .ladys-kid-col + .ladys-kid-col { border-left: 1px solid #eee; padding-left: 12px; }
+  .ladys-kid-item { padding: 8px 0; gap: 8px; } .ladys-kid-item .t { min-width: 0; word-break: break-word; font-size: 15px; }
   .ladys-kid-head span { font-weight: 400; font-size: 12px; color: var(--ladys-muted); }
   .ladys-seg button.on[data-v=elder], .ladys-seg button.on[data-v=younger] { background: var(--ladys-kid); color: #3a2c12; }
   .ladys-dots .ladys-period { background: #E58FA6; border-radius: 2px; }
