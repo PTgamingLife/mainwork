@@ -6,7 +6,7 @@
 <title>LadyS 生活秘書</title>
 <style>
   :root {
-    --ladys-husband: #6C8EBF; --ladys-wife: #D4A5A5; --ladys-both: #9A8FB0;
+    --ladys-husband: #6C8EBF; --ladys-wife: #D4A5A5; --ladys-both: #9A8FB0; --ladys-kid: #E8B86B;
     --ladys-bg: #F5F5F7; --ladys-card: #FFFFFF; --ladys-ink: #2E2E33; --ladys-muted: #8A8A93;
     --ladys-line: #E6E6EB; --ladys-danger: #C0605A; --ladys-radius: 14px;
   }
@@ -42,7 +42,12 @@
   .ladys-dots { display: flex; justify-content: center; gap: 3px; height: 6px; margin-top: 2px; }
   .ladys-dots i { width: 6px; height: 6px; border-radius: 50%; }
   .ladys-o-husband { background: var(--ladys-husband); } .ladys-o-wife { background: var(--ladys-wife); }
-  .ladys-o-both { background: var(--ladys-both); }
+  .ladys-o-both { background: var(--ladys-both); } .ladys-o-kid { background: var(--ladys-kid); }
+  .ladys-chip.ladys-chip-kid.on { background: var(--ladys-kid); border-color: var(--ladys-kid); color: #3a2c12; }
+  .ladys-kid-card { border-top: 4px solid var(--ladys-kid); }
+  .ladys-kid-head { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-top: 6px; color: #8a6420; }
+  .ladys-kid-head span { font-weight: 400; font-size: 12px; color: var(--ladys-muted); }
+  .ladys-seg button.on[data-v=elder], .ladys-seg button.on[data-v=younger] { background: var(--ladys-kid); color: #3a2c12; }
   .ladys-dots .ladys-period { background: #E58FA6; border-radius: 2px; }
   .ladys-seg button.on[data-v=period_start], .ladys-seg button.on[data-v=period_end] { background: #E58FA6; }
   .ladys-seg button.on[data-v=health], .ladys-seg button.on[data-v=other], .ladys-seg button.on[data-v=off] { background: var(--ladys-both); }
@@ -136,6 +141,7 @@
 <div class="ladys-toast" id="ladysToast"></div>
 <script src="ladys-life.js"></script>
 <script src="ladys-shoot.js"></script>
+<script src="ladys-kid.js"></script>
 <script src="ladys-money.js"></script>
 <script src="ladys.js"></script>
 </body>

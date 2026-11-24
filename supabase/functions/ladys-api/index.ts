@@ -46,7 +46,7 @@ async function ladysVerify(idToken: string): Promise<string> {
 
 async function ladysLoad(uid: string) {
   const today = ladysTodayTaipei();
-  const [settings, members, events, yearly, expenses, notes, life, receivables, shoots] = await Promise.all([
+  const [settings, members, events, yearly, expenses, notes, life, receivables, shoots, kids] = await Promise.all([
     ladysSettings(),
     ladysSelect("ladys_members", "select=ladys_line_uid,ladys_name,ladys_emoji,ladys_role&order=ladys_created_at.asc"),
     ladysSelect("ladys_events", `ladys_deleted=eq.false&ladys_start_at=gte.${encodeURIComponent(ladysDayStartIso(ladysAddDays(today, -62)))}` +
@@ -64,6 +64,8 @@ async function ladysLoad(uid: string) {
     ladysSelect("ladys_shoots", `ladys_deleted=eq.false&or=(ladys_date.is.null,ladys_date.gte.${ladysAddDays(today, -60)})&order=ladys_date.asc.nullsfirst,ladys_time.asc&limit=300` +
       "&select=id,ladys_date,ladys_time,ladys_owner,ladys_topic,ladys_content,ladys_prep,ladys_status,ladys_next_step,ladys_blocker," +
       "ladys_brief,ladys_script,ladys_assets_url,ladys_final_url,ladys_updated_by,ladys_created_at"),
+    ladysSelect("ladys_kid_logs", `ladys_deleted=eq.false&ladys_date=gte.${ladysAddDays(today, -30)}&order=ladys_date.desc,ladys_created_at.asc&limit=500` +
+      "&select=id,ladys_date,ladys_child,ladys_content,ladys_source"),
   ]);
   delete settings.ladys_group_id;
   const workIds: string[] = Array.isArray(settings.ladys_work_group_ids) ? settings.ladys_work_group_ids : [];
@@ -73,7 +75,7 @@ async function ladysLoad(uid: string) {
     catch { return { id, name: "工作群(名稱讀取失敗)" }; }
   }));
   const gcalReady = !!Deno.env.get("LADYS_GOOGLE_CREDENTIALS_JSON");
-  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, receivables, shoots, notes, life, period: ladysPeriodStats(life) };
+  return { me: uid, today, settings, gcalReady, workGroups, members, events, yearly, expenses, receivables, shoots, kids, notes, life, period: ladysPeriodStats(life) };
 }
 
 function ladysEventRow(b: any) {
@@ -148,6 +150,13 @@ function ladysLifeRow(b: any) {
   return { ladys_date: b.date, ladys_kind: kind, ladys_content: content, ladys_owner: kind.startsWith("period") ? "wife" : owner(b.owner) };
 }
 
+// 小孩每日完成事項(哥哥 / 弟弟)
+function ladysKidRow(b: any) {
+  if (!isYmd(b.date)) bad("BAD_DATE");
+  if (!["elder", "younger"].includes(b.child)) bad("BAD_CHILD");
+  return { ladys_date: b.date, ladys_child: b.child, ladys_content: str(b.content, 120) || bad("BAD_CONTENT") };
+}
+
 const TABLES: Record<string, [string, (b: any) => Record<string, unknown>]> = {
   event: ["ladys_events", ladysEventRow],
   expense: ["ladys_expenses", ladysExpenseRow],
@@ -155,6 +164,7 @@ const TABLES: Record<string, [string, (b: any) => Record<string, unknown>]> = {
   life: ["ladys_life", ladysLifeRow],
   receivable: ["ladys_receivables", ladysReceivableRow],
   shoot: ["ladys_shoots", ladysShootRow],
+  kid: ["ladys_kid_logs", ladysKidRow],
 };
 
 async function ladysSave(kind: string, b: any) {
