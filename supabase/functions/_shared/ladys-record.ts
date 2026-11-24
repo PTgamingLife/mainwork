@@ -1,14 +1,19 @@
-// LadyS — 一對一傳錄音(語音訊息或音檔,10 分鐘內)→ Groq Whisper 逐字稿 → Haiku 摘要 → 推播摘要卡 + 待辦/行程確認卡
+// LadyS — 一對一傳錄音(語音訊息或音檔,10 分鐘內)→ OpenAI(優先)或 Groq 逐字稿 → Haiku 摘要 → 推播摘要卡 + 待辦/行程確認卡
 // 只認帳號擁有者(呼叫端檢查 uid)。音檔不保存,逐字稿與摘要存 ladys_recordings;待辦/行程走 ladys_pending,按 ✅ 才寫入。
-// secrets:LADYS_GROQ_API_KEY、ANTHROPIC_API_KEY、LADYS_LINE_CHANNEL_ACCESS_TOKEN
+// secrets:LADYS_OPENAI_API_KEY 或 LADYS_GROQ_API_KEY(擇一,有 OpenAI 就用 OpenAI)、ANTHROPIC_API_KEY、LADYS_LINE_CHANNEL_ACCESS_TOKEN
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { LADYS_LINE_TOKEN, ladysCard, ladysInsert, ladysMask, ladysPush, ladysTodayTaipei, ladysUpdate } from "./ladys.ts";
 import { ladysWorkCards } from "./ladys-work.ts";
 
 const MAX_SEC = 600;                 // 上限 10 分鐘
-const MAX_BYTES = 24_000_000;        // Groq 單檔上限約 25MB
+const MAX_BYTES = 24_000_000;        // OpenAI / Groq 單檔上限約 25MB
 const AUDIO_EXT = /\.(m4a|mp3|mp4|aac|wav|ogg|oga|opus|webm|flac|amr|3gp)$/i;
 const GROQ_KEY = Deno.env.get("LADYS_GROQ_API_KEY") ?? "";
+const OPENAI_KEY = Deno.env.get("LADYS_OPENAI_API_KEY") ?? "";
+// 語音轉文字服務:OpenAI 優先(gpt-4o-mini-transcribe,不回傳長度 → 以 LINE 提供的長度為準),否則 Groq Whisper
+const STT = OPENAI_KEY
+  ? { url: "https://api.openai.com/v1/audio/transcriptions", key: OPENAI_KEY, model: "gpt-4o-mini-transcribe", format: "json" }
+  : { url: "https://api.groq.com/openai/v1/audio/transcriptions", key: GROQ_KEY, model: "whisper-large-v3", format: "verbose_json" };
 const client = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") ?? "" });
 const text = (t: string) => ({ type: "text", text: t });
 const isYmd = (s: unknown) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -19,13 +24,13 @@ export const ladysIsRecordMsg = (m: any) => m?.type === "audio" || (m?.type === 
 
 // 收到當下就能判斷的拒絕理由;null = 可以處理
 export function ladysRecordPrecheck(m: any): string | null {
-  if (!GROQ_KEY) return "錄音轉文字還沒設定好(缺語音轉文字金鑰)🙏";
+  if (!STT.key) return "錄音轉文字還沒設定好(缺語音轉文字金鑰)🙏";
   if (m.type === "audio" && Number(m.duration) > MAX_SEC * 1000) return `錄音有 ${Math.round(Number(m.duration) / 60000)} 分鐘,超過 10 分鐘上限,請剪短再傳 🙏`;
   if (m.type === "file" && Number(m.fileSize) > MAX_BYTES) return "音檔太大(超過 24MB),請剪短或壓縮再傳 🙏";
   return null;
 }
 
-async function ladysTranscribe(msgId: string, fileName: string): Promise<{ text: string; duration: number }> {
+async function ladysTranscribe(msgId: string, fileName: string, lineDurMs: number): Promise<{ text: string; duration: number }> {
   const res = await fetch(`https://api-data.line.me/v2/bot/message/${msgId}/content`, { headers: { Authorization: `Bearer ${LADYS_LINE_TOKEN}` } });
   if (res.status === 404 || res.status === 410) throw new Error("REC_GONE");
   if (!res.ok) throw new Error(`REC_FETCH_${res.status}`);
@@ -33,14 +38,14 @@ async function ladysTranscribe(msgId: string, fileName: string): Promise<{ text:
   if (buf.length > MAX_BYTES) throw new Error("REC_TOO_BIG");
   const form = new FormData();
   form.append("file", new Blob([buf], { type: res.headers.get("content-type") ?? "audio/mp4" }), fileName);
-  form.append("model", "whisper-large-v3");
+  form.append("model", STT.model);
   form.append("language", "zh");
-  form.append("response_format", "verbose_json");
+  form.append("response_format", STT.format);
   form.append("prompt", "以下是繁體中文的錄音。");
-  const r = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${GROQ_KEY}` }, body: form });
+  const r = await fetch(STT.url, { method: "POST", headers: { Authorization: `Bearer ${STT.key}` }, body: form });
   if (!r.ok) throw new Error(`REC_STT_${r.status}:${(await r.text()).slice(0, 120)}`);
   const j = await r.json();
-  return { text: String(j.text ?? "").trim(), duration: Math.round(Number(j.duration) || 0) };
+  return { text: String(j.text ?? "").trim(), duration: Math.round(Number(j.duration) || lineDurMs / 1000 || 0) };
 }
 
 const S = { type: "string" };
@@ -81,7 +86,7 @@ export async function ladysRecordProcess(m: any, to: string): Promise<void> {
     "resolution=ignore-duplicates,return=representation");
   if (!row) return; // 同一則重送,不重做
   try {
-    const t = await ladysTranscribe(msgId, kind === "audio" ? "audio.m4a" : clip(m.fileName, 80));
+    const t = await ladysTranscribe(msgId, kind === "audio" ? "audio.m4a" : clip(m.fileName, 80), Number(m.duration) || 0);
     if (t.duration > MAX_SEC + 10) {
       await ladysUpdate("ladys_recordings", `id=eq.${row.id}`, { ladys_status: "rejected", ladys_duration_s: t.duration });
       await ladysPush(to, [text(`錄音有 ${Math.round(t.duration / 60)} 分鐘,超過 10 分鐘上限,請剪短再傳 🙏`)]);
