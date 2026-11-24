@@ -15,7 +15,8 @@ import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.t
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
 import { ladysHandleAgentAssign, ladysIsWorkCmd, ladysWorkCommand } from "../_shared/ladys-agenttask.ts";
 import { ladysAskCommand, ladysIsAskCmd } from "../_shared/ladys-advice.ts";
-import { ladysIsRecordMsg, ladysRecordPrecheck, ladysRecordProcess } from "../_shared/ladys-record.ts";
+import { ladysIsRecordMsg, ladysIsShortVoice, ladysRecordPrecheck, ladysRecordProcess } from "../_shared/ladys-record.ts";
+import { ladysExecCommand, ladysHandleExecPostback, ladysIsExecCmd } from "../_shared/ladys-recexec.ts";
 
 // 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(狀態「構想」,誰傳的就算誰的);內文由剪片 agent 與使用者討論,LadyS 不寫
 async function ladysCmdShootTopic(text: string, uid: string) {
@@ -192,6 +193,12 @@ async function ladysHandle(ev: any, settings: any) {
       if (r) await ladysReply(ev.replyToken, [{ type: "text", text: r }]);
       return;
     }
+    if (data.startsWith("ladys_rx=")) {
+      if (puid !== LADYS_OWNER_UID) return;
+      const r = await ladysHandleExecPostback(data);
+      if (r) await ladysReply(ev.replyToken, [{ type: "text", text: r }]);
+      return;
+    }
     const msg = (await ladysHandleDeletePostback(data)) ?? (await ladysHandleNotePostback(data)) ?? (await ladysHandleWorkPostback(data));
     if (msg) await ladysReply(ev.replyToken, [{ type: "text", text: msg }]);
     return;
@@ -204,9 +211,11 @@ async function ladysHandle(ev: any, settings: any) {
   // 一對一傳錄音(10 分鐘內):先回「整理中」,背景轉逐字稿 + 摘要,完成後推播(只認帳號擁有者)
   if (ev.type === "message" && src.type === "user" && src.userId === LADYS_OWNER_UID && ladysIsRecordMsg(ev.message)) {
     const no = ladysRecordPrecheck(ev.message);
-    await ladysReply(ev.replyToken, [{ type: "text", text: no ?? "🎙️ 收到錄音,整理中(約 1 分鐘)…" }]);
+    // 短語音不先回「整理中」,把 reply token 留給答案;長語音 / 音檔先回「整理中」
+    const short = !no && ladysIsShortVoice(ev.message);
+    if (!short) await ladysReply(ev.replyToken, [{ type: "text", text: no ?? "🎙️ 收到錄音,整理中(約 1 分鐘)…" }]);
     if (!no) {
-      const job = ladysRecordProcess(ev.message, src.userId);
+      const job = ladysRecordProcess(ev.message, src.userId, short ? ev.replyToken : "");
       // deno-lint-ignore no-explicit-any
       const rt = (globalThis as any).EdgeRuntime;
       if (rt?.waitUntil) rt.waitUntil(job); else await job;
@@ -265,6 +274,16 @@ async function ladysHandle(ev: any, settings: any) {
     return;
   }
 
+  // 一對一聊天室:回覆錄音整理卡並輸入「執行」→ 逐筆確認加入 / 派工,只認帳號擁有者
+  if (src.type === "user" && uid === LADYS_OWNER_UID && ladysIsExecCmd(text)) {
+    let msgs: unknown[];
+    try { msgs = await ladysExecCommand(String(ev.message.quotedMessageId ?? ""), uid); } catch (e) {
+      console.error("ladys exec", e instanceof Error ? e.message : e);
+      msgs = [{ type: "text", text: "執行時出了點問題,請稍後再試一次 🙏" }];
+    }
+    await ladysReply(ev.replyToken, msgs);
+    return;
+  }
   // 一對一聊天室:「問 + 問題」用資料庫與 GitHub 紀錄給建議,只認帳號擁有者
   if (src.type === "user" && uid === LADYS_OWNER_UID && ladysIsAskCmd(text)) {
     let msgs: unknown[];

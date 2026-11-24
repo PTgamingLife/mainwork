@@ -104,3 +104,9 @@ export async function ladysHandleAgentAssign(data: string): Promise<string | nul
     { ladys_agent: agent, ladys_status: "待處理", ladys_route: "user", ladys_updated_at: new Date().toISOString() });
   return r ? `✅ 已派給 ${LABEL[agent]} agent:${short(r.ladys_content)}` : "這張工作單已經指派過了 👌";
 }
+
+// 給其他功能用:依內容挑 agent(開頭指定 → 關鍵字只命中一個 → Haiku);挑不出來回 null
+export async function ladysPickAgent(content: string): Promise<{ agent: Agent; label: string } | null> {
+  const a = ladysRoute(content)?.agent ?? await ladysAiRoute(content);
+  return a ? { agent: a, label: LABEL[a] } : null;
+}
