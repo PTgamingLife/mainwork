@@ -33,7 +33,7 @@ async function syncRepo(r: any, commits: LadysCommit[]) {
     `repo:${r.name}(${r.private ? "私人" : "公開"},最後推送 ${String(r.pushed_at).slice(0, 10)})\n說明:${r.description ?? ""}\n` +
     `網站:${r.homepage || (r.has_pages ? `https://ptgaminglife.github.io/${r.name}/` : "")}\n根目錄:${files}\n` +
     `最近 commit:\n${commits.map((c) => `${c.date} ${c.msg}`).join("\n")}\n\nREADME:\n${String(readme ?? "").slice(0, 12000)}\n\n` +
-    "title:作品名稱(15 字內);summary:300~500 字,含做什麼、目前進度、最近在改什麼、網址。", ONE, 1500);
+    "title:作品名稱(15 字內);summary:300~500 字,含做什麼、目前進度、最近在改什麼、網址。", ONE, 4000);
   await upsert([{ ladys_kind: "project", ladys_key: `repo:${r.name}`, ladys_repo: r.name, ladys_title: ladysClean(out.title, 40),
     ladys_summary: ladysClean(out.summary, 1200), ladys_source_sha: commits[0]?.date ?? "", ladys_pushed_at: r.pushed_at }]);
 }
@@ -62,14 +62,15 @@ async function syncMain(r: any, commits: LadysCommit[]) {
   const models = tree.filter((t: any) => t.type === "blob" && /(^|\/)MODEL\.md$/.test(t.path));
   const have = new Map((await ladysSelect("ladys_knowledge", "ladys_kind=eq.model&select=ladys_key,ladys_source_sha")).map((x: any) => [x.ladys_key, x.ladys_source_sha]));
   const todo = models.filter((m: any) => have.get(`model:${m.path}`) !== m.sha);
-  await ladysPool(todo, 4, async (m: any) => {
+  const res = await ladysPool(todo, 4, async (m: any) => {
     const text = await ladysGh(`/repos/${LADYS_GH_OWNER}/${MAIN}/contents/${m.path}`, true);
     const o = await ladysCondense(`模型檔 ${m.path}:\n${String(text ?? "").slice(0, 40000)}\n\n` +
-      "title:這份模型在管什麼(15 字內);summary:500~800 字,保留目標、關鍵數字、目前策略與規則、最新校正結論。", ONE, 2000);
+      "title:這份模型在管什麼(15 字內);summary:500~800 字,保留目標、關鍵數字、目前策略與規則、最新校正結論。", ONE, 5000);
     await upsert([{ ladys_kind: "model", ladys_key: `model:${m.path}`, ladys_repo: MAIN, ladys_title: ladysClean(o.title, 40),
       ladys_summary: ladysClean(o.summary, 1200), ladys_source_sha: m.sha, ladys_pushed_at: r.pushed_at }]);
   });
-  return { dirs: out.items?.length ?? 0, models: todo.length };
+  const failed = res.map((x, i) => x.status === "rejected" ? `${todo[i].path}:${String((x as any).reason?.message ?? "").slice(0, 60)}` : "").filter(Boolean);
+  return { dirs: out.items?.length ?? 0, models: todo.length - failed.length, model_errors: failed };
 }
 
 // 每週工作紀錄:有新 commit 的週重算(已存過、且不是最近兩週的就不動)
@@ -86,7 +87,7 @@ async function syncWeeks(commits: LadysCommit[]) {
     const prev = old.find((x: any) => x.ladys_key === `week:${w}`)?.ladys_summary ?? "";
     const o = await ladysCondense(`${w} 這週的 commit(repo 日期 訊息):\n${list.map((c) => `${c.repo} ${c.date} ${c.msg}`).join("\n").slice(0, 30000)}\n` +
       (prev ? `\n之前存的這週摘要(可能少了其他 repo,請合併):\n${prev}\n` : "") +
-      "\ntitle:這週重點(15 字內);summary:200~500 字,依作品分點寫這週完成了什麼、改了什麼。", ONE, 1500);
+      "\ntitle:這週重點(15 字內);summary:200~500 字,依作品分點寫這週完成了什麼、改了什麼。", ONE, 3000);
     await upsert([{ ladys_kind: "worklog", ladys_key: `week:${w}`, ladys_title: `${w} ${ladysClean(o.title, 30)}`, ladys_summary: ladysClean(o.summary, 1200) }]);
   });
   return todo.length;
