@@ -15,6 +15,7 @@ import { ladysMemorizeImages, ladysRememberImage } from "../_shared/ladys-memo.t
 import { ladysCheckTime } from "../_shared/ladys-timecheck.ts";
 import { ladysHandleAgentAssign, ladysIsWorkCmd, ladysWorkCommand } from "../_shared/ladys-agenttask.ts";
 import { ladysAskCommand, ladysIsAskCmd } from "../_shared/ladys-advice.ts";
+import { ladysIsRecordMsg, ladysRecordPrecheck, ladysRecordProcess } from "../_shared/ladys-record.ts";
 
 // 「拍片主題 xxx」:存成一筆還沒排日期的拍片主題(狀態「構想」,誰傳的就算誰的);內文由剪片 agent 與使用者討論,LadyS 不寫
 async function ladysCmdShootTopic(text: string, uid: string) {
@@ -198,6 +199,18 @@ async function ladysHandle(ev: any, settings: any) {
   // 家庭群組的圖片:只記訊息編號,供「記憶以上圖片」使用
   if (ev.type === "message" && ev.message?.type === "image" && src.type === "group" && boundGroup && src.groupId === boundGroup) {
     await ladysRememberImage(ev, boundGroup);
+    return;
+  }
+  // 一對一傳錄音(10 分鐘內):先回「整理中」,背景轉逐字稿 + 摘要,完成後推播(只認帳號擁有者)
+  if (ev.type === "message" && src.type === "user" && src.userId === LADYS_OWNER_UID && ladysIsRecordMsg(ev.message)) {
+    const no = ladysRecordPrecheck(ev.message);
+    await ladysReply(ev.replyToken, [{ type: "text", text: no ?? "🎙️ 收到錄音,整理中(約 1 分鐘)…" }]);
+    if (!no) {
+      const job = ladysRecordProcess(ev.message, src.userId);
+      // deno-lint-ignore no-explicit-any
+      const rt = (globalThis as any).EdgeRuntime;
+      if (rt?.waitUntil) rt.waitUntil(job); else await job;
+    }
     return;
   }
   if (ev.type !== "message" || ev.message?.type !== "text") return; // 貼圖/語音暫不處理
