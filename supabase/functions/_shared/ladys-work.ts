@@ -129,7 +129,7 @@ function pendingLine(p: any): string {
   return `${d.ladys_flow === "in" ? "💵 收入" : "💰"} $${Number(d.ladys_amount).toLocaleString("en-US")} ${d.ladys_note.replace(/^💼 /, "")}`;
 }
 
-export function ladysWorkCards(items: any[]): unknown[] {
+export function ladysWorkCards(items: any[], title = "💼 工作群記錄,要加入嗎?"): unknown[] {
   const cards: unknown[] = [];
   for (let i = 0; i < items.length; i += LADYS_WORK_PER_CARD) {
     const part = items.slice(i, i + LADYS_WORK_PER_CARD);
@@ -143,11 +143,11 @@ export function ladysWorkCards(items: any[]): unknown[] {
       ] },
     ]);
     cards.push({
-      type: "flex", altText: `💼 工作群記錄 ${items.length} 筆,要加入嗎?`,
+      type: "flex", altText: `${title.replace(/,要加入嗎\?$/, "")} ${items.length} 筆,要加入嗎?`,
       contents: { type: "bubble", styles: { body: { backgroundColor: LADYS_C.bg }, footer: { backgroundColor: LADYS_C.bg } },
         body: { type: "box", layout: "vertical", spacing: "xs", contents: [
           { type: "text", text: "LadyS", size: "xs", color: LADYS_C.wife, weight: "bold" },
-          { type: "text", text: `💼 工作群記錄,要加入嗎?${items.length > LADYS_WORK_PER_CARD ? `(${i / LADYS_WORK_PER_CARD + 1})` : ""}`,
+          { type: "text", text: `${title}${items.length > LADYS_WORK_PER_CARD ? `(${i / LADYS_WORK_PER_CARD + 1})` : ""}`,
             size: "lg", color: LADYS_C.ink, weight: "bold", wrap: true },
           { type: "text", text: `沒按的 ${LADYS_WORK_EXPIRE_DAYS} 天後自動作廢`, size: "xs", color: LADYS_C.muted },
           { type: "separator", color: LADYS_C.husband, margin: "md" },

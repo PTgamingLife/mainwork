@@ -15,7 +15,7 @@ async function ladysAdviceContext(): Promise<string> {
   const today = ladysTodayTaipei();
   const prevMonth = ladysAddDays(`${today.slice(0, 7)}-01`, -1).slice(0, 7) + "-01";
   const since90 = ladysAddDays(today, -90);
-  const [know, events, money, recv, notes, life, shoots, tasks, past] = await Promise.all([
+  const [know, events, money, recv, notes, life, shoots, tasks, past, recs] = await Promise.all([
     safe(ladysSelect("ladys_knowledge", "select=ladys_kind,ladys_title,ladys_summary,ladys_updated_at&order=ladys_kind.asc,ladys_updated_at.desc&limit=200"), []),
     safe(ladysEventsBetween(today, ladysAddDays(today, 31)), []),
     safe(ladysSelect("ladys_expenses", `ladys_deleted=eq.false&ladys_payer=neq.wife&ladys_date=gte.${prevMonth}&order=ladys_date.desc&select=ladys_date,ladys_amount,ladys_category,ladys_flow,ladys_note`), []),
@@ -25,6 +25,7 @@ async function ladysAdviceContext(): Promise<string> {
     safe(ladysSelect("ladys_shoots", "ladys_deleted=eq.false&ladys_owner=neq.wife&ladys_status=not.in.(已上片,暫停)&order=ladys_date.asc.nullslast&limit=20&select=ladys_date,ladys_topic,ladys_status,ladys_next_step"), []),
     safe(ladysSelect("ladys_agent_tasks", "ladys_status=in.(待指派,待處理,處理中)&order=ladys_created_at.desc&limit=20&select=ladys_agent,ladys_status,ladys_content"), []),
     safe(ladysSelect("ladys_advice_log", "order=ladys_created_at.desc&limit=5&select=ladys_created_at,ladys_question,ladys_answer"), []),
+    safe(ladysSelect("ladys_recordings", "ladys_status=eq.done&order=ladys_created_at.desc&limit=10&select=ladys_created_at,ladys_title,ladys_summary"), []),
   ]);
 
   const month = today.slice(0, 7);
@@ -48,6 +49,7 @@ async function ladysAdviceContext(): Promise<string> {
     sec("近 90 天生活紀錄", life.map((l: any) => `${l.ladys_date} ${l.ladys_content}`)),
     sec("拍片進度", shoots.map((s: any) => `${s.ladys_date ?? "未排日"} ${s.ladys_topic}(${s.ladys_status})${s.ladys_next_step ? ` 下一步:${s.ladys_next_step}` : ""}`)),
     sec("agent 工作單", tasks.map((t: any) => `${t.ladys_agent ?? "未指派"} ${t.ladys_status} ${String(t.ladys_content).slice(0, 60)}`)),
+    sec("最近的錄音摘要", recs.map((r: any) => `${String(r.ladys_created_at).slice(0, 10)} ${r.ladys_title}:${String(r.ladys_summary).replace(/\n/g, ";").slice(0, 400)}`)),
     sec("最近的問答", past.map((p: any) => `${String(p.ladys_created_at).slice(0, 10)} 問:${p.ladys_question}\n答:${String(p.ladys_answer).slice(0, 300)}`)),
   ].join("\n\n");
 }
