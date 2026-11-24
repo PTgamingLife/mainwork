@@ -72,7 +72,7 @@ function ladysSystemPrompt(settings: any, memberDesc: string) {
 - 每則訊息開頭有 [#編號 日期(星期) 時間],source_ids 填依據的編號。
 - 「明天、下週三、月底」等相對日期,一律以「該則訊息送出的日期」換算成 YYYY-MM-DD(台北時間)。
 - 分類原則:每件事只能放一類。有明確日期、星期幾或可推算日期的事 → events(行事曆),即使只是「禮拜一要跟媽媽說某件事」也算;沒有日期但要去完成的事 → notes 的 todo(待辦);長期想達成的方向、計畫(例如半年還清債務、年前瘦身五公斤)→ notes 的 goal(目標)。
-- life(生活紀錄):已經發生的生活細節,date 為發生日,kind 只能是 period_start / period_end / health / other。經期:「月經來了/MC 來」→ period_start,「結束了/乾淨了」→ period_end,owner 通常是 wife;身體狀況(感冒、看醫生、體重、吃藥、睡眠)→ health;其他值得記住的生活細節(喜好、尺寸、某人說過的重要事)→ other。content 寫成一句完整描述。
+- life(生活紀錄):已經發生的生活細節,date 為發生日,kind 只能是 period_start / period_end / health / other。經期:「月經來了/MC 來」→ period_start,「結束了/乾淨了」→ period_end,owner 通常是 wife;身體狀況(感冒、看醫生、體重、吃藥、睡眠)→ health;其他值得記住的生活細節(喜好、尺寸、某人說過的重要事)→ other。content 寫成一句完整描述。\n- 小孩每日完成事項(兩個小孩:哥哥、弟弟):對話提到小孩今天已經做了 / 吃了 / 喝了某件日常事(例如「哥哥喝藥了」「弟弟魚油吃了」「兩個都刷牙了」)→ 放 life,kind 填 kid_elder(哥哥)或 kid_younger(弟弟),兩個都有就各放一筆,content 只寫做了什麼(例如「喝藥」「魚油」),date 為發生日。
 - 生日、結婚紀念日、交往紀念日、各種週年 → events 且 yearly=true,date 用原始日期(知道年份就用原始年份,不知道就用今年),title 寫清楚是誰的什麼紀念日;其他行程 yearly=false。
 - events:約會、看診、聚餐、繳費日、接送、要在某天做或說的事。title 要具體(例如「跟媽媽分享:請款30、誰先找到工作誰上班、家裡場地借用」)。time 用 HH:MM,沒講時間就給空字串(視為全天);end_time 沒講給空字串;location 沒講給空字串。title 保持精簡,額外資訊(要帶的東西、穿著、聯絡人、訂位/訂房細節、注意事項)放 note(150 字內),沒有就給空字串。
 - obsolete:對話明確說「已存在的行程」中某筆改期、取消、不去了、改地點時間 → 填那筆的編號(例如 E3)與 20 字內原因(例如「改到 11/12」);改期的新日期照常放 events。只填清單裡有的編號,不確定就不要填。
@@ -172,6 +172,11 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
       ladys_owner: ownerOk(n.owner), ladys_source_msg_ids: ids(n.source_ids),
     }));
 
+  // 小孩每日完成事項:life 裡 kind = kid_elder / kid_younger 的改存 ladys_kid_logs
+  const kids = (out.life ?? [])
+    .filter((l: any) => isYmd(l.date) && (l.kind === "kid_elder" || l.kind === "kid_younger") && clip(l.content, 120))
+    .map((l: any) => ({ ladys_date: l.date, ladys_child: l.kind === "kid_elder" ? "elder" : "younger", ladys_content: clip(l.content, 120),
+      ladys_source: "ai", ladys_source_msg_ids: ids(l.source_ids) }));
   const life = (out.life ?? [])
     .filter((l: any) => isYmd(l.date) && ["period_start", "period_end", "health", "other"].includes(l.kind))
     .map((l: any) => ({
@@ -202,6 +207,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
   if (notes.length) await ladysInsert("ladys_notes", notes, "return=minimal");
   if (receivables.length) await ladysInsert("ladys_receivables", receivables, "return=minimal");
   if (shoots.length) await ladysInsert("ladys_shoots", shoots, "return=minimal");
+  if (kids.length) await ladysInsert("ladys_kid_logs", kids, "return=minimal");
 
   // 整理完立刻刪除原文,只留整理結果(AI 失敗時不會走到這裡,原文保留到下次重試)
   await ladysDeleteWhere("ladys_messages", `id=in.(${msgs.map((m) => Number(m.id)).join(",")})`);
@@ -215,7 +221,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
     .map((o: any) => ({ event: existing[Number(String(o.ref ?? "").replace(/^E/i, "")) - 1], reason: clip(o.reason, 40) }))
     .filter((o: any) => o.event?.id && o.event.ladys_recur !== "yearly" && !seen.has(o.event.id) && seen.add(o.event.id));
 
-  const total = events.length + shoots.length + expenses.length + incomes.length + receivables.length + notes.length + life.length;
+  const total = events.length + shoots.length + expenses.length + incomes.length + receivables.length + notes.length + life.length + kids.length;
   const privateLife = life.filter((l: any) => l.ladys_kind.startsWith("period"));
   const publicLife = life.filter((l: any) => !l.ladys_kind.startsWith("period"));
   const cards: unknown[] = [];
@@ -231,6 +237,7 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
       ...(receivables.length ? ["【應收帳款】", ...receivables.map((x: any) => `${LADYS_OWNER_LABEL[x.ladys_owner as "both"]} ${x.ladys_party} $${x.ladys_amount.toLocaleString("en-US")}`)] : []),
       ...(notes.some((n: any) => n.ladys_kind === "goal") ? ["【目標】", ...notes.filter((n: any) => n.ladys_kind === "goal").map((n: any) => `🎯 ${n.ladys_content}`)] : []),
       ...(notes.some((n: any) => n.ladys_kind !== "goal") ? ["【待辦】", ...notes.filter((n: any) => n.ladys_kind !== "goal").map((n: any) => `☐ ${n.ladys_content}`)] : []),
+      ...(kids.length ? ["【👶 小孩每日】", ...kids.map((k: any) => `${k.ladys_child === "elder" ? "🧒 哥哥" : "👦 弟弟"} ${k.ladys_content}`)] : []),
       ...(life.length ? ["【生活紀錄】", ...publicLife.map((l: any) => `🌸 ${l.ladys_content}`),
         ...(privateLife.length ? [`🔒 私密紀錄 ${privateLife.length} 筆(到 LIFF 生活頁查看)`] : [])] : []),
       "有記錯的話,點下面按鈕修改 👇",
@@ -241,5 +248,5 @@ export async function ladysProcessPending(cardTitle: string, hero: LadysHero = "
   let noteItems: any[] = [];
   try { noteItems = await ladysQueueEventNotes(out.event_notes, existing, settings.ladys_group_id); } catch (e) { console.error("ladys event_notes", e instanceof Error ? e.message : e); }
   if (noteItems.length) cards.push(ladysNoteConfirmCard(noteItems));
-  return { status: "done", detail: { messages: msgs.length, events: events.length, shoots: shoots.length, expenses: expenses.length, incomes: incomes.length, receivables: receivables.length, notes: notes.length, life: life.length, obsolete: obsolete.length, event_notes: noteItems.length, gcal }, cards };
+  return { status: "done", detail: { messages: msgs.length, events: events.length, shoots: shoots.length, expenses: expenses.length, incomes: incomes.length, receivables: receivables.length, notes: notes.length, life: life.length, kids: kids.length, obsolete: obsolete.length, event_notes: noteItems.length, gcal }, cards };
 }
