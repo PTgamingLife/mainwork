@@ -9,8 +9,8 @@ function todoTabs() {
 }
 
 function kidItem(x) {
-  return `<div class="ladys-item" data-edit="kid" data-id="${x.id}"><i class="ladys-bar ladys-o-kid"></i>
-    <div class="t"><div>${esc(x.ladys_content)}</div>${x.ladys_source === "ai" ? '<div class="s">從群組對話記錄</div>' : ""}</div></div>`;
+  return `<div class="ladys-item ladys-kid-item" data-edit="kid" data-id="${x.id}"><i class="ladys-bar ladys-o-kid"></i>
+    <div class="t"><div>${esc(x.ladys_content)}</div></div></div>`;
 }
 
 function viewKids() {
@@ -19,9 +19,9 @@ function viewKids() {
   const days = [...new Set([today, ...Object.keys(by)])].sort().reverse().slice(0, 14);
   const day = (d) => {
     const g = by[d] || { elder: [], younger: [] };
-    const block = ([c, label]) => `<div class="ladys-kid-head">${label}<span>${(g[c] || []).length} 項</span></div>
-      ${(g[c] || []).length ? g[c].map(kidItem).join("") : `<div class="ladys-empty" style="padding:8px 0">${d === today ? "今天還沒記 · 按右下 ＋ 新增" : "沒有紀錄"}</div>`}`;
-    return `<div class="ladys-sec">${dayLabel(d)}${d === today ? " 今天" : ""}</div><div class="ladys-card ladys-kid-card">${LADYS_KIDS.map(block).join("")}</div>`;
+    const block = ([c, label]) => `<div class="ladys-kid-col"><div class="ladys-kid-head">${label}<span>${(g[c] || []).length} 項</span></div>
+      ${(g[c] || []).length ? g[c].map(kidItem).join("") : `<div class="ladys-empty" style="padding:8px 0;font-size:12px">${d === today ? "還沒記" : "沒有紀錄"}</div>`}</div>`;
+    return `<div class="ladys-sec">${dayLabel(d)}${d === today ? " 今天" : ""}</div><div class="ladys-card ladys-kid-card"><div class="ladys-kid-grid">${LADYS_KIDS.map(block).join("")}</div></div>`;
   };
   return `${todoTabs()}<div class="s" style="font-size:12px;color:var(--ladys-muted);margin:6px 2px">群組裡說「哥哥喝藥了」「弟弟吃魚油」,晚上整理時也會自動記到這裡</div>
     ${days.map(day).join("")}`;
