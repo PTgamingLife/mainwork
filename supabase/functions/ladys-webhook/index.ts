@@ -27,6 +27,31 @@ async function ladysCmdShootTopic(text: string, uid: string) {
   await ladysInsert("ladys_shoots", { ladys_date: null, ladys_owner: owner, ladys_topic: ladysMask(topic), ladys_source: "manual", ladys_status: "構想", ladys_updated_by: "user" }, "return=minimal");
   return { type: "text", text: `🎬 已加入拍片主題:${topic}\n(${LADYS_OWNER_LABEL[owner as "both"]} 還沒排日期;內容請跟剪片 agent 討論;排日期可到 LIFF「🎬 拍片」頁)` };
 }
+// 「貨款 王小明 3000」:後面每一行(或、;分隔)一筆應收帳款,誰打的就算誰要收;只在家庭群組
+async function ladysCmdReceivable(text: string, uid: string) {
+  const body = text.replace(/^貨款\s*[:：]?/, "");
+  const parts = body.split(/[\n、;；]+/).map((s) => s.trim()).filter(Boolean).slice(0, 20);
+  if (!parts.length) return { type: "text", text: "請在後面加上對象和金額,例如:\n貨款 王小明 3000\n(多筆可換行,一行一筆)💰" };
+  const [m] = uid ? await ladysSelect("ladys_members", `ladys_line_uid=eq.${encodeURIComponent(uid)}&select=ladys_role`) : [];
+  const owner = m?.ladys_role === "wife" || m?.ladys_role === "husband" ? m.ladys_role : "both";
+  const rows: any[] = [], bad: string[] = [];
+  for (const p of parts) {
+    const r = p.match(/^(.+?)\s*[:：]?\s*(?:NT\$|\$)?\s*([\d,]+(?:\.\d+)?)\s*(萬|w|W|k|K|千|元)?$/);
+    const mul = r?.[3] === "萬" || r?.[3] === "w" || r?.[3] === "W" ? 10000 : r?.[3] && /[kK千]/.test(r[3]) ? 1000 : 1;
+    const amt = r ? Math.round(Number(r[2].replace(/,/g, "")) * mul) : 0;
+    const party = ladysMask(r?.[1] ?? "").trim().slice(0, 10);
+    if (!party || !(amt > 0 && amt < 100_000_000)) { bad.push(p.slice(0, 20)); continue; }
+    rows.push({ ladys_party: party, ladys_amount: amt, ladys_owner: owner, ladys_source: "manual" });
+  }
+  if (rows.length) await ladysInsert("ladys_receivables", rows, "return=minimal");
+  const fmt = (n: number) => `$${n.toLocaleString("en-US")}`;
+  const lines = [
+    ...(rows.length ? [`💰 已記應收帳款 ${rows.length} 筆(${LADYS_OWNER_LABEL[owner as "both"]} 要收):`, ...rows.map((x) => `・${x.ladys_party} ${fmt(x.ladys_amount)}`)] : []),
+    ...(rows.length > 1 ? [`合計 ${fmt(rows.reduce((s, x) => s + x.ladys_amount, 0))}`] : []),
+    ...(bad.length ? [`⚠️ 看不懂的 ${bad.length} 行(格式:對象 金額):`, ...bad.map((b) => `・${b}`)] : []),
+  ];
+  return { type: "text", text: lines.join("\n") };
+}
 import { ladysHandleNotePostback } from "../_shared/ladys-eventnote.ts";
 import { ladysHandleDeletePostback } from "../_shared/ladys-obsolete.ts";
 import { ladysHandleWorkPostback } from "../_shared/ladys-work.ts";
@@ -258,6 +283,10 @@ async function ladysHandle(ev: any, settings: any) {
     if (uid) await ladysEnsureMember(gid, uid);
     if (/^拍片主題/.test(text)) {
       await ladysReply(ev.replyToken, [await ladysCmdShootTopic(text, uid)]);
+      return;
+    }
+    if (/^貨款/.test(text)) {
+      await ladysReply(ev.replyToken, [await ladysCmdReceivable(text, uid)]);
       return;
     }
     if (LADYS_COMMANDS.includes(text)) {
